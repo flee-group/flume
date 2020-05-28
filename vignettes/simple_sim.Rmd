@@ -1,0 +1,115 @@
+---
+title: "A simple simulation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{A simple simulation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width=5.5, fig.height=5.5, collapse = TRUE, comment = "##")
+
+# library(flume)
+library(igraph)
+```
+
+Here we demonstrate the model using a simple simulation with generated data. There are several essential components:
+
+1. A community matrix, one row per site, one column per species, populated with 1s (indicating presence) and 0s (for absence).
+2. A state matrix giving important state variables (e.g., resources, habitat); one row per site, one column per variable.
+3. A parameter matrix; one row per species, one column per parameter.
+4. A discharge vector with one element per site.
+5. A site-by-site adjacency matrix (see below).
+6. A series of functions (described below) to feed the model.
+
+
+## 1. Community matrix
+
+We begin with a two-species, ten-site community matrix, populated at random.
+
+```{r}
+set.seed("5111605")
+
+nsites = 10
+nsp = 2
+comm = matrix(sample(0:1, nsites*nsp, replace=TRUE, prob = c(0.35, 0.65)), ncol=nsp)
+comm
+```
+
+## 2. State matrix
+
+For simplicity, we use a single state variable, defined as a gradient from 0 to 1 along the 10 sites.
+
+```{r}
+n_vars = 1
+res = matrix(seq(0, 1, length.out = nsites), ncol=n_vars)
+
+## it's a good idea to name your variables
+colnames(res) = c("R")
+res
+```
+
+## 3. Parameters
+
+The parameter matrix will need to have named columns corresponding to parameters in the model. Additional parameters that are required for (for example) colonisation and extinction functions should also be provided in this matrix.
+
+## 4. Discharge
+
+We use a very simple model for discharge, growing from upstream to downstream; Q grows by 1 each time we move downstream, and we add reaches together at confluences. See the plot of the adjacency matrix below for details.
+
+```{r}
+Q = c(13,12,8,7,1,4,1,1,2,1)
+```
+
+
+
+## 5. Adjacency matrix
+
+The adjacency matrix describes the structure of the river network and how the different sites are connected to one another. The matrix must be square, with one row and column per site. For two sites `i` and `j`, `adj[i,j]` will be nonzero if `i` is downstream of `j`, and the value indicates the distance between the two.
+
+We set the same distance for all connections here for simplicity.
+
+```{r fig.height = 5, fig.width = 5}
+adj = matrix(0, nrow=nsites, ncol=nsites)
+adj[1,2] = adj[2,3] = adj[2,9] = adj[3,4] = adj[4,5] = adj[4,6] = adj[6,7] = adj[6,8] = adj[9,10] = 1
+layout = matrix(c(0,0,0,1,-0.5,2,-0.5,3,-1,4,0,4,-0.5,5,0.5,5,0.5,2,1,3), byrow=TRUE, nrow=nsites)
+plt = graph_from_adjacency_matrix(t(adj), mode = "directed")
+plot(plt, vertex.color="#0570b0", edge.color="#a6bddb", edge.arrow.size=0.3, layout = layout, edge.width = Q[2:nsites])
+```
+
+
+
+## 6. Functions
+
+The model depends on a number of functions to connect the parameters and state variables defined above to the resource flux (i.e., time derivative of the state variable) and the community flux (i.e., the transition rates between occupied and unoccupied patches). The `flume` package comes with a number of defaults, or custom functions can be created (see the vignette **Custom functions -- todo**).
+
+
+
+## old stuff, update
+
+Now we have to define a patch quality function for each species to pass to the simulation. This must take as input the resource state variable, and return a site by species matrix of qualities. The scale is arbitrary. Here, we define it as a linear function of the single variable, increasing for one species, decreasing for the other.
+
+```{r fig.height = 5, fig.width = 5}
+# x is the site state variable matrix, one row per site, one column per resource
+quality = function(x) {
+	cbind(x, -x + max(x))
+}
+
+plot(res, quality(res)[,1], type='l', col='blue', xlab="Resource concentration", ylab = "Patch quality", bty='n')
+lines(res, quality(res)[,2], col='red')
+legend("top", c("Sp 1", "Sp 2"), col=c('blue', 'red'), lty=1, bty='n')
+```
+
+It is also necessary to define functions returning colonisation and extinction rates as functions of the patch quality. For simplicity, we define these here such that c = q and m is constant with respect to q.
+
+```{r}
+colonization = function(x) {
+	x
+}
+
+extinction = function(x) {
+	return(0.2)
+}
+```
+
