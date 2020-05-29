@@ -52,7 +52,20 @@ res
 
 ## 3. Parameters
 
-The parameter matrix will need to have named columns corresponding to parameters in the model. Additional parameters that are required for (for example) colonisation and extinction functions should also be provided in this matrix.
+The parameter list will need to have named elements corresponding to parameters in the model. Additional parameters that are required for (for example) colonisation and extinction functions should also be provided in this list. Parameters generally should have one entry per species, or, if they are shared among species, a single entry.
+
+* alpha: active dispersal; we use only passive dispersal here, so set to zero for all species.
+* beta: passive dispersal; we give species two double the dispersal rate.
+* gamma: Competition matrix, a square matrix giving the strength of competition. Negative values can be used to indicate facilitation.
+
+```{r}
+params = list(
+	alpha = 0, 
+	beta = c(0.5,1),
+	gamma = matrix(c(0,1,1,0), ncol=nsp)
+)
+```
+
 
 ## 4. Discharge
 
@@ -83,6 +96,15 @@ plot(plt, vertex.color="#0570b0", edge.color="#a6bddb", edge.arrow.size=0.3, lay
 ## 6. Functions
 
 The model depends on a number of functions to connect the parameters and state variables defined above to the resource flux (i.e., time derivative of the state variable) and the community flux (i.e., the transition rates between occupied and unoccupied patches). The `flume` package comes with a number of defaults, or custom functions can be created (see the vignette **Custom functions -- todo**).
+
+### Colonisation and extinction functions
+
+These functions take as input the resource state variable and the parameter list and output the colonisation and extinction rates, respectively. For most cases, we will want to use the `generate_colfun` and `generate_extfun` functions provided by `flume` to create these functions. There are several categories of functions to choose from. We will use 'linear' for colonisation and 'constant' for extinction.
+
+```{r}
+col = generate_colfun(type = 'linear', n_species = nsp, nx = ncol(res), xlim=range(res[,1]), scale = 1)
+ext = generate_extfun(type = 'constant', n_species = nsp, scale = 0.2)
+```
 
 
 
