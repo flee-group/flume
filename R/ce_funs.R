@@ -34,12 +34,14 @@ ce_linear = function(parm) {
 	function(x) return(parm$a + parm$b*x)
 }
 
+#' @rdname ce_funs
 ce_constant = function(parm) {
 	if(!'scale' %in% names(parm))
 		stop("constant functions require named parameter 'scale'")
 	function(x) return(parm$scale)
 }
 
+#' @rdname ce_funs
 ce_gaussian = function(parm) {
 	if(!'scale' %in% names(parm) || !'mean' %in% names(parm) || !'sd' %in% names(parm))
 		stop("gaussian functions require named parameters 'scale', 'mean', and 'sd'")
@@ -54,31 +56,4 @@ ce_gaussian = function(parm) {
 
 
 
-#' Generate colonisation and extinction functions
-#'
-#' @param
-#' @return A colonization or extinction function. These functions take two arguments:
-#'     * `x`: the state variable matrix, one column per dimension given by `nx`
-#'     * `param`: a parameter list; can be optional if the c/e function needs no additional parameters
-#' @examples
-# generate_colfun = function(type = c('linear', 'gaussian'), n_species = 2) {
-# 	type = match.arg(type)
-#
-# 	if(type == 'linear' && (n_species > 3 || nx > 1))
-# 		stop("linear col/ext functions only support maximum 2 species and one variable")
-# }
-#
-#' Create a species pool with corresponding colonisation and extinction functions
-#'
-#' @param n_species The number of species
-#'
-#' @return An S3 obect of class `speciespool`, which is a list of [species][create_species()] objects.
-# generate_species_pool = function(n_species = 2, nx = 1,
-# 				c_type =  c('linear', 'gaussian', 'constant'),
-# 				e_type = c('constant', 'linear', 'quadratic')) {
-# 	c_type = match.arg(c_type)
-#
-# 	if(c_type == 'linear') {
-#
-# 	}
-# }
+

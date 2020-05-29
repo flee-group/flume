@@ -3,9 +3,15 @@
 \name{ce_funs}
 \alias{ce_funs}
 \alias{ce_linear}
+\alias{ce_constant}
+\alias{ce_gaussian}
 \title{Colonisation and extinction functions}
 \usage{
 ce_linear(parm)
+
+ce_constant(parm)
+
+ce_gaussian(parm)
 }
 \arguments{
 \item{parm}{Parameter list, a named list containing parameters for the c/e functions; see 'details'}
