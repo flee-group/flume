@@ -19,10 +19,9 @@ Here we demonstrate the model using a simple simulation with generated data. The
 
 1. A community matrix, one row per site, one column per species, populated with 1s (indicating presence) and 0s (for absence).
 2. A state matrix giving important state variables (e.g., resources, habitat); one row per site, one column per variable.
-3. A parameter matrix; one row per species, one column per parameter.
+3. A species pool, containing the information about the niche of each species in the community
 4. A discharge vector with one element per site.
 5. A site-by-site adjacency matrix (see below).
-6. A series of functions (described below) to feed the model.
 
 
 ## 1. Community matrix
@@ -51,20 +50,19 @@ colnames(res) = c("R")
 res
 ```
 
-## 3. Parameters
+## 3. Species Pool
 
-The parameter list will need to have named elements corresponding to parameters in the model. Additional parameters that are required for (for example) colonisation and extinction functions should also be provided in this list. Parameters generally should have one entry per species, or, if they are shared among species, a single entry.
+The species pool is an S3 object created by `flume` that describes all of the species in the community. It is created using the `create_species_pool()` function. Additional species can be added using `create_species()`, although care should be taken when doing this.
 
-* alpha: active dispersal; we use only passive dispersal here, so set to zero for all species.
-* beta: passive dispersal; we give species two double the dispersal rate.
-* gamma: Competition matrix, a square matrix giving the strength of competition. Negative values can be used to indicate facilitation.
+The species pool consists of a list of `species` objects; each species contains the colonisation and extinction function that defines that species' niche, along with the parameters giving the shapes of those functions. Here we create a 2-species pool that has linear colonisation and constant extinction. The `create_species_pool()` function automatically chooses parameters to "spread out" the species in the niche space. We then plot the community -- the first two panels show the two species' colonisation and extinction functions, and the third shows the dominant eigenvalue (which is positive if the species is expected to be present).
 
-```{r}
-params = list(
-	alpha = 0, 
-	beta = c(0.5,1),
-	gamma = matrix(c(0,1,1,0), ncol=nsp)
-)
+```{r fig.height = 3, fig.width = 7}
+comm = create_species_pool(n_species = 2, nx = 1, c_type = 'linear', e_type='constant')
+
+par(mfrow=c(1,3))
+plot(comm[[1]], main = "Species 1")
+plot(comm[[2]], main = "Species 2")
+plot.speciespool(comm)
 ```
 
 
@@ -94,45 +92,22 @@ plot(plt, vertex.color="#0570b0", edge.color="#a6bddb", edge.arrow.size=0.3, lay
 
 
 
-## 6. Functions
-
-The model depends on a number of functions to connect the parameters and state variables defined above to the resource flux (i.e., time derivative of the state variable) and the community flux (i.e., the transition rates between occupied and unoccupied patches). The `flume` package comes with a number of defaults, or custom functions can be created (see the vignette **Custom functions -- todo**).
-
-### Colonisation and extinction functions
-
-These functions take as input the resource state variable and the parameter list and output the colonisation and extinction rates, respectively. For most cases, we will want to use the `generate_colfun` and `generate_extfun` functions provided by `flume` to create these functions. There are several categories of functions to choose from. We will use 'linear' for colonisation and 'constant' for extinction.
-
-```{r}
-#col = generate_colfun(type = 'linear', n_species = nsp, nx = ncol(res), xlim=range(res[,1]), scale = 1)
-#ext = generate_extfun(type = 'constant', n_species = nsp, scale = 0.2)
-```
-
 
 ## old stuff, update
 
-Now we have to define a patch quality function for each species to pass to the simulation. This must take as input the resource state variable, and return a site by species matrix of qualities. The scale is arbitrary. Here, we define it as a linear function of the single variable, increasing for one species, decreasing for the other.
 
-```{r fig.height = 5, fig.width = 5}
-# x is the site state variable matrix, one row per site, one column per resource
-quality = function(x) {
-	cbind(x, -x + max(x))
-}
+The parameter list will need to have named elements corresponding to parameters in the model. Additional parameters that are required for (for example) colonisation and extinction functions should also be provided in this list. Parameters generally should have one entry per species, or, if they are shared among species, a single entry.
 
-plot(res, quality(res)[,1], type='l', col='blue', xlab="Resource concentration", ylab = "Patch quality", bty='n')
-lines(res, quality(res)[,2], col='red')
-legend("top", c("Sp 1", "Sp 2"), col=c('blue', 'red'), lty=1, bty='n')
-```
-
-It is also necessary to define functions returning colonisation and extinction rates as functions of the patch quality. For simplicity, we define these here such that c = q and m is constant with respect to q.
+* alpha: active dispersal; we use only passive dispersal here, so set to zero for all species.
+* beta: passive dispersal; we give species two double the dispersal rate.
+* gamma: Competition matrix, a square matrix giving the strength of competition. Negative values can be used to indicate facilitation.
 
 ```{r}
-colonization = function(x) {
-	x
-}
-
-extinction = function(x) {
-	return(0.2)
-}
+params = list(
+	alpha = 0, 
+	beta = c(0.5,1),
+	gamma = matrix(c(0,1,1,0), ncol=nsp)
+)
 ```
 
--->
+

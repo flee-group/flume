@@ -18,23 +18,35 @@ create_species_pool = function(n_species = 2, nx = 1, c_type = 'linear', e_type 
 	if((c_type == 'linear' || e_type == 'linear') && (n_species > 2 || nx > 1))
 		stop("Linear functions are only supported for <=2 species and 1 variable")
 
-	c_pars = switch(c_type,
-		'constant' = lapply(1:n_species, function(x) list(scale = scale[1])),
-		'linear' = {
-			x = c(xmin[1],  xmax[1])
-			y1 = c(0, scale[1])
-			y2 = c(scale[1], 0)
-			b = c((y1[2] - y1[1])/(x[2] - x[1]), (y2[2] - y2[1])/(x[2] - x[1]))
-			a = c(y1[1] - b[1] * x[1], y2[1] - b[2] * x[1])
-			mapply(function(a,b) list(a=a, b=b), a,b)},
-		'gaussian' = {
-			stop("Gaussian not implemented yet")
-			scale = rep(scale[1], n_species)
-			## mean = this is difficult to do generally for multiple variables; simple for one
-			## maybe to start we only consider a single, or we at least consider variables independently
-		},
-	)
+	c_pars = .generate_ce_params(c_type, n_species, scale[1], xmin, xmax)
+	e_pars = .generate_ce_params(e_type, n_species, scale[2], xmin, xmax)
+
+	comm = mapply(create_species, c_type = c_type, e_type = e_type, c_par = c_pars, e_par = e_pars, SIMPLIFY = FALSE)
+	class(comm) = c("speciespool", class(comm))
+	return(comm)
 }
+
+
+#' Create parameter sets for CE functions
+#' @keywords internal
+.generate_ce_params = function(type, n, scale, xmin, xmax) {
+	switch(type,
+		'constant' = lapply(1:n, function(x) list(scale = scale)),
+		'linear' = {
+		   	x = c(xmin,  xmax)
+		   	y1 = c(0, scale)
+		   	y2 = c(scale, 0)
+		   	b = c((y1[2] - y1[1])/(x[2] - x[1]), (y2[2] - y2[1])/(x[2] - x[1]))
+		   	a = c(y1[1] - b[1] * x[1], y2[1] - b[2] * x[1])
+		   	mapply(function(a,b) list(a=a, b=b), a,b, SIMPLIFY=FALSE)},
+		'gaussian' = {
+		   	stop("Gaussian not implemented yet")
+		   	scale = rep(scale[1], n_species)
+		   	## mean = this is difficult to do generally for multiple variables; simple for one
+		   	## maybe to start we only consider a single, or we at least consider variables independently
+	})
+}
+
 
 #' Creates species
 #'
@@ -79,14 +91,106 @@ create_species = function(c_type, e_type, c_par, e_par) {
 	return(x)
 }
 
+
+#' Plot species independent stable envelopes
+#' @param x A species pool
+#' @param R an optional resource state matrix
+#' @param axis Which resource axis (i.e., column in R) to plot along
+#' @export
+plot.speciespool = function(x, R, axis = 1, ...) {
+	if(missing(R)) R = matrix(seq(0, 1, length.out=50), ncol=1)
+	ypl = lapply(x, function(sp) sp$col(R) - sp$ext(R))
+	yl = c(0, max(unlist(ypl)))
+
+	# colours from colorbrewer
+	cols = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6")
+	if(length(cols) > length(x))
+		cols = cols[1:length(x)]
+
+	args = .default_plot_pool_options()
+	args$x = 0
+	args$y = 0
+	args$xlim = range(R[,axis])
+	args$ylim = yl
+	par(mar = c(5,4,4,6))
+	do.call(plot, args)
+
+	.make_line = function(y, col, args) {
+		args$x = R[,axis]
+		args$y = y
+		args$col = col
+		args$type = 'l'
+		do.call(lines, args)
+	}
+	invisible(mapply(.make_line, ypl, cols, MoreArgs = list(args = args)))
+
+	xpd = par()$xpd
+	par(xpd = TRUE)
+	legend("topright", legend = 1:length(x), col = cols, title = "species",
+		   lty = args$lty, lwd = args$lwd, bty = "n", inset=c(-0.15,0), cex=0.7)
+	par(xpd = xpd)
+
+}
+
+
 #' Plot species niches
 #' @param x A species
 #' @param R a resource state matrix
 #' @param axis Which resource axis (i.e., column in R) to plot along
 #'@export
 plot.species = function(x, R, axis = 1, ...) {
+	if(missing(R)) R = matrix(seq(0, 1, length.out=50), ncol=1)
 	yc = x$col(R)
 	ye = x$ext(R)
 	yl = range(c(yc, ye))
-	plot(R[,axis], yc, xlab = "Resource concentration", ylab = "Colonisation/extinction rate", ylim=yl, ...)
+
+	args = .default_plot_species_options(...)
+	cols = args$col
+	args$x = R[,axis]
+	args$y = yc
+	if(!"ylim" %in% names(args)) args$ylim = yl
+	args$col = cols[1]
+	par(mar = c(5,4,4,6))
+	do.call(plot.default, args)
+
+	args$y = ye
+	args$col = cols[2]
+	do.call(lines, args)
+
+	xpd = par()$xpd
+	par(xpd = TRUE)
+	legend("topright", legend = c("colonisation", "extinction"), col = cols,
+		   lty = args$lty, lwd = args$lwd, bty = "n", inset=c(-0.15,0), cex=0.7)
+	par(xpd = xpd)
 }
+
+
+#' Set default plot options when not user-specified
+#' @keywords internal
+.default_plot_pool_options = function(...) {
+	dots = 	.default_plot_species_options(...)
+	dots$ylab = "Dominant eigenvalue"
+	dots$type = "n"
+	dots$col = NULL
+	return(dots)
+}
+
+#' Set default plot options when not user-specified
+#' @keywords internal
+.default_plot_species_options = function(...) {
+	dots = list(...)
+	nms = names(dots)
+	if(!"xlab" %in% nms) dots$xlab = "Resource concentration"
+	if(!"ylab" %in% nms) dots$ylab = "Colonisation/extinction rate"
+	if(!"type" %in% nms) dots$type = "l"
+	if(!"bty" %in% nms) dots$bty = "n"
+	if(!"lwd" %in% nms) dots$lwd = 1.5
+	if(!"col" %in% nms) {
+		dots$col = c("#1f78b4", "#e31a1c")
+	} else {
+		if(length(dots$col) == 1)
+			dots$col = rep(dots$col, 2)
+	}
+	return(dots)
+}
+

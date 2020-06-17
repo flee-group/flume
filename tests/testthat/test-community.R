@@ -15,4 +15,10 @@ test_that("Species creation", {
 	expect_error(sp <- create_species('gaussian', 'linear', list(scale=1, mean=0.5, sd=0.2), list(a=1, b=-1)), regex=NA)
 	expect_equal(sp$col(0.5), 1)
 	expect_equal(sp$ext(1), 0)
+
+	expect_error(comm <- create_species_pool(), regex = NA)
+	expect_equal(length(comm), 2)
+	expect_equal(comm[[1]]$ext(1), comm[[2]]$ext(1))
+	R <- matrix(seq(0,1,length.out=20), ncol=1)
+	expect_equal(mean(comm[[1]]$col(R)), mean(comm[[2]]$col(R)))
 })
