@@ -11,6 +11,7 @@ vignette: >
 knitr::opts_chunk$set(fig.width=5.5, fig.height=5.5, collapse = TRUE, comment = "##")
 
 # library(flume)
+devtools::load_all()
 library(igraph)
 ```
 
@@ -102,10 +103,9 @@ The model depends on a number of functions to connect the parameters and state v
 These functions take as input the resource state variable and the parameter list and output the colonisation and extinction rates, respectively. For most cases, we will want to use the `generate_colfun` and `generate_extfun` functions provided by `flume` to create these functions. There are several categories of functions to choose from. We will use 'linear' for colonisation and 'constant' for extinction.
 
 ```{r}
-col = generate_colfun(type = 'linear', n_species = nsp, nx = ncol(res), xlim=range(res[,1]), scale = 1)
-ext = generate_extfun(type = 'constant', n_species = nsp, scale = 0.2)
+#col = generate_colfun(type = 'linear', n_species = nsp, nx = ncol(res), xlim=range(res[,1]), scale = 1)
+#ext = generate_extfun(type = 'constant', n_species = nsp, scale = 0.2)
 ```
-
 
 
 ## old stuff, update
@@ -135,3 +135,4 @@ extinction = function(x) {
 }
 ```
 
+-->
