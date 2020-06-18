@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 720.00 576.00'>
+<defs>
+  <style type='text/css'><![CDATA[
+    line, polyline, polygon, path, rect, circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<line x1='78.93' y1='504.00' x2='612.27' y2='504.00' style='stroke-width: 0.75;' />
+<line x1='78.93' y1='504.00' x2='78.93' y2='511.20' style='stroke-width: 0.75;' />
+<line x1='185.60' y1='504.00' x2='185.60' y2='511.20' style='stroke-width: 0.75;' />
+<line x1='292.27' y1='504.00' x2='292.27' y2='511.20' style='stroke-width: 0.75;' />
+<line x1='398.93' y1='504.00' x2='398.93' y2='511.20' style='stroke-width: 0.75;' />
+<line x1='505.60' y1='504.00' x2='505.60' y2='511.20' style='stroke-width: 0.75;' />
+<line x1='612.27' y1='504.00' x2='612.27' y2='511.20' style='stroke-width: 0.75;' />
+<text x='70.60' y='529.92' style='font-size: 12.00px; font-family: Liberation Sans;' textLength='16.67px' lengthAdjust='spacingAndGlyphs'>0.0</text>
+<text x='177.26' y='529.92' style='font-size: 12.00px; font-family: Liberation Sans;' textLength='16.67px' lengthAdjust='spacingAndGlyphs'>0.2</text>
+<text x='283.93' y='529.92' style='font-size: 12.00px; font-family: Liberation Sans;' textLength='16.67px' lengthAdjust='spacingAndGlyphs'>0.4</text>
+<text x='390.60' y='529.92' style='font-size: 12.00px; font-family: Liberation Sans;' textLength='16.67px' lengthAdjust='spacingAndGlyphs'>0.6</text>
+<text x='497.26' y='529.92' style='font-size: 12.00px; font-family: Liberation Sans;' textLength='16.67px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+<text x='603.93' y='529.92' style='font-size: 12.00px; font-family: Liberation Sans;' textLength='16.67px' lengthAdjust='spacingAndGlyphs'>1.0</text>
+<line x1='57.60' y1='487.47' x2='57.60' y2='74.13' style='stroke-width: 0.75;' />
+<line x1='57.60' y1='487.47' x2='50.40' y2='487.47' style='stroke-width: 0.75;' />
+<line x1='57.60' y1='384.13' x2='50.40' y2='384.13' style='stroke-width: 0.75;' />
+<line x1='57.60' y1='280.80' x2='50.40' y2='280.80' style='stroke-width: 0.75;' />
+<line x1='57.60' y1='177.47' x2='50.40' y2='177.47' style='stroke-width: 0.75;' />
+<line x1='57.60' y1='74.13' x2='50.40' y2='74.13' style='stroke-width: 0.75;' />
+<text transform='translate(40.32,495.80) rotate(-90)' style='font-size: 12.00px; font-family: Liberation Sans;' textLength='16.67px' lengthAdjust='spacingAndGlyphs'>0.0</text>
+<text transform='translate(40.32,392.47) rotate(-90)' style='font-size: 12.00px; font-family: Liberation Sans;' textLength='16.67px' lengthAdjust='spacingAndGlyphs'>0.2</text>
+<text transform='translate(40.32,289.14) rotate(-90)' style='font-size: 12.00px; font-family: Liberation Sans;' textLength='16.67px' lengthAdjust='spacingAndGlyphs'>0.4</text>
+<text transform='translate(40.32,185.80) rotate(-90)' style='font-size: 12.00px; font-family: Liberation Sans;' textLength='16.67px' lengthAdjust='spacingAndGlyphs'>0.6</text>
+<text transform='translate(40.32,82.47) rotate(-90)' style='font-size: 12.00px; font-family: Liberation Sans;' textLength='16.67px' lengthAdjust='spacingAndGlyphs'>0.8</text>
+<text x='282.24' y='558.72' style='font-size: 12.00px; font-family: Liberation Sans;' textLength='126.72px' lengthAdjust='spacingAndGlyphs'>Resource concentration</text>
+<text transform='translate(11.52,337.17) rotate(-90)' style='font-size: 12.00px; font-family: Liberation Sans;' textLength='112.73px' lengthAdjust='spacingAndGlyphs'>Dominant eigenvalue</text>
+<defs>
+  <clipPath id='cpNTcuNjB8NjMzLjYwfDUwNC4wMHw1Ny42MA=='>
+    <rect x='57.60' y='57.60' width='576.00' height='446.40' />
+  </clipPath>
+</defs>
+<polyline points='94.21,576.00 100.70,569.71 111.59,559.17 122.47,548.62 133.36,538.08 144.24,527.53 155.12,516.99 166.01,506.45 176.89,495.90 187.78,485.36 198.66,474.81 209.55,464.27 220.43,453.73 231.31,443.18 242.20,432.64 253.08,422.09 263.97,411.55 274.85,401.00 285.74,390.46 296.62,379.92 307.50,369.37 318.39,358.83 329.27,348.28 340.16,337.74 351.04,327.19 361.93,316.65 372.81,306.11 383.70,295.56 394.58,285.02 405.46,274.47 416.35,263.93 427.23,253.39 438.12,242.84 449.00,232.30 459.89,221.75 470.77,211.21 481.65,200.66 492.54,190.12 503.42,179.58 514.31,169.03 525.19,158.49 536.08,147.94 546.96,137.40 557.84,126.85 568.73,116.31 579.61,105.77 590.50,95.22 601.38,84.68 612.27,74.13 ' style='stroke-width: 1.12; stroke: #A6CEE3;' clip-path='url(#cpNTcuNjB8NjMzLjYwfDUwNC4wMHw1Ny42MA==)' />
+<polyline points='78.93,74.13 89.82,84.68 100.70,95.22 111.59,105.77 122.47,116.31 133.36,126.85 144.24,137.40 155.12,147.94 166.01,158.49 176.89,169.03 187.78,179.58 198.66,190.12 209.55,200.66 220.43,211.21 231.31,221.75 242.20,232.30 253.08,242.84 263.97,253.39 274.85,263.93 285.74,274.47 296.62,285.02 307.50,295.56 318.39,306.11 329.27,316.65 340.16,327.19 351.04,337.74 361.93,348.28 372.81,358.83 383.70,369.37 394.58,379.92 405.46,390.46 416.35,401.00 427.23,411.55 438.12,422.09 449.00,432.64 459.89,443.18 470.77,453.73 481.65,464.27 492.54,474.81 503.42,485.36 514.31,495.90 525.19,506.45 536.08,516.99 546.96,527.53 557.84,538.08 568.73,548.62 579.61,559.17 590.50,569.71 596.99,576.00 ' style='stroke-width: 1.12; stroke: #1F78B4;' clip-path='url(#cpNTcuNjB8NjMzLjYwfDUwNC4wMHw1Ny42MA==)' />
+<defs>
+  <clipPath id='cpMC4wMHw3MjAuMDB8NTc2LjAwfDAuMDA='>
+    <rect x='0.00' y='0.00' width='720.00' height='576.00' />
+  </clipPath>
+</defs>
+<line x1='688.87' y1='77.76' x2='703.99' y2='77.76' style='stroke-width: 1.12; stroke: #A6CEE3;' clip-path='url(#cpMC4wMHw3MjAuMDB8NTc2LjAwfDAuMDA=)' />
+<line x1='688.87' y1='87.84' x2='703.99' y2='87.84' style='stroke-width: 1.12; stroke: #1F78B4;' clip-path='url(#cpMC4wMHw3MjAuMDB8NTc2LjAwfDAuMDA=)' />
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8NTc2LjAwfDAuMDA=)'><text x='686.41' y='67.68' style='font-size: 8.40px; font-family: Liberation Sans;' textLength='28.48px' lengthAdjust='spacingAndGlyphs'>species</text></g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8NTc2LjAwfDAuMDA=)'><text x='711.55' y='80.64' style='font-size: 8.40px; font-family: Liberation Sans;' textLength='4.67px' lengthAdjust='spacingAndGlyphs'>1</text></g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8NTc2LjAwfDAuMDA=)'><text x='711.55' y='90.72' style='font-size: 8.40px; font-family: Liberation Sans;' textLength='4.67px' lengthAdjust='spacingAndGlyphs'>2</text></g>
+</svg>
