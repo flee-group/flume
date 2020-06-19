@@ -4,14 +4,24 @@
 \alias{river_network}
 \title{Create a river network}
 \usage{
-river_network(adjacency, discharge, skip_checks = FALSE)
+river_network(adjacency, discharge, state, skip_checks = FALSE)
 }
 \arguments{
 \item{adjacency}{An adjacency matrix; see 'details'}
 
 \item{discharge}{A vector for discharge values, one per row/column in adjacency}
 
+\item{state}{Optional, starting state of the network}
+
 \item{skip_checks}{Logical; if true, no checks for valid topology will be performed}
+}
+\value{
+An S3 object of class 'river_network', with the following attributes:
+\itemize{
+\item \code{adjacency} The adjacency matrix
+\item \code{discharge} A discharge vector
+\item \code{.state} The state history of the network; access with \link[=state.river_network]{state}.
+}
 }
 \description{
 Create a river network
@@ -20,4 +30,11 @@ Create a river network
 The adjacency matrix must be a square matrix, with a row/column for each river network reach. Zero entries
 indicate no adjacency between reaches. Nonzero entries indicate adjacency, with the value equal to the distance between
 reaches.
+}
+\examples{
+Q = rep(1, 4)
+adj = matrix(0, nrow = 4, ncol = 4)
+adj[1,2] = adj[2,3] = adj[4,3] = 1
+rn = river_network(adj, Q)
+plot(rn)
 }

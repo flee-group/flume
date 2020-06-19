@@ -20,4 +20,10 @@ test_that("River Network plotting", {
 	layout = matrix(c(-1,1, -0.5, 0.5, 0, 0, 0.5,0.5), ncol=2, byrow=TRUE)
 	pl = function() plot(rn, layout = layout)
 	vdiffr::expect_doppelganger("River Network Plot", pl)
+
+	## add state and plot
+	st = matrix(seq(0, 1, length.out = length(Q)), ncol = 1, dimnames = list(NULL, 'R'))
+	state(rn) = st
+	vdiffr::expect_doppelganger("River Network State Plot", pl)
+
 })

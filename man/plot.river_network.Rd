@@ -4,10 +4,12 @@
 \alias{plot.river_network}
 \title{Plot a river network}
 \usage{
-\method{plot}{river_network}(x, ...)
+\method{plot}{river_network}(x, axis = 1, ...)
 }
 \arguments{
 \item{x}{A \code{\link[=river_network]{river_network()}}}
+
+\item{axis}{If state is defined, the column to use for plotting}
 
 \item{...}{Additional arguments to \code{\link[igraph:plot.igraph]{igraph::plot.igraph()}}}
 }

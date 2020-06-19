@@ -1,8 +1,9 @@
 #' Plot a river network
 #' @param x A [river_network()]
+#' @param axis If state is defined, the column to use for plotting
 #' @param ... Additional arguments to [igraph::plot.igraph()]
 #' @export
-plot.river_network = function(x, ...) {
+plot.river_network = function(x, axis = 1, ...) {
 	if(!requireNamespace("igraph", quietly = TRUE)) {
 		stop("Package 'igraph' is required for plotting, please install it and try again")
 	}
@@ -11,6 +12,14 @@ plot.river_network = function(x, ...) {
 	args$x = graph_from_adjacency_matrix(x$adjacency, mode = "directed")
 	wt = x$discharge[2:nrow(x$adjacency)]
 	args$edge.width = (wt / max(wt)) * args$edge.width
+
+	## colour scale, if available and desired
+	if(!is.null(state(x)) && !("vertex.color" %in% names(args)) && requireNamespace("scales", quietly = TRUE)) {
+		args$vertex.color = scales::col_numeric("PuBu", range(state(x)[,axis]))(state(x)[,axis])
+		args$vertex.label.color = rev(scales::col_numeric("YlOrBr", range(state(x)[,axis]))(state(x)[,axis]))
+	} else {
+		args$vertex.color = "#7BA08C"
+	}
 	do.call(plot, args)
 }
 
@@ -94,7 +103,6 @@ plot.species = function(x, R, axis = 1, ...) {
 	dots = 	list(...)
 	nms = names(dots)
 	if(!"edge.width" %in% nms) dots$edge.width = 10
-	if(!"vertex.color" %in% nms) dots$vertex.color = "#7BA08C"
 	if(!"edge.color" %in% nms) dots$edge.color = "#a6bddb"
 	if(!"edge.arrow.size" %in% nms) dots$edge.arrow.size = 0.2 * dots$edge.width
 	return(dots)

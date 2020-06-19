@@ -19,5 +19,6 @@ Suggests:
     rmarkdown,
     vdiffr,
     igraph (>= 1.2),
-    Matrix (>= 1.2)
+    Matrix (>= 1.2),
+    scales (>= 1.1)
 VignetteBuilder: knitr
