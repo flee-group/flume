@@ -3,7 +3,6 @@
 \docType{package}
 \name{flume}
 \alias{flume}
-\alias{flume-package}
 \title{flume: A package for modelling FLUvial Meta-Ecosystems}
 \description{
 The foo package provides three categories of important functions:

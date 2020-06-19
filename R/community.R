@@ -15,15 +15,14 @@
 #' comm = community()
 #' plot(comm)
 #' @export
-community = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, nx), ...) {
-	comm = list()
+metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, nx), ...) {
+	comm = structure(list(), class = "metacommunity")
 
 	comm$species = species_pool(n_species = n_species, nx = nx, xmin=xmin, xmax=xmax, ...)
 	comm$competition = competition(comm$species, xmin, xmax)
 
 	attr(comm, "xmin") = xmin
 	attr(comm, "xmax") = xmax
-	class(comm) = c("community", class(comm))
 	return(comm)
 }
 
@@ -85,7 +84,7 @@ species_pool = function(n_species = 2, nx = 1, c_type = 'linear', e_type = 'cons
 #' plot(sp)
 #' @export
 species = function(c_type, e_type, c_par, e_par) {
-	x = list()
+	x = structure(list(), class = "species")
 	x$col = switch(c_type,
 				   "constant" = ce_constant(c_par),
 				   "linear" = ce_linear(c_par),
@@ -103,7 +102,6 @@ species = function(c_type, e_type, c_par, e_par) {
 	x$c_par = c_par
 	x$e_par = e_par
 
-	class(x) = c('species', class(x))
 	return(x)
 }
 

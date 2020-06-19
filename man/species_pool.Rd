@@ -4,9 +4,15 @@
 \alias{species_pool}
 \title{Generates a species pool with all possible species in a metacommunity}
 \usage{
-species_pool(n_species = 2, nx = 1, c_type = "linear",
-  e_type = "constant", scale = c(1, 0.2), xmin = rep(0, nx),
-  xmax = rep(1, nx))
+species_pool(
+  n_species = 2,
+  nx = 1,
+  c_type = "linear",
+  e_type = "constant",
+  scale = c(1, 0.2),
+  xmin = rep(0, nx),
+  xmax = rep(1, nx)
+)
 }
 \arguments{
 \item{n_species}{The number of species}

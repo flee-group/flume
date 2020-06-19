@@ -17,11 +17,94 @@ library(igraph)
 
 Here we demonstrate the model using a simple simulation with generated data. There are several essential components:
 
-1. A community matrix, one row per site, one column per species, populated with 1s (indicating presence) and 0s (for absence).
+1. A `metacommunity` object, which describes all the possible species that can occur in the simulation, gives their niches, and includes the pairwise competition strength
+2. A `river_network`, which describes the topology of the network and gives other important attributes, such as discharge.
+3. State variables; these are (mostly) dynamic attributes describing the state of the model at a given time. 
+4. Parameters; generally stored in a named list and usually static for the duration of a model run.
+
+
+They generally take the form of a matrix, with the rows representing locations (i.e., the nodes in the `river_network` object)
+
+A community matrix, one row per site, one column per species, populated with 1s (indicating presence) and 0s (for absence).
 2. A state matrix giving important state variables (e.g., resources, habitat); one row per site, one column per variable.
-3. A species pool, containing the information about the niche of each species in the community
-4. A discharge vector with one element per site.
-5. A site-by-site adjacency matrix (see below).
+
+
+
+
+
+## 1. The metacommunity
+
+The metacommunity is an S3 object created by `flume` that describes all of the species that can possibly occur in the model. It is created using the `metacommunity()` function. Additional species can be added using `species()`, although care should be taken when doing this.
+
+The metacommunity contains a `$species` member, which is a list of `species` objects; each species contains the colonisation and extinction function that defines that species' niche, along with the parameters giving the shapes of those functions. Here we create a 2-species pool that has linear colonisation and constant extinction. The `metacommunity()` function automatically chooses parameters to "spread out" the species in the niche space. We then plot the metacommunity -- the first two panels show the two species' colonisation and extinction functions, and the third shows the dominant eigenvalue (which is positive if the species is expected to be present).
+
+```{r fig.height = 3, fig.width = 7}
+comm = metacommunity(n_species = 2, nx = 1, c_type = 'linear', e_type='constant')
+
+par(mfrow=c(1,3))
+plot(comm$species[[1]], main = "Species 1")
+plot(comm$species[[2]], main = "Species 2")
+plot(comm)
+```
+
+### 1a. Competition
+
+The `metacommunity()` function automatically handles creating a competition matrix for you. This section explains in more detail how this function is created.
+
+Competition in the model is defined as the degree of overlap between two species' absolute niches, which in turn are defined by the colonisation-extinction functions. This follows from the definition of the absolute niche as the environmental conditions where a species can persist long-term. In a metapopultion, this is predicted to be anywhere $\lambda > 0$, where $\lambda = c - m$. Moreover, the quantity $\lambda$ will be correlated to performance; where $\lambda$ is large, the species will recolonize more quickly after going extinct. We can visualise the niche using the `plot` function.
+
+The model simply computes the area of overlap under the species' niche curves to determine the pairwise competition coefficient, shown shaded in the figure below. This is done using the numerical integration. The more similar two species are, the more their niches overlap, and the larger this shaded area gets. Here, the model has chosen the two species such that they have identical performance (i.e., $\int \lambda_1 = \int \lambda_2$) and competition is minimised.
+
+```{r fig.height = 4, fig.width = 4}
+plot(comm)
+
+
+xpo = seq(0,1,0.05)
+
+# compute the two curves, then choose whichever is smaller
+y1 = comm$species[[1]]$col(xpo) - comm$species[[1]]$ext(xpo)
+y2 = comm$species[[2]]$col(xpo) - comm$species[[2]]$ext(xpo)
+ypo = ifelse(y1 > y2, y2, y1)
+ypo = c(ypo, rep(-1, length(ypo)))
+xpo = c(xpo, rev(xpo))
+polygon(xpo, ypo, border = NA, col = "#d9d9d9")
+```
+
+
+
+
+## 2. The river network
+
+The main component of the river network is a weighted digraph; i.e., the topological relationships between locations. The network graph in `flume` uses stream reaches as nodes, while the edges describe which reaches are neighbours of each other. The simplest way to define a network is using an attribute list and a weighted adjacency matrix.
+
+For attributes, we will use only discharge (which is required). Other attributes can be specified with a named list, but we will not use them for this example.,We use a simple discharge model, where Q grows by 1 each time we move downstream (i.e., when we traverse an edge, representing lateral input), and we add reaches together at confluences. Here, we define node 1 to be the most downstream node (this is purely an arbitrary choice).
+
+```{r}
+Q = c(13,12,8,7,1,4,1,1,2,1)
+```
+
+
+The adjacency matrix describes the spatial relationships among nodes. The matrix must be square, with one row and column per node. For two sites `i` and `j`, `adj[i,j]` will be nonzero if `i` is upstream of `j`, and the value indicates the distance between the two. We make all stream reaches the same length for simplicity.
+
+By default, plotting the network will show the edges weighted by discharge. Node ('vertex') colours can be set by `vertex.color`; I use a simple gradient following the order of sites, because this is also how I will set up my resource gradients (in **3. State Variables** below). Edge weight is proportional to the discharge between sites. The layout matrix shows where to plot each vertex; this is optional but can be useful for nicer plots.
+
+```{r fig.height = 5, fig.width = 5}
+nsites = length(Q)
+adj = matrix(0, nrow=nsites, ncol=nsites)
+adj[2,1] = adj[3,2] = adj[9,2] = adj[4,3] = adj[5,4] = adj[6,4] = adj[7,6] = adj[8,6] = adj[10,9] = 1
+
+network = river_network(adjacency = adj, discharge = Q)
+vcols = colorRampPalette(c("#f7fcfd", "#00441b"))(nsites)
+layout = matrix(c(0,0,0,1,-0.5,2,-0.5,3,-1,4,0,4,-0.5,5,0.5,5,0.5,2,1,3), byrow=TRUE, nrow=nsites)
+plot(network, layout = layout, edge.arrow.size = 0.2, vertex.color = vcols)
+```
+
+
+
+
+
+
+
 
 
 ## 1. Community matrix
@@ -31,7 +114,6 @@ We begin with a two-species, ten-site community matrix, populated at random.
 ```{r}
 set.seed("5111605")
 
-nsites = 10
 nsp = 2
 comm = matrix(sample(0:1, nsites*nsp, replace=TRUE, prob = c(0.35, 0.65)), ncol=nsp)
 comm
@@ -50,72 +132,11 @@ colnames(res) = c("R")
 res
 ```
 
-## 3. Species Pool
-
-The species pool is an S3 object created by `flume` that describes all of the species in the community. It is created using the `community()` function. Additional species can be added using `species()`, although care should be taken when doing this.
-
-The species pool consists of a list of `species` objects; each species contains the colonisation and extinction function that defines that species' niche, along with the parameters giving the shapes of those functions. Here we create a 2-species pool that has linear colonisation and constant extinction. The `community()` function automatically chooses parameters to "spread out" the species in the niche space. We then plot the community -- the first two panels show the two species' colonisation and extinction functions, and the third shows the dominant eigenvalue (which is positive if the species is expected to be present).
-
-Since we have already defined the state matrix (i.e., the resource concentration at each site), we use this as the `R` argument for the plot methods, so we are viewing each species' performance at our simulated sites.
-
-```{r fig.height = 3, fig.width = 7}
-comm = community(n_species = 2, nx = 1, c_type = 'linear', e_type='constant')
-
-par(mfrow=c(1,3))
-plot(comm$species[[1]], R=res, main = "Species 1")
-plot(comm$species[[2]], R=res, main = "Species 2")
-plot(comm, R=res)
-```
-
-### 3a. Competition
-
-The `community()` function automatically handles creating a competition matrix for you. This section explains in more detail how this function is created for documentation purposes.
-
-Competition in the model is defined as the degree of overlap between two species' absolute niches, which in turn are defined by the colonisation-extinction functions. This follows from the definition of the absolute niche as the environmental conditions where a species can persist long-term. In a metapopultion, this is predicted to be anywhere $\lambda > 0$, where $\lambda = c - m$. Moreover, the quantity $\lambda$ will be correlated to performance; where $\lambda$ is large, the species will recolonize more quickly after going extinct. We can visualise the niche using the `plot.community` function.
-
-The model simply computes the area of overlap under the species' niche curves to determine the pairwise competition coefficient, shown shaded in the figure below. This is done using the integrate function in R. The more similar two species are, the more their niches overlap, and the larger this shaded area gets. Here, the model has chosen the two species such that they have identical performance (i.e., $\int \lambda_1 = \int \lambda_2$) and competition is minimised.
-
-```{r fig.height = 4, fig.width = 4}
-plot(comm, R=res)
-
-
-xpo = seq(0,1,0.05)
-
-# compute the two curves, then choose whichever is smaller
-y1 = comm$species[[1]]$col(xpo) - comm$species[[1]]$ext(xpo)
-y2 = comm$species[[2]]$col(xpo) - comm$species[[2]]$ext(xpo)
-ypo = ifelse(y1 > y2, y2, y1)
-ypo = c(ypo, rep(-1, length(ypo)))
-xpo = c(xpo, rev(xpo))
-polygon(xpo, ypo, border = NA, col = "#d9d9d9")
-```
-
-## 4. Discharge
-
-We use a very simple model for discharge, growing from upstream to downstream; Q grows by 1 each time we move downstream, and we add reaches together at confluences. See the plot of the adjacency matrix below for details.
-
-```{r}
-Q = c(13,12,8,7,1,4,1,1,2,1)
-```
 
 
 
 ## 5. Adjacency matrix
 
-The adjacency matrix describes the structure of the river network and how the different sites are connected to one another. The matrix must be square, with one row and column per site. For two sites `i` and `j`, `adj[i,j]` will be nonzero if `i` is downstream of `j`, and the value indicates the distance between the two.
-
-We set the same distance for all connections here for simplicity.
-
-Edge weight is proportional to the discharge between sites. Vertex color is proportional to the value of the environmental gradient at each site.
-
-```{r fig.height = 5, fig.width = 5}
-adj = matrix(0, nrow=nsites, ncol=nsites)
-adj[1,2] = adj[2,3] = adj[2,9] = adj[3,4] = adj[4,5] = adj[4,6] = adj[6,7] = adj[6,8] = adj[9,10] = 1
-layout = matrix(c(0,0,0,1,-0.5,2,-0.5,3,-1,4,0,4,-0.5,5,0.5,5,0.5,2,1,3), byrow=TRUE, nrow=nsites)
-plt = graph_from_adjacency_matrix(t(adj), mode = "directed")
-vcols = colorRampPalette(c("#f7fcfd", "#00441b"))(nsites)
-plot(plt, vertex.color=vcols, edge.color="#a6bddb", edge.arrow.size=0.3, layout = layout, edge.width = Q[2:nsites])
-```
 
 
 

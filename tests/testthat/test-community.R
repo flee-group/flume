@@ -16,7 +16,7 @@ test_that("Species creation", {
 	expect_equal(sp$col(0.5), 1)
 	expect_equal(sp$ext(1), 0)
 
-	expect_error(comm <- community(), regex = NA)
+	expect_error(comm <- metacommunity(), regex = NA)
 	pool = comm$species
 	expect_equal(length(pool), 2)
 	expect_equal(pool[[1]]$ext(1), pool[[2]]$ext(1))

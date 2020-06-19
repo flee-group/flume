@@ -1,9 +1,25 @@
+#' Plot a river network
+#' @param x A [river_network()]
+#' @param ... Additional arguments to [igraph::plot.igraph()]
+#' @export
+plot.river_network = function(x, ...) {
+	if(!requireNamespace("igraph", quietly = TRUE)) {
+		stop("Package 'igraph' is required for plotting, please install it and try again")
+	}
+
+	args = .default_river_plot_options(...)
+	args$x = graph_from_adjacency_matrix(x$adjacency, mode = "directed")
+	wt = x$discharge[2:nrow(x$adjacency)]
+	args$edge.width = (wt / max(wt)) * args$edge.width
+	do.call(plot, args)
+}
+
 #' Plot species independent stable envelopes
-#' @param x A [community()]
+#' @param x A [metacommunity()]
 #' @param R an optional resource state matrix
 #' @param axis Which resource axis (i.e., column in R) to plot along
 #' @export
-plot.community = function(x, R, axis = 1, ...) {
+plot.metacommunity = function(x, R, axis = 1, ...) {
 	x = x$species
 	if(missing(R)) R = matrix(seq(0, 1, length.out=50), ncol=1)
 	ypl = lapply(x, function(sp) sp$col(R) - sp$ext(R))
@@ -69,6 +85,19 @@ plot.species = function(x, R, axis = 1, ...) {
 	legend("topright", legend = c("colonisation", "extinction"), col = cols,
 		   lty = args$lty, lwd = args$lwd, bty = "n", inset=c(-0.15,0), cex=0.7)
 	par(xpd = xpd)
+}
+
+
+#' Set default plot options when not user-specified
+#' @keywords internal
+.default_river_plot_options = function(...) {
+	dots = 	list(...)
+	nms = names(dots)
+	if(!"edge.width" %in% nms) dots$edge.width = 10
+	if(!"vertex.color" %in% nms) dots$vertex.color = "#7BA08C"
+	if(!"edge.color" %in% nms) dots$edge.color = "#a6bddb"
+	if(!"edge.arrow.size" %in% nms) dots$edge.arrow.size = 0.2 * dots$edge.width
+	return(dots)
 }
 
 
