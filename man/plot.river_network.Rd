@@ -4,15 +4,20 @@
 \alias{plot.river_network}
 \title{Plot a river network}
 \usage{
-\method{plot}{river_network}(x, axis = 1, ...)
+\method{plot}{river_network}(x, variable = 1, ...)
 }
 \arguments{
 \item{x}{A \code{\link[=river_network]{river_network()}}}
 
-\item{axis}{If state is defined, the column to use for plotting}
+\item{variable}{If state is defined, the column to use for plotting; see 'details'}
 
 \item{...}{Additional arguments to \code{\link[igraph:plot.igraph]{igraph::plot.igraph()}}}
 }
 \description{
 Plot a river network
+}
+\details{
+The argument 'variable' can either be a column number from the state variable matrix, a column name from
+the state variable matrix, or the special name "site_by_species", which produces a plot of the network with
+species presence-absence.
 }

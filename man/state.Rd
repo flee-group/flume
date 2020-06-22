@@ -4,11 +4,17 @@
 \alias{state}
 \alias{state.river_network}
 \alias{state<-.river_network}
-\title{Setter and getter methods for river network state}
+\alias{site_by_species.river_network}
+\alias{site_by_species<-.river_network}
+\title{Setter and getter methods for river network state variables}
 \usage{
 \method{state}{river_network}(x, history = FALSE)
 
 \method{state}{river_network}(x) <- value
+
+\method{site_by_species}{river_network}(x, history = FALSE)
+
+\method{site_by_species}{river_network}(x) <- value
 }
 \arguments{
 \item{x}{A river network}
@@ -18,7 +24,7 @@
 \item{value}{The value to update the attribute with}
 }
 \description{
-Setter and getter methods for river network state
+Setter and getter methods for river network state variables
 }
 \details{
 By default, setting state will save the current state in the state history, then update current state

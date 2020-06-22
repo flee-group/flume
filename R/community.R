@@ -27,6 +27,26 @@ metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, n
 }
 
 
+#' Generate a random community
+#' @param rn A [river_network()]
+#' @param mc A [metacommunity()]
+#' @param prevalence A vector of length 1 or `length(mc)`, what proportion of sites should be occupied on average by each species.
+#' @return A site by species matrix, with sites taken from `rc` and species from `mc`
+#' @examples
+#' Q = rep(1, 4)
+#' adj = matrix(0, nrow = 4, ncol = 4)
+#' adj[1,2] = adj[2,3] = adj[4,3] = 1
+#' rn = river_network(adj, Q)
+#' comm = community()
+#' site_by_species(rn) = random_community(rn, mc)
+#' plot(rn, variable = "site_by_species")
+#' @export
+random_community = function(rn, mc, prevalence = 0.25) {
+	i = nrow(rn$adjacency)
+	j = length(mc)
+	do.call(cbind, mapply(function(jj, pr)
+		sample(0:1, i, replace = TRUE, prob = c(1-pr, pr)), 1:j, prevalence, SIMPLIFY = FALSE))
+}
 
 
 #' Generates a species pool with all possible species in a metacommunity

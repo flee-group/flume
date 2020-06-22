@@ -57,12 +57,20 @@ river_network = function(adjacency, discharge, state, skip_checks = FALSE) {
 }
 
 
+#'@export
 state = function(x, ...)
 	UseMethod("state", x)
+#'@export
 'state<-' = function(x, value)
 	UseMethod('state<-', x)
+#'@export
+site_by_species = function(x, ...)
+	UseMethod("site_by_species", x)
+#'@export
+'site_by_species<-' = function(x, value)
+	UseMethod('site_by_species<-', x)
 
-#' Setter and getter methods for river network state
+#' Setter and getter methods for river network state variables
 #' @name state
 #' @details By default, setting state will save the current state in the state history, then update current state
 #' to `value`.
@@ -94,5 +102,32 @@ state.river_network = function(x, history = FALSE) {
 	}
 
 	x[['.state']][[i + 1]] = value
+	return(x)
+}
+
+#' @rdname state
+#' @export
+site_by_species.river_network = function(x, history = FALSE) {
+	if(!"si_by_sp" %in% names(x))
+		stop("Site by species information is missing for this river network")
+	if(history) {
+		return(x[["si_by_sp"]])
+	} else {
+		return(x[['si_by_sp']][[length(x[['si_by_sp']])]])
+	}
+}
+
+#' @rdname state
+#' @export
+'site_by_species<-.river_network' = function(x, value) {
+	if(!"si_by_sp" %in% names(x))
+		x[['si_by_sp']] = list()
+
+	i = length(x[['si_by_sp']])
+	if(i > 0) {
+		## changing state dimensions is not allowed
+		stopifnot(identical(dim(value), dim(site_by_species(x))))
+	}
+	x[['si_by_sp']][[i + 1]] = value
 	return(x)
 }

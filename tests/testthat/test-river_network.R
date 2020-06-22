@@ -63,3 +63,10 @@ test_that("River network state manipulation", {
 	expect_identical(state(rn, history = TRUE)[[1]], st)
 	expect_identical(state(rn, history = TRUE)[[2]], state(rn))
 })
+
+test_that("River network community matrix", {
+	rn = river_network(adj, Q)
+	comm <- metacommunity()
+	expect_error(site_by_species(rn), regex = "missing")
+	expect_error(site_by_species(rn) <- random_community(rn, comm), regex = NA)
+})

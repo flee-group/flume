@@ -12,11 +12,12 @@ test_that("Community plotting", {
 	vdiffr::expect_doppelganger("Default Species Pool Plot", pl)
 })
 
+adj = matrix(0, nrow = 4, ncol = 4)
+adj[1,2] = adj[2,3] = adj[4,3] = 1
+Q = rep(1, 4)
+rn = river_network(adj, Q)
+
 test_that("River Network plotting", {
-	adj = matrix(0, nrow = 4, ncol = 4)
-	adj[1,2] = adj[2,3] = adj[4,3] = 1
-	Q = rep(1, 4)
-	rn = river_network(adj, Q)
 	layout = matrix(c(-1,1, -0.5, 0.5, 0, 0, 0.5,0.5), ncol=2, byrow=TRUE)
 	pl = function() plot(rn, layout = layout)
 	vdiffr::expect_doppelganger("River Network Plot", pl)
@@ -26,4 +27,11 @@ test_that("River Network plotting", {
 	state(rn) = st
 	vdiffr::expect_doppelganger("River Network State Plot", pl)
 
+})
+
+test_that("River Network community plotting", {
+	comm <- metacommunity()
+	site_by_species(rn) <- random_community(rn, comm)
+	pl = function() plot(rn, layout = layout, variable = 'site_by_species')
+	vdiffr::expect_doppelganger("River Network Species Plot", pl)
 })

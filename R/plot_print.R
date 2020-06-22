@@ -1,26 +1,44 @@
 #' Plot a river network
+#' @details The argument 'variable' can either be a column number from the state variable matrix, a column name from
+#' the state variable matrix, or the special name "site_by_species", which produces a plot of the network with
+#' species presence-absence.
 #' @param x A [river_network()]
-#' @param axis If state is defined, the column to use for plotting
+#' @param variable If state is defined, the column to use for plotting; see 'details'
 #' @param ... Additional arguments to [igraph::plot.igraph()]
 #' @export
-plot.river_network = function(x, axis = 1, ...) {
+plot.river_network = function(x, variable = 1, ...) {
 	if(!requireNamespace("igraph", quietly = TRUE)) {
 		stop("Package 'igraph' is required for plotting, please install it and try again")
 	}
 
 	args = .default_river_plot_options(...)
-	args$x = graph_from_adjacency_matrix(x$adjacency, mode = "directed")
+	args$x = igraph::graph_from_adjacency_matrix(x$adjacency, mode = "directed")
 	wt = x$discharge[2:nrow(x$adjacency)]
 	args$edge.width = (wt / max(wt)) * args$edge.width
 
 	## colour scale, if available and desired
-	if(!is.null(state(x)) && !("vertex.color" %in% names(args)) && requireNamespace("scales", quietly = TRUE)) {
-		args$vertex.color = scales::col_numeric("PuBu", range(state(x)[,axis]))(state(x)[,axis])
-		args$vertex.label.color = rev(scales::col_numeric("YlOrBr", range(state(x)[,axis]))(state(x)[,axis]))
-	} else {
-		args$vertex.color = "#7BA08C"
+	if(variable == "site_by_species") {
+		nsp = ncol(site_by_species(x))
+		# colours from colorbrewer
+		cols = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6")
+		args$vertex.label.color = '#444444'
+
+		par(mfrow = .set_mfrow(nsp))
+		for(i in 1:nsp) {
+			args$vertex.color = rep('white', nrow(site_by_species(x)))
+			args$vertex.color[site_by_species(x)[,i] == 1] = cols[(i %% length(cols))+1]
+			do.call(plot, args)
+		}
 	}
-	do.call(plot, args)
+	else {
+		if(!is.null(state(x)) && !("vertex.color" %in% names(args)) && requireNamespace("scales", quietly = TRUE)) {
+			args$vertex.color = scales::col_numeric("PuBu", range(state(x)[,variable]))(state(x)[,variable])
+			args$vertex.label.color = rev(scales::col_numeric("YlOrBr", range(state(x)[,variable]))(state(x)[,variable]))
+		} else {
+			args$vertex.color = "#7BA08C"
+		}
+		do.call(plot, args)
+	}
 }
 
 #' Plot species independent stable envelopes
@@ -136,4 +154,23 @@ plot.species = function(x, R, axis = 1, ...) {
 			dots$col = rep(dots$col, 2)
 	}
 	return(dots)
+}
+
+
+#' Choose some sensible number of plots for a river network
+.set_mfrow = function(n) {
+	if(n <= 3) {
+		nr = 1
+	} else if(n <= 6) {
+		nr = 2
+	} else if(n <= 12) {
+		nr = 3
+	} else if(n <= 24) {
+		nr = 4
+	} else {
+		ratio = 10/16
+		nr = ceiling(sqrt(ratio * n))
+	}
+	nc = ceiling(n / nr)
+	return(c(nr, nc))
 }
