@@ -28,6 +28,10 @@ metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, n
 
 
 #' Generate a random community
+#' @details This function will ensure that all sites have at least one species. If many species have low prevalence, it
+#' may be that the initial random draw produces many zero-richness sites, in which case one species will be selected at
+#' random for each of these sites. This can have the side effect that the prevalences in the end do not match the desired
+#' prevalence very closely.
 #' @param rn A [river_network()]
 #' @param mc A [metacommunity()]
 #' @param prevalence A vector of length 1 or `length(mc)`, what proportion of sites should be occupied on average by each species.
@@ -44,8 +48,18 @@ metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, n
 random_community = function(rn, mc, prevalence = 0.25) {
 	i = nrow(rn$adjacency)
 	j = length(mc)
-	do.call(cbind, mapply(function(jj, pr)
+	com = do.call(cbind, mapply(function(jj, pr)
 		sample(0:1, i, replace = TRUE, prob = c(1-pr, pr)), 1:j, prevalence, SIMPLIFY = FALSE))
+
+	if(all(prevalence < 1/i))
+		warning("All species have low prevalence; random communities might not match desired prevalences")
+
+	r0 = which(rowSums(com) == 0)
+	if(length(r0) > 0) {
+		for(k in r0)
+			com[k, sample(1:length(j))] = 1
+	}
+	return(com)
 }
 
 
@@ -90,20 +104,25 @@ species_pool = function(n_species = 2, nx = 1, c_type = 'linear', e_type = 'cons
 #' `mean` must be a location vector of length `nx`, and `sd` must be a variance covariance matrix
 #' with `dim=c(nx,nx)`.
 #'
+#' The resource use function is set automatically by default, but can be set to an arbitrary function; see
+#' [resource use functions][ruf()] for details on how this function should behave.
+#'
 #' @param c_type Form of [colonisation function][ce_funs]
 #' @param e_type Form of [extinction function][ce_funs]
 #' @param c_par Named parameter list; constant parameters to include in the c/e functions, see [colonisation functions][ce_funs]
 #' @param e_par Named parameter list; constant parameters to include in the c/e functions, see [extinction functions][ce_funs]
+#' @param r_scale Scale for the [resource use function][ruf()]
 #' @return An S3 object of class 'species', which contains the following named elements:
 #'       `col`: The colonisation function, takes a state matrix R and returns a vector of colonisation rates
 #'       `ext`: The extinction function
+#'       `ruf`: The resource use function; the effect the species has on the resources in a site
 #'       `c_par`: colonisation niche parameters
 #'       `e_par`: extinction niche parameters
 #' @examples
 #' sp = flume:::species('linear', 'constant', list(a=0, b=1), e_par = list(scale = 0.2))
 #' plot(sp)
 #' @export
-species = function(c_type, e_type, c_par, e_par) {
+species = function(c_type, e_type, c_par, e_par, r_scale) {
 	x = structure(list(), class = "species")
 	x$col = switch(c_type,
 				   "constant" = ce_constant(c_par),
@@ -118,6 +137,13 @@ species = function(c_type, e_type, c_par, e_par) {
 				   "gaussian" = stop('gaussian extinction functions not recommended'),
 				   stop("unknown extinction function type:", e_type)
 	)
+
+	x$ruf = switch(c_type,
+				   "constant" = ruf_constant(c_par, r_scale),
+				   "linear" = ruf_linear(c_par, r_scale),
+				   "gaussian" = ruf_gaussian(c_par, r_scale),
+	)
+
 
 	x$c_par = c_par
 	x$e_par = e_par

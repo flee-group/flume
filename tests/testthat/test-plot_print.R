@@ -16,10 +16,11 @@ adj = matrix(0, nrow = 4, ncol = 4)
 adj[1,2] = adj[2,3] = adj[4,3] = 1
 Q = rep(1, 4)
 rn = river_network(adj, Q)
+l_out = matrix(c(-1,1, -0.5, 0.5, 0, 0, 0.5,0.5), ncol=2, byrow=TRUE)
 
 test_that("River Network plotting", {
-	layout = matrix(c(-1,1, -0.5, 0.5, 0, 0, 0.5,0.5), ncol=2, byrow=TRUE)
-	pl = function() plot(rn, layout = layout)
+
+	pl = function() plot(rn, layout = l_out)
 	vdiffr::expect_doppelganger("River Network Plot", pl)
 
 	## add state and plot
@@ -31,7 +32,7 @@ test_that("River Network plotting", {
 
 test_that("River Network community plotting", {
 	comm <- metacommunity()
-	site_by_species(rn) <- random_community(rn, comm)
-	pl = function() plot(rn, layout = layout, variable = 'site_by_species')
+	site_by_species(rn) = matrix(c(1,1,1,0,0,0,1,1), ncol=length(comm))
+	pl = function() plot(rn, layout = l_out, variable = 'site_by_species')
 	vdiffr::expect_doppelganger("River Network Species Plot", pl)
 })

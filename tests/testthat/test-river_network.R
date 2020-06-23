@@ -69,4 +69,8 @@ test_that("River network community matrix", {
 	comm <- metacommunity()
 	expect_error(site_by_species(rn), regex = "missing")
 	expect_error(site_by_species(rn) <- random_community(rn, comm), regex = NA)
+
+	# make sure all sites have species in a bunch of random communities
+	expect_warning(rcomm <- random_community(rn, comm, prevalence = 0), regex = "low prevalence")
+	expect_true(all(rowSums(rcomm) > 0))
 })

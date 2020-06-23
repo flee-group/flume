@@ -127,24 +127,28 @@ plot(network, layout = layout, edge.arrow.size = 0.2)
 
 The other aspect of the river network's state is the community site-by-species matrix. This matrix always has as many rows as there are sites (i.e. nodes) in the river network, and as many columns as there are species in the metacommunity. We can access this variable using the `site_by_species` function, and we can generate one at random using `random_community`. We begin with a two-species, ten-site community matrix, populated at random.
 
-```{r}
+```{r error=TRUE}
 
 ## empty, we haven't set it up yet
 site_by_species(network)
+```
 
+``````{r fig.height = 3, fig.width = 7}
 set.seed("5111605")
 site_by_species(network) = random_community(network, sp_pool, prevalence = c(0.35, 0.65))
 site_by_species(network)
 
-plot(network, variable = 'site_by_species')
+par(mar=rep(0.1, 4))
+plot(network, variable = 'site_by_species', layout = layout, edge.arrow.size = 0.2)
 ```
 
 
 
-## 4. Parameters (old, update)
+## 4. Parameters
 
+The parameter list controls how the model operates. The list should be named, and each element of the list should be a scalar (for parameters that will apply to all sites/species) or a vector (e.g., if species vary in dispersal ability, then the dispersal params can be a vector with one entry per species).
 
-The parameter list will need to have named elements corresponding to parameters in the model. Additional parameters that are required for (for example) colonisation and extinction functions should also be provided in this list. Parameters generally should have one entry per species, or, if they are shared among species, a single entry.
+A good starting point is the function `flume_params()`, which will return a parameter list with all required elements, set to sensible defaults. Individual parameters can then be edited as desired. It is recommended to use the function `validate_flume_params()` after editing, to make sure the parameter list still contains all required elements and that all parameters are within allowable ranges.
 
 * alpha: active dispersal; we use only passive dispersal here, so set to zero for all species.
 * beta: passive dispersal; we give species two double the dispersal rate.
@@ -154,7 +158,7 @@ The parameter list will need to have named elements corresponding to parameters 
 params = list(
 	alpha = 0, 
 	beta = c(0.5,1),
-	gamma = matrix(c(0,1,1,0), ncol=nsp)
+	gamma = matrix(c(0,1,1,0), ncol=length(sp_pool))
 )
 ```
 
