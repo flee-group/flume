@@ -19,6 +19,12 @@ A site by species matrix, with sites taken from \code{rc} and species from \code
 \description{
 Generate a random community
 }
+\details{
+This function will ensure that all sites have at least one species. If many species have low prevalence, it
+may be that the initial random draw produces many zero-richness sites, in which case one species will be selected at
+random for each of these sites. This can have the side effect that the prevalences in the end do not match the desired
+prevalence very closely.
+}
 \examples{
 Q = rep(1, 4)
 adj = matrix(0, nrow = 4, ncol = 4)

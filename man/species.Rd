@@ -4,7 +4,7 @@
 \alias{species}
 \title{Creates species}
 \usage{
-species(c_type, e_type, c_par, e_par)
+species(c_type, e_type, c_par, e_par, r_scale)
 }
 \arguments{
 \item{c_type}{Form of \link[=ce_funs]{colonisation function}}
@@ -14,6 +14,8 @@ species(c_type, e_type, c_par, e_par)
 \item{c_par}{Named parameter list; constant parameters to include in the c/e functions, see \link[=ce_funs]{colonisation functions}}
 
 \item{e_par}{Named parameter list; constant parameters to include in the c/e functions, see \link[=ce_funs]{extinction functions}}
+
+\item{r_scale}{Scale for the \link[=ruf]{resource use function}}
 }
 \value{
 An S3 object of class 'species', which contains the following named elements:
@@ -31,6 +33,9 @@ Creates a species, which is defined by its niche parameters and its colonisation
 Note that for gaussian functions in multiple variables, \code{scale} is always a scalar, but
 \code{mean} must be a location vector of length \code{nx}, and \code{sd} must be a variance covariance matrix
 with \code{dim=c(nx,nx)}.
+
+The resource use function is set automatically by default, but can be set to an arbitrary function; see
+\link[=ruf]{resource use functions} for details on how this function should behave.
 }
 \examples{
 sp = flume:::species('linear', 'constant', list(a=0, b=1), e_par = list(scale = 0.2))

@@ -4,10 +4,11 @@
 #' be zero (for static habitat features, for example), but for many resources (e.g., nutrient concentrations)
 #' the result will be negative (i.e., species deplete resources).
 #'
-#' The `ruf` in general must take two parameters; the first is a species, the second is a vector of resource values
-#'  at a single location; the `ruf` must return a vector of the same length giving the instantaneous rate of change in
-#' each resource due to this species. The units must match whatever is being used for the reaction-transport portion of
-#' the model; often something like $g-Resource L^{-1} min^{-1}$.
+#' This function is intended as an example, and can be replaced with a user-defined function. The function must take
+#' a site by species matrix and a resource state matrix as its first two arguments, and it must return a matrix
+#' with the same dimensions as R giving the instantaneous rate of change in each resource. The units must match
+#' whatever is being used for the reaction-transport portion of the model; often something like
+#' $g-Resource L^{-1} min^{-1}$.
 #'
 #' The default behaviour is for species to consume more resources the closer they are to the niche optimum. This is done
 #' by computing the value of the niche at the current concentration (`sp$col(R) - sp$ext(R)`) and taking the ratio with
@@ -16,21 +17,19 @@
 #' leads to a convenient definition of the scale, which is the number of units of resources depleted by a species at its
 #' maximum growth, per unit time.
 #'
-#' @param r_scale The scale of the function, see 'details'
-#' @param sp A [species()]
-#' @param R A resource state vector
-#' @seealso [plot_ruf()]
-#' @return A resource use function, suitable for adding to a [species()]. This function takes `sp` and `R` as parameters
-#' and returns a vector of the same length as `R` giving the rate of change of each resource.
+#' @param x A site by species matrix
+#' @param R A resource state matrix
+#' @param C A [metacommunity()]
+#' @return A matrix of the same dimensions as `R` giving the rate of change of each resource
 #' @examples
-#' sp = species('linear', 'constant')
-ruf = function(r_scale) {
-
-	fu = function(sp, R) {
-		n_val = sp$col(R) - sp$
-	}
-
-	## hmm, maybe this isn't the way to go... might be better if ruf is just a function
-	## that takes species and R and returns the resource use, not a property of the 
-	## species
+#' comm = metacommunity()
+#' Q = rep(1, 4)
+#' adj = matrix(0, nrow = 4, ncol = 4)
+#' adj[1,2] = adj[2,3] = adj[4,3] = 1
+#' rn = river_network(adj, Q)
+#' site_by_species(rn) = random_community(rn, comm)
+#' ruf(site_by_species(rn), state(rn), r_scale(comm))
+ruf = function(x, R, C) {
+	n_ht = f_niche(C, R) / attr(C, "niche_max")
+	r_nt %*% C$r_scale ## whut, double check this
 }

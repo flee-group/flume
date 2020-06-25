@@ -1,8 +1,12 @@
 #' Greate a community for simulations
+#' @details The `r_scale` parameter must either be a single value (in which case it is repeated for all species/resources),
+#' a vector of length equal to `nx` (allowing all species to have identical effects, but that differ by resource),
+#' or a matrix with nrow == n_species and ncol == nx
 #' @param n_species The number of species
 #' @param nx The number of niche axes
 #' @param xmin Vector, length=nx, the minimum values for each resource for scaling the fitness functions
 #' @param xmax Vector, length=nx, the maximum values for each resource for scaling the fitness functions
+#' @param r_scale Scales for [resource use functions][ruf()], see 'details'
 #' @param ... Additional parameters to pass to [species_pool()]
 #' @return An object of class `community`, with the following items:
 #' * `species` a [species pool][species_pool()]
@@ -15,11 +19,17 @@
 #' comm = community()
 #' plot(comm)
 #' @export
-metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, nx), ...) {
+metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, nx), r_scale = 0.05, ...) {
 	comm = structure(list(), class = "metacommunity")
+
+	stopifnot(length(r_scale) == 1 || length(r_scale) == nx || dim(r_scale) == c(n_species, nx))
+	if(!is(r_scale, "matrix")) {
+		r_scale = matrix(r_scale, nrow=n_species, ncol=nx, byrow = TRUE)
+	}
 
 	comm$species = species_pool(n_species = n_species, nx = nx, xmin=xmin, xmax=xmax, ...)
 	comm$competition = competition(comm$species, xmin, xmax)
+	comm$r_scale = r_scale
 
 	attr(comm, "xmin") = xmin
 	attr(comm, "xmax") = xmax
@@ -115,7 +125,6 @@ species_pool = function(n_species = 2, nx = 1, c_type = 'linear', e_type = 'cons
 #' @return An S3 object of class 'species', which contains the following named elements:
 #'       `col`: The colonisation function, takes a state matrix R and returns a vector of colonisation rates
 #'       `ext`: The extinction function
-#'       `ruf`: The resource use function; the effect the species has on the resources in a site
 #'       `c_par`: colonisation niche parameters
 #'       `e_par`: extinction niche parameters
 #' @examples
@@ -137,13 +146,6 @@ species = function(c_type, e_type, c_par, e_par, r_scale) {
 				   "gaussian" = stop('gaussian extinction functions not recommended'),
 				   stop("unknown extinction function type:", e_type)
 	)
-
-	x$ruf = switch(c_type,
-				   "constant" = ruf_constant(c_par, r_scale),
-				   "linear" = ruf_linear(c_par, r_scale),
-				   "gaussian" = ruf_gaussian(c_par, r_scale),
-	)
-
 
 	x$c_par = c_par
 	x$e_par = e_par
@@ -218,5 +220,32 @@ competition = function(sp, xmin, xmax) {
 }
 
 
+#' @export
+f_niche = function(x, ...)
+	UseMethod("f_niche", x)
 
 
+#' Functions for determining the niche of species
+#' @name niche
+#' @param x A [species()] or [metacommunity()]
+#' @param R A site by resource matrix
+#' @examples
+#' comm = metacommunity()
+#' st = matrix(seq(0, 1, length.out = 4), ncol = 1, dimnames = list(NULL, 'R'))
+#'
+#' # for a single species
+#' f_niche(comm$species[[1]], st)
+#'
+#' # for multiple species
+#' f_niche(comm, st)
+#' @return A vector (for a single species) or matrix (for a metacommunity) giving the value(s)
+#' of the niche at each site
+#' @export
+f_niche.species = function(x, R) {
+	x$col(R) - x$ext(R)
+}
+
+#' @rdname niche
+f_niche.metacommunity = function(x, R) {
+	do.call(cbind, lapply(x$species, f_niche, R=R))
+}
