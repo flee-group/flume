@@ -4,7 +4,14 @@
 \alias{metacommunity}
 \title{Greate a community for simulations}
 \usage{
-metacommunity(n_species = 2, nx = 1, xmin = rep(0, nx), xmax = rep(1, nx), ...)
+metacommunity(
+  n_species = 2,
+  nx = 1,
+  xmin = rep(0, nx),
+  xmax = rep(1, nx),
+  r_scale = 0.05,
+  ...
+)
 }
 \arguments{
 \item{n_species}{The number of species}
@@ -14,6 +21,8 @@ metacommunity(n_species = 2, nx = 1, xmin = rep(0, nx), xmax = rep(1, nx), ...)
 \item{xmin}{Vector, length=nx, the minimum values for each resource for scaling the fitness functions}
 
 \item{xmax}{Vector, length=nx, the maximum values for each resource for scaling the fitness functions}
+
+\item{r_scale}{Scales for \link[=ruf]{resource use functions}, see 'details'}
 
 \item{...}{Additional parameters to pass to \code{\link[=species_pool]{species_pool()}}}
 }
@@ -26,12 +35,18 @@ An object of class \code{community}, with the following items:
 
 Additionally, the following attributes:
 \itemize{
+\item \code{niche_max} the maximum value of the niche along the x interval given
 \item \code{xmin} the minimum value of the environmental gradient
 \item \code{xmax} the maximum value of the environmental gradient
 }
 }
 \description{
 Greate a community for simulations
+}
+\details{
+The \code{r_scale} parameter must either be a single value (in which case it is repeated for all species/resources),
+a vector of length equal to \code{nx} (allowing all species to have identical effects, but that differ by resource),
+or a matrix with nrow == n_species and ncol == nx
 }
 \examples{
 comm = community()

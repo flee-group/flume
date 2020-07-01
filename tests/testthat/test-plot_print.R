@@ -32,7 +32,7 @@ test_that("River Network plotting", {
 
 test_that("River Network community plotting", {
 	comm <- metacommunity()
-	site_by_species(rn) = matrix(c(1,1,1,0,0,0,1,1), ncol=length(comm))
+	site_by_species(rn) = matrix(c(1,1,1,0,0,0,1,1), ncol=length(comm$species))
 	pl = function() plot(rn, layout = l_out, variable = 'site_by_species')
 	vdiffr::expect_doppelganger("River Network Species Plot", pl)
 })

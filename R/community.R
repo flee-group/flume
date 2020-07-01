@@ -13,6 +13,7 @@
 #' * `competition` a [competition()] matrix
 #'
 #' Additionally, the following attributes:
+#' * `niche_max` the maximum value of the niche along the x interval given
 #' * `xmin` the minimum value of the environmental gradient
 #' * `xmax` the maximum value of the environmental gradient
 #' @examples
@@ -31,11 +32,18 @@ metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, n
 	comm$competition = competition(comm$species, xmin, xmax)
 	comm$r_scale = r_scale
 
+
+	attr(comm, "niche_max") =
+		sapply(comm$species, function(sp) {
+			optimise(function(r, sp) {
+				r = matrix(r, nrow=1, ncol=1)
+				f_niche(sp, r)[1,1]
+			}, c(xmin, xmax), sp = sp, maximum = TRUE)$objective
+		})
 	attr(comm, "xmin") = xmin
 	attr(comm, "xmax") = xmax
 	return(comm)
 }
-
 
 #' Generate a random community
 #' @details This function will ensure that all sites have at least one species. If many species have low prevalence, it
@@ -246,6 +254,7 @@ f_niche.species = function(x, R) {
 }
 
 #' @rdname niche
+#' @export
 f_niche.metacommunity = function(x, R) {
 	do.call(cbind, lapply(x$species, f_niche, R=R))
 }

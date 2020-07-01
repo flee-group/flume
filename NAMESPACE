@@ -2,6 +2,7 @@
 
 S3method("site_by_species<-",river_network)
 S3method("state<-",river_network)
+S3method(f_niche,metacommunity)
 S3method(f_niche,species)
 S3method(plot,metacommunity)
 S3method(plot,river_network)

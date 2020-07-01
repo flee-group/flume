@@ -31,5 +31,8 @@
 #' ruf(site_by_species(rn), state(rn), r_scale(comm))
 ruf = function(x, R, C) {
 	n_ht = f_niche(C, R) / attr(C, "niche_max")
-	r_nt %*% C$r_scale ## whut, double check this
+
+	# this produces the resources consumed, so the rate of change will have the opposite sign
+	r_use = n_ht %*% C$r_scale
+	-1 * r_use
 }
