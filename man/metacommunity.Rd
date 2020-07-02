@@ -10,6 +10,8 @@ metacommunity(
   xmin = rep(0, nx),
   xmax = rep(1, nx),
   r_scale = 0.05,
+  alpha = 0,
+  beta = 0.5,
   ...
 )
 }
@@ -23,6 +25,10 @@ metacommunity(
 \item{xmax}{Vector, length=nx, the maximum values for each resource for scaling the fitness functions}
 
 \item{r_scale}{Scales for \link[=ruf]{resource use functions}, see 'details'}
+
+\item{alpha}{Active dispersal ability for each species}
+
+\item{beta}{Passive dispersal ability for each species}
 
 \item{...}{Additional parameters to pass to \code{\link[=species_pool]{species_pool()}}}
 }

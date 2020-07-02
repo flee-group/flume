@@ -5,11 +5,13 @@
 #' reaches.
 #' @param adjacency An adjacency matrix; see 'details'
 #' @param discharge A vector for discharge values, one per row/column in adjacency
+#' @param area Optional vector for cross sectional area values, one per row/column in adjacency
 #' @param state Optional, starting state of the network
 #' @param skip_checks Logical; if true, no checks for valid topology will be performed
 #' @return An S3 object of class 'river_network', with the following attributes:
 #' * `adjacency` The adjacency matrix
 #' * `discharge` A discharge vector
+#' * `area` Cross sectional area at each node
 #' * `.state` The state history of the network; access with [state][state.river_network()].
 #' @examples
 #' Q = rep(1, 4)
@@ -18,7 +20,7 @@
 #' rn = river_network(adj, Q)
 #' plot(rn)
 #' @export
-river_network = function(adjacency, discharge, state, skip_checks = FALSE) {
+river_network = function(adjacency, discharge, area, state, skip_checks = FALSE) {
 	if(!skip_checks) {
 		if(!requireNamespace("igraph", quietly = TRUE) || !requireNamespace("Matrix", quietly = TRUE)) {
 			stop("Packages igraph and Matrix are required for topology checks; please install to proceed. ",
@@ -29,7 +31,16 @@ river_network = function(adjacency, discharge, state, skip_checks = FALSE) {
 		stopifnot(length(discharge) == nrow(adjacency))
 	}
 
-	rn = structure(list(adjacency = adjacency, discharge = discharge,
+	if(missing(area)) {
+		if(!requireNamespace("WatershedTools", quietly = TRUE))
+			stop("WatershedTools is required to estimate area from discharge; ",
+			"use devtools::install_github('mtalluto/WatershedTools') to install")
+
+		area = WatershedTools::hydraulic_geometry(discharge)
+		area = area$depth * area$width
+	}
+
+	rn = structure(list(adjacency = adjacency, discharge = discharge, area = area,
 						.state = list()), class = "river_network")
 	if(!missing(state))
 		state(rn) = state

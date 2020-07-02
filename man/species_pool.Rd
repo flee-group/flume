@@ -11,7 +11,9 @@ species_pool(
   e_type = "constant",
   scale = c(1, 0.2),
   xmin = rep(0, nx),
-  xmax = rep(1, nx)
+  xmax = rep(1, nx),
+  alpha,
+  beta
 )
 }
 \arguments{
@@ -28,6 +30,10 @@ species_pool(
 \item{xmin}{Vector, length=nx, the minimum values for each resource for scaling the fitness functions}
 
 \item{xmax}{Vector, length=nx, the maximum values for each resource for scaling the fitness functions}
+
+\item{alpha}{Active dispersal ability for each species}
+
+\item{beta}{Passive dispersal ability for each species}
 }
 \value{
 A list of \code{\link[=species]{species()}}

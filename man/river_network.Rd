@@ -4,12 +4,14 @@
 \alias{river_network}
 \title{Create a river network}
 \usage{
-river_network(adjacency, discharge, state, skip_checks = FALSE)
+river_network(adjacency, discharge, area, state, skip_checks = FALSE)
 }
 \arguments{
 \item{adjacency}{An adjacency matrix; see 'details'}
 
 \item{discharge}{A vector for discharge values, one per row/column in adjacency}
+
+\item{area}{Optional vector for cross sectional area values, one per row/column in adjacency}
 
 \item{state}{Optional, starting state of the network}
 
@@ -20,6 +22,7 @@ An S3 object of class 'river_network', with the following attributes:
 \itemize{
 \item \code{adjacency} The adjacency matrix
 \item \code{discharge} A discharge vector
+\item \code{area} Cross sectional area at each node
 \item \code{.state} The state history of the network; access with \link[=state.river_network]{state}.
 }
 }

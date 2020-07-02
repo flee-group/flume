@@ -4,7 +4,7 @@
 \alias{species}
 \title{Creates species}
 \usage{
-species(c_type, e_type, c_par, e_par, r_scale)
+species(c_type, e_type, c_par, e_par, alpha = 0, beta = 0)
 }
 \arguments{
 \item{c_type}{Form of \link[=ce_funs]{colonisation function}}
@@ -15,7 +15,9 @@ species(c_type, e_type, c_par, e_par, r_scale)
 
 \item{e_par}{Named parameter list; constant parameters to include in the c/e functions, see \link[=ce_funs]{extinction functions}}
 
-\item{r_scale}{Scale for the \link[=ruf]{resource use function}}
+\item{alpha}{Active dispersal ability}
+
+\item{beta}{Passive dispersal ability}
 }
 \value{
 An S3 object of class 'species', which contains the following named elements:
@@ -23,6 +25,8 @@ An S3 object of class 'species', which contains the following named elements:
 \code{ext}: The extinction function
 \code{c_par}: colonisation niche parameters
 \code{e_par}: extinction niche parameters
+\code{alpha}: Active dispersal ability
+\code{beta}: Passive dispersal ability
 }
 \description{
 Creates species

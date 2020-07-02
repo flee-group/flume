@@ -24,6 +24,12 @@ test_that("Species creation", {
 	expect_equal(mean(pool[[1]]$col(R)), mean(pool[[2]]$col(R)))
 	default_mat = matrix(c(0.30, 0.05, 0.05, 0.30), ncol=2)
 	expect_equal(comm$competition, default_mat)
+
+	# check that dispersal function works
+	expect_error(di <- dispersal_params(comm), regex=NA)
+	expect_true(is(di, "list"))
+	expect_equal(length(di$alpha), length(di$beta))
+	expect_equal(length(di$alpha), length(comm$species))
 })
 
 test_that("Niches estimated correctly", {
@@ -38,4 +44,16 @@ test_that("Niches estimated correctly", {
 	expect_equal(dim(c_niche), c(nrow(st), length(comm$species)))
 	expect_identical(c_niche[,1, drop=FALSE], sp_niche)
 
+})
+
+test_that("Random community creation", {
+	Q = rep(1, 4)
+	adj = matrix(0, nrow = 4, ncol = 4)
+	adj[1,2] = adj[2,3] = adj[4,3] = 1
+	rn = river_network(adj, Q)
+
+	expect_warning(random_community(rn, comm, 0.01), regex = "low prevalence")
+	expect_error(si_sp <- random_community(rn, comm), regex = NA)
+	expect_equal(ncol(si_sp), length(comm$species))
+	expect_equal(nrow(si_sp), nrow(adj))
 })

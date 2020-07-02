@@ -4,7 +4,7 @@ test_that("Resource use functions", {
 	adj = matrix(0, nrow = 4, ncol = 4)
 	adj[1,2] = adj[2,3] = adj[4,3] = 1
 	st = matrix(seq(0, 1, length.out = length(Q)), ncol = 1, dimnames = list(NULL, 'R'))
-	rn = river_network(adj, Q, st)
+	rn = river_network(adj, Q, state = st)
 	site_by_species(rn) = random_community(rn, comm)
 
 	expect_error(ru <- ruf(site_by_species(rn), state(rn), comm), regex=NA)

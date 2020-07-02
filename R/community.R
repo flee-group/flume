@@ -7,6 +7,8 @@
 #' @param xmin Vector, length=nx, the minimum values for each resource for scaling the fitness functions
 #' @param xmax Vector, length=nx, the maximum values for each resource for scaling the fitness functions
 #' @param r_scale Scales for [resource use functions][ruf()], see 'details'
+#' @param alpha Active dispersal ability for each species
+#' @param beta Passive dispersal ability for each species
 #' @param ... Additional parameters to pass to [species_pool()]
 #' @return An object of class `community`, with the following items:
 #' * `species` a [species pool][species_pool()]
@@ -20,7 +22,8 @@
 #' comm = community()
 #' plot(comm)
 #' @export
-metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, nx), r_scale = 0.05, ...) {
+metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, nx), r_scale = 0.05, alpha = 0,
+					beta = 0.5, ...) {
 	comm = structure(list(), class = "metacommunity")
 
 	stopifnot(length(r_scale) == 1 || length(r_scale) == nx || dim(r_scale) == c(n_species, nx))
@@ -28,7 +31,7 @@ metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, n
 		r_scale = matrix(r_scale, nrow=n_species, ncol=nx, byrow = TRUE)
 	}
 
-	comm$species = species_pool(n_species = n_species, nx = nx, xmin=xmin, xmax=xmax, ...)
+	comm$species = species_pool(n_species = n_species, nx = nx, xmin=xmin, xmax=xmax, alpha = alpha, beta = beta, ...)
 	comm$competition = competition(comm$species, xmin, xmax)
 	comm$r_scale = r_scale
 
@@ -65,7 +68,7 @@ metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, n
 #' @export
 random_community = function(rn, mc, prevalence = 0.25) {
 	i = nrow(rn$adjacency)
-	j = length(mc)
+	j = length(mc$species)
 	com = do.call(cbind, mapply(function(jj, pr)
 		sample(0:1, i, replace = TRUE, prob = c(1-pr, pr)), 1:j, prevalence, SIMPLIFY = FALSE))
 
@@ -94,25 +97,38 @@ random_community = function(rn, mc, prevalence = 0.25) {
 #' @param scale A vector, length 2, with the scales (maximum values) for the colonisation and extinction functions
 #' @param xmin Vector, length=nx, the minimum values for each resource for scaling the fitness functions
 #' @param xmax Vector, length=nx, the maximum values for each resource for scaling the fitness functions
+#' @param alpha Active dispersal ability for each species
+#' @param beta Passive dispersal ability for each species
 #'
 #' @return A list of [species()]
 #' @examples
 #' ## create a default 2-species pool
 #' spp = flume:::species_pool()
 species_pool = function(n_species = 2, nx = 1, c_type = 'linear', e_type = 'constant', scale = c(1, 0.2),
-						xmin = rep(0, nx), xmax=rep(1, nx)) {
+						xmin = rep(0, nx), xmax=rep(1, nx), alpha, beta) {
 	if((c_type == 'linear' || e_type == 'linear') && (n_species > 2 || nx > 1))
 		stop("Linear functions are only supported for <=2 species and 1 variable")
 
 	c_pars = .generate_ce_params(c_type, n_species, scale[1], xmin, xmax)
 	e_pars = .generate_ce_params(e_type, n_species, scale[2], xmin, xmax)
 
-	mapply(species, c_type = c_type, e_type = e_type, c_par = c_pars, e_par = e_pars, SIMPLIFY = FALSE)
+	mapply(species, c_type = c_type, e_type = e_type, c_par = c_pars, e_par = e_pars, alpha = alpha, beta = beta,
+		   SIMPLIFY = FALSE, USE.NAMES = FALSE)
 }
 
 
-
-
+#' Returns dispersal parameters for a metacommunity
+#' @param x A [metacommunity()]
+#' @return Named list with two elements, `alpha` and `beta`, each one a vector of dispersal parameters for each species
+#' @export
+#' @examples
+#' comm = community()
+#' dispersal_params(comm)
+dispersal_params = function(x) {
+	alpha = sapply(x$species, function(y) y$alpha)
+	beta = sapply(x$species, function(y) y$beta)
+	list(alpha=alpha, beta=beta)
+}
 
 #' Creates species
 #'
@@ -129,17 +145,20 @@ species_pool = function(n_species = 2, nx = 1, c_type = 'linear', e_type = 'cons
 #' @param e_type Form of [extinction function][ce_funs]
 #' @param c_par Named parameter list; constant parameters to include in the c/e functions, see [colonisation functions][ce_funs]
 #' @param e_par Named parameter list; constant parameters to include in the c/e functions, see [extinction functions][ce_funs]
-#' @param r_scale Scale for the [resource use function][ruf()]
+#' @param alpha Active dispersal ability
+#' @param beta Passive dispersal ability
 #' @return An S3 object of class 'species', which contains the following named elements:
 #'       `col`: The colonisation function, takes a state matrix R and returns a vector of colonisation rates
 #'       `ext`: The extinction function
 #'       `c_par`: colonisation niche parameters
 #'       `e_par`: extinction niche parameters
+#'       `alpha`: Active dispersal ability
+#'       `beta`: Passive dispersal ability
 #' @examples
 #' sp = flume:::species('linear', 'constant', list(a=0, b=1), e_par = list(scale = 0.2))
 #' plot(sp)
 #' @export
-species = function(c_type, e_type, c_par, e_par, r_scale) {
+species = function(c_type, e_type, c_par, e_par, alpha=0, beta=0) {
 	x = structure(list(), class = "species")
 	x$col = switch(c_type,
 				   "constant" = ce_constant(c_par),
@@ -157,6 +176,8 @@ species = function(c_type, e_type, c_par, e_par, r_scale) {
 
 	x$c_par = c_par
 	x$e_par = e_par
+	x$alpha = alpha
+	x$beta = beta
 
 	return(x)
 }

@@ -70,14 +70,20 @@ xpo = c(xpo, rev(xpo))
 polygon(xpo, ypo, border = NA, col = "#d9d9d9")
 ```
 
+### 1b. Dispersal
 
+The model includes two dispersal parameters `alpha` and `beta`, representing active and passive dispersal, respectively. These are created by default to include no active dispersal and identical passive dispersal among all species. The dispersal parameters can be accessed using the `dispersal_params` function, or by the `alpha` and `beta` members of individual species.
 
+```{r}
+dispersal_params(sp_pool)
+sp_pool$species[[1]]$beta
+```
 
 ## 2. The river network
 
 The main component of the river network is a weighted digraph; i.e., the topological relationships between locations. The network graph in `flume` uses stream reaches as nodes, while the edges describe which reaches are neighbours of each other. The simplest way to define a network is using an attribute list and a weighted adjacency matrix.
 
-For attributes, we will use only discharge (which is required). Other attributes can be specified with a named list, but we will not use them for this example.,We use a simple discharge model, where Q grows by 1 each time we move downstream (i.e., when we traverse an edge, representing lateral input), and we add reaches together at confluences. Here, we define node 1 to be the most downstream node (this is purely an arbitrary choice).
+For attributes, we will use only discharge and cross sectional area (which are required). Other attributes can be specified with a named list, but we will not use them for this example. We use a simple discharge model, where Q grows by 1 each time we move downstream (i.e., when we traverse an edge, representing lateral input), and we add reaches together at confluences. Here, we define node 1 to be the most downstream node (this is purely an arbitrary choice). Although area is a required attribute, if it is omitted when the network is created, then simple hydraulic scaling relationships will be used to estimate area from Q.
 
 ```{r}
 Q = c(13,12,8,7,1,4,1,1,2,1)
@@ -141,25 +147,4 @@ site_by_species(network)
 par(mar=rep(0.1, 4))
 plot(network, variable = 'site_by_species', layout = layout, edge.arrow.size = 0.2)
 ```
-
-
-
-## 4. Parameters
-
-The parameter list controls how the model operates. The list should be named, and each element of the list should be a scalar (for parameters that will apply to all sites/species) or a vector (e.g., if species vary in dispersal ability, then the dispersal params can be a vector with one entry per species).
-
-A good starting point is the function `flume_params()`, which will return a parameter list with all required elements, set to sensible defaults. Individual parameters can then be edited as desired. It is recommended to use the function `validate_flume_params()` after editing, to make sure the parameter list still contains all required elements and that all parameters are within allowable ranges.
-
-* alpha: active dispersal; we use only passive dispersal here, so set to zero for all species.
-* beta: passive dispersal; we give species two double the dispersal rate.
-* gamma: Competition matrix, a square matrix giving the strength of competition. Negative values can be used to indicate facilitation.
-
-```{r}
-params = list(
-	alpha = 0, 
-	beta = c(0.5,1),
-	gamma = matrix(c(0,1,1,0), ncol=length(sp_pool))
-)
-```
-
 
