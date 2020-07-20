@@ -35,6 +35,9 @@ metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, n
 	comm$competition = competition(comm$species, xmin, xmax)
 	comm$r_scale = r_scale
 
+	# default boundary condition is to return zero for all sites
+	# n is the number of sites
+	comm$boundary = function(n) matrix(0, nrow=n, ncol=n_species)
 
 	attr(comm, "niche_max") =
 		sapply(comm$species, function(sp) {

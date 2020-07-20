@@ -42,8 +42,14 @@ river_network = function(adjacency, discharge, area, state, skip_checks = FALSE)
 
 	rn = structure(list(adjacency = adjacency, discharge = discharge, area = area,
 						.state = list()), class = "river_network")
-	if(!missing(state))
+
+	## by default, boundary condition is set to equal the starting state
+	if(!missing(state)) {
 		state(rn) = state
+		rb$boundary = function() return(state)
+	} else {
+		rn$boundary = function() return(rep(0, nrow(rn$adjacency)))
+	}
 	return(rn)
 }
 

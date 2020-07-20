@@ -110,12 +110,14 @@ plot(network, layout = layout, edge.arrow.size = 0.2)
 
 The state variables are a matrix, one row per node in the river network, with each column representing an important
 variable for the model (e.g., resources, habitat, etc). The current state of the network can be accessed and updated
-with state(). For this example, we use a single state variable representing resources, which we name 'R'.
+with state(). For this example, we use a single state variable representing resources, which we name 'R'. We also use this starting state of the network as the boundary condition.
 
 ```{r}
 ## it's a good idea to name your variables
 
-state(network) = matrix(seq(0, 1, length.out = nsites), ncol=1, dimnames = list(NULL, 'R'))
+
+network$boundary = function() matrix(seq(0, 1, length.out = nsites), ncol=1, dimnames = list(NULL, 'R'))
+state(network) = network$boundary()
 state(network)
 ```
 
