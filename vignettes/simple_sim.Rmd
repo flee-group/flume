@@ -20,16 +20,7 @@ Here we demonstrate the model using a simple simulation with generated data. The
 1. A `metacommunity` object, which describes all the possible species that can occur in the simulation, gives their niches, and includes the pairwise competition strength
 2. A `river_network`, which describes the topology of the network and gives other important attributes, such as discharge.
 3. State variables; these are (mostly) dynamic attributes describing the state of the model at a given time. 
-4. Parameters; generally stored in a named list and usually static for the duration of a model run.
-
-
-They generally take the form of a matrix, with the rows representing locations (i.e., the nodes in the `river_network` object)
-
-A community matrix, one row per site, one column per species, populated with 1s (indicating presence) and 0s (for absence).
-2. A state matrix giving important state variables (e.g., resources, habitat); one row per site, one column per variable.
-
-
-
+4. Boundary conditions: input, both to the biological community (via immigration from the surrounding landscape) and to the resources (via terrestrial runoff, groundwater intrusion, etc).
 
 
 ## 1. The metacommunity
@@ -79,6 +70,14 @@ dispersal_params(sp_pool)
 sp_pool$species[[1]]$beta
 ```
 
+### 1c. Boundary conditions
+
+Depending on the system and the species involved, there might be immigration of species to the river network from outside. This takes the form of an addition to the colonisation term, and should be implemented as a function that returns either a matrix with one column per species and either a single row (if immigration is constant throughout the river network) or with rows corresponding to the number of nodes in the network. By default the model assumes no immigration.
+
+```{r}
+sp_pool$boundary()
+```
+
 ## 2. The river network
 
 The main component of the river network is a weighted digraph; i.e., the topological relationships between locations. The network graph in `flume` uses stream reaches as nodes, while the edges describe which reaches are neighbours of each other. The simplest way to define a network is using an attribute list and a weighted adjacency matrix.
@@ -112,10 +111,11 @@ The state variables are a matrix, one row per node in the river network, with ea
 variable for the model (e.g., resources, habitat, etc). The current state of the network can be accessed and updated
 with state(). For this example, we use a single state variable representing resources, which we name 'R'. We also use this starting state of the network as the boundary condition.
 
+The boundary condition for resources takes the same functional form as for the species pool, and represents input of resources from the terrestrial environment and from groundwater. The default is to set the resource boundary to zero if no initial state is provided with the network (as we have done here). Otherwise, the boundary condition will be set equal to the initial state.
+
+
 ```{r}
-## it's a good idea to name your variables
-
-
+## it's a good idea to name your variables using dimnames
 network$boundary = function() matrix(seq(0, 1, length.out = nsites), ncol=1, dimnames = list(NULL, 'R'))
 state(network) = network$boundary()
 state(network)
@@ -149,4 +149,6 @@ site_by_species(network)
 par(mar=rep(0.1, 4))
 plot(network, variable = 'site_by_species', layout = layout, edge.arrow.size = 0.2)
 ```
+
+
 
