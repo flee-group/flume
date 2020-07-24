@@ -21,12 +21,14 @@ col_prob = function(comm, network, dt, components = FALSE) {
 	## first the niche portion
 	col = do.call(cbind, lapply(comm$species, function(sp) sp$col(R)))
 
+
 	## here the dispersal portion
 	P = prevalence(network)
 	A = matrix(dispersal_params(comm)$alpha, nrow=nsites, ncol = nsp, byrow = TRUE) # repeat the alphas across all sites in a matrix
 	B = matrix(dispersal_params(comm)$beta, nrow=nsites, ncol = nsp, byrow = TRUE) # same for beta
 	Q = matrix(network$discharge, nrow=nsites, ncol = nsp) # repeat discharge by site across all species
-	dispersal = P * (A + B*Q)
+	immigration = matrix(as.vector(comm$boundary()), nrow = nsites, ncol = nsp, byrow = TRUE)
+	dispersal = P * (A + B*Q + immigration)
 
 	if(components) {
 		return(list(colonisation = col, dispersal = dispersal))
@@ -55,4 +57,35 @@ ext_prob = function(comm, network, dt, components = FALSE) {
 		return(1 - exp(-1 * (m_i + comp) * dt))
 	}
 
+}
+
+#' Compute time-derivative for resources
+#' @details For debugging and tuning, it can be useful to examine the individual components of the
+#' derivative rate by setting `components = TRUE`, in which case a named list of site
+#' by resource matrices is returned, with separate transport and reaction components.
+#' @param comm A metacommnunity
+#' @param network A river network
+#' @param components Boolean, normally FALSE, see 'details'
+#' @return Normally, a site by resource matrix of resource fluxes
+#' @export
+dRdt = function(comm, network, components = FALSE) {
+	S = site_by_species(network)
+	R = state(network)
+	Q = network$discharge
+	Ru = t(network$adjacency) %*% R
+	Qu = t(network$adjacency) %*% Q
+	A = area(network)
+	l = reach_length(network) ## note to self; stored in the adjacency matrix, this function should extract it; what about outlet??
+
+	output = Q * R
+	input = apply(Ru, 2, function(x) Qu * x) + network$boundary()
+	transport = (output - input) / (A*l)
+
+	rxn = ruf(S, R, comm)
+
+	if(components) {
+		return(list(transport = transport, reaction = rxn))
+	} else {
+		return(rxn - transport)
+	}
 }
