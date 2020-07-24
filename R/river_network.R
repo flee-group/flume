@@ -46,7 +46,7 @@ river_network = function(adjacency, discharge, area, state, skip_checks = FALSE)
 	## by default, boundary condition is set to equal the starting state
 	if(!missing(state)) {
 		state(rn) = state
-		rb$boundary = function() return(state)
+		rn$boundary = function() return(state)
 	} else {
 		rn$boundary = function() return(rep(0, nrow(rn$adjacency)))
 	}
@@ -148,3 +148,15 @@ site_by_species.river_network = function(x, history = FALSE) {
 	x[['si_by_sp']][[i + 1]] = value
 	return(x)
 }
+
+#' Compute current prevalence for all species in a river network
+#' @param x A river network
+#' @return A site by species matrix; values indicate the prevalence in surrounding sites
+prevalence = function(x) {
+	## for prevalence, adjacency is upstream, downstream or self
+	adj = x$adjacency + t(x$adjacency)
+	diag(adj) = 1
+
+	adj %*% site_by_species(x)
+}
+

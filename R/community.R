@@ -32,7 +32,7 @@ metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, n
 	}
 
 	comm$species = species_pool(n_species = n_species, nx = nx, xmin=xmin, xmax=xmax, alpha = alpha, beta = beta, ...)
-	comm$competition = competition(comm$species, xmin, xmax)
+	comm$competition = .compute_comp_matrix(comm$species, xmin, xmax)
 	comm$r_scale = r_scale
 
 	# default boundary condition is to return zero for all sites
@@ -48,6 +48,7 @@ metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, n
 		})
 	attr(comm, "xmin") = xmin
 	attr(comm, "xmax") = xmax
+
 	return(comm)
 }
 
@@ -185,23 +186,12 @@ species = function(c_type, e_type, c_par, e_par, alpha=0, beta=0) {
 	return(x)
 }
 
-
-
-
-#' Produce a default competition matrix
-#'
-#' Competition is defined by computing the overlap of species niches, which are in turn defined as c(R) - m(R).
-#' This function computes the niche for each species, then integrates for every pairwise pair
 #' @param sp A [species_pool()]
-#' @param xmin The minima for the resources
-#' @param xmax The maxima for resources
-#'
-#' @examples
-#' spp = flume:::species_pool()
-#' competition(spp, 0, 1)
-#'
+#' @param xmin The minimum for integration
+#' @param xmax The maximum for integration
+#' @keywords internal
 #' @return a matrix giving pairwise competition coefficients
-competition = function(sp, xmin, xmax) {
+.compute_comp_matrix = function(sp, xmin, xmax) {
 	comp = matrix(0., nrow=length(sp), ncol=length(sp))
 	for(i in 1:(length(sp) - 1)) {
 		si = sp[[i]]
