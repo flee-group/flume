@@ -12,8 +12,8 @@ plot.river_network = function(x, variable = 1, ...) {
 	}
 
 	args = .default_river_plot_options(...)
-	args$x = igraph::graph_from_adjacency_matrix(x$adjacency, mode = "directed")
-	wt = x$discharge[2:nrow(x$adjacency)]
+	args$x = igraph::graph_from_adjacency_matrix(adjacency(x), mode = "directed")
+	wt = x$discharge[2:nrow(adjacency(x))]
 	args$edge.width = (wt / max(wt)) * args$edge.width
 
 	## colour scale, if available and desired

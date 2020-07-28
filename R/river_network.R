@@ -1,12 +1,14 @@
 #' Create a river network
 #'
 #' @details The adjacency matrix must be a square matrix, with a row/column for each river network reach. Zero entries
-#' indicate no adjacency between reaches. Nonzero entries indicate adjacency, with the value equal to the distance between
-#' reaches.
+#' indicate no adjacency between reaches. Nonzero entries indicate adjacency, with the row indicating the upstream
+#' reach and the column the downstream (i.e., adjacency[i,j] == 1 indicates water flows from i to j). Nonzero elements
+#' will be set equal to one.
 #' @param adjacency An adjacency matrix; see 'details'
 #' @param discharge A vector for discharge values, one per row/column in adjacency
 #' @param area Optional vector for cross sectional area values, one per row/column in adjacency
 #' @param state Optional, starting state of the network
+#' @param length The length of each reach, must be a single value (the model assumes all reaches are the same length)
 #' @param skip_checks Logical; if true, no checks for valid topology will be performed
 #' @return An S3 object of class 'river_network', with the following attributes:
 #' * `adjacency` The adjacency matrix
@@ -20,7 +22,7 @@
 #' rn = river_network(adj, Q)
 #' plot(rn)
 #' @export
-river_network = function(adjacency, discharge, area, state, skip_checks = FALSE) {
+river_network = function(adjacency, discharge, area, state, length = 1, skip_checks = FALSE) {
 	if(!skip_checks) {
 		if(!requireNamespace("igraph", quietly = TRUE) || !requireNamespace("Matrix", quietly = TRUE)) {
 			stop("Packages igraph and Matrix are required for topology checks; please install to proceed. ",
@@ -29,6 +31,9 @@ river_network = function(adjacency, discharge, area, state, skip_checks = FALSE)
 		if(!.validate_adjacency(adjacency))
 			stop("Adjacency matrix failed validation; see '?river_network' for the requirements.")
 		stopifnot(length(discharge) == nrow(adjacency))
+	}
+	if(any(! adjacency %in% c(0,1))) {
+		adjacency[adjacency != 0] = 1
 	}
 
 	if(missing(area)) {
@@ -40,17 +45,41 @@ river_network = function(adjacency, discharge, area, state, skip_checks = FALSE)
 		area = area$depth * area$width
 	}
 
-	rn = structure(list(adjacency = adjacency, discharge = discharge, area = area,
-						.state = list()), class = "river_network")
+	rn = structure(list(.adjacency = adjacency, discharge = discharge, area = area,
+						.state = list(), .length = length), class = "river_network")
 
 	## by default, boundary condition is set to equal the starting state
 	if(!missing(state)) {
 		state(rn) = state
 		rn$boundary = function() return(state)
 	} else {
-		rn$boundary = function() return(rep(0, nrow(rn$adjacency)))
+		rn$boundary = function() return(rep(0, nrow(rn[['.adjacency']])))
 	}
 	return(rn)
+}
+
+#' River network adjacency matrix
+#'
+#' @param x A river network
+#' @param weighted boolean, default to FALSE, if true returns the weighted adjacency matrix
+#' @return A matrix Y, such that non-zero values in Y[i,j] indicate flow from i to j
+#' @export
+adjacency = function(x, weighted = FALSE) {
+	adj = x[['.adjacency']]
+	# if(!weighted)  ## removed weights from adjacency matrix
+	# 	adj = (adj > 0) * 1
+	return(adj)
+}
+
+
+#' Length of every reach in the river network
+#'
+#' Currently, all reaches are assumed to have the same length
+#' @param x A river network
+#' @return a vector of reach lengths
+#' @export
+reach_length = function(x) {
+	return(rep(x[['.length']], nrow(adjacency(x))))
 }
 
 #' Perform checks on a river network adjacency matrix
@@ -109,7 +138,7 @@ state.river_network = function(x, history = FALSE) {
 #' @rdname state
 #' @export
 'state<-.river_network' = function(x, value) {
-	if(nrow(value) != nrow(x[['adjacency']]))
+	if(nrow(value) != nrow(adjacency(x)))
 		stop("nrow(value) must be equal to the number of nodes in the river network")
 
 	i = length(x[['.state']])
@@ -154,7 +183,7 @@ site_by_species.river_network = function(x, history = FALSE) {
 #' @return A site by species matrix; values indicate the prevalence in surrounding sites
 prevalence = function(x) {
 	## for prevalence, adjacency is upstream, downstream or self
-	adj = x$adjacency + t(x$adjacency)
+	adj = adjacency(x) + t(adjacency(x))
 	diag(adj) = 1
 
 	adj %*% site_by_species(x)

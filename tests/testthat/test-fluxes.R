@@ -12,4 +12,6 @@ test_that("Species flux works", {
 
 	expect_error(cp <- col_prob(sp_pool, network, dt=1), regex=NA)
 	expect_error(ep <- ext_prob(sp_pool, network, dt=1), regex=NA)
+
+	expect_error(Rflux <- dRdt(sp_pool, network), regex=NA)
 })

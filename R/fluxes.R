@@ -72,9 +72,9 @@ dRdt = function(comm, network, components = FALSE) {
 	S = site_by_species(network)
 	R = state(network)
 	Q = network$discharge
-	Ru = t(network$adjacency) %*% R
-	Qu = t(network$adjacency) %*% Q
-	A = area(network)
+	Ru = t(adjacency(network)) %*% R
+	Qu = t(adjacency(network)) %*% Q
+	A = network$area
 	l = reach_length(network) ## note to self; stored in the adjacency matrix, this function should extract it; what about outlet??
 
 	output = Q * R

@@ -71,7 +71,7 @@ metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, n
 #' plot(rn, variable = "site_by_species")
 #' @export
 random_community = function(rn, mc, prevalence = 0.25) {
-	i = nrow(rn$adjacency)
+	i = nrow(adjacency(rn))
 	j = length(mc$species)
 	com = do.call(cbind, mapply(function(jj, pr)
 		sample(0:1, i, replace = TRUE, prob = c(1-pr, pr)), 1:j, prevalence, SIMPLIFY = FALSE))
