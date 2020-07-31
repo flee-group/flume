@@ -4,7 +4,14 @@
 \alias{river_network}
 \title{Create a river network}
 \usage{
-river_network(adjacency, discharge, area, state, skip_checks = FALSE)
+river_network(
+  adjacency,
+  discharge,
+  area,
+  state,
+  length = 1,
+  skip_checks = FALSE
+)
 }
 \arguments{
 \item{adjacency}{An adjacency matrix; see 'details'}
@@ -14,6 +21,8 @@ river_network(adjacency, discharge, area, state, skip_checks = FALSE)
 \item{area}{Optional vector for cross sectional area values, one per row/column in adjacency}
 
 \item{state}{Optional, starting state of the network}
+
+\item{length}{The length of each reach, must be a single value (the model assumes all reaches are the same length)}
 
 \item{skip_checks}{Logical; if true, no checks for valid topology will be performed}
 }
@@ -31,8 +40,9 @@ Create a river network
 }
 \details{
 The adjacency matrix must be a square matrix, with a row/column for each river network reach. Zero entries
-indicate no adjacency between reaches. Nonzero entries indicate adjacency, with the value equal to the distance between
-reaches.
+indicate no adjacency between reaches. Nonzero entries indicate adjacency, with the row indicating the upstream
+reach and the column the downstream (i.e., adjacency\link{i,j} == 1 indicates water flows from i to j). Nonzero elements
+will be set equal to one.
 }
 \examples{
 Q = rep(1, 4)

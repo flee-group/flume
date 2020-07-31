@@ -186,6 +186,7 @@ species = function(c_type, e_type, c_par, e_par, alpha=0, beta=0) {
 	return(x)
 }
 
+#' Make a competition matrix
 #' @param sp A [species_pool()]
 #' @param xmin The minimum for integration
 #' @param xmax The maximum for integration

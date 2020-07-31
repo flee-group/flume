@@ -4,12 +4,16 @@
 \alias{plot.river_network}
 \title{Plot a river network}
 \usage{
-\method{plot}{river_network}(x, variable = 1, ...)
+\method{plot}{river_network}(x, variable = 1, t, zlim, ...)
 }
 \arguments{
 \item{x}{A \code{\link[=river_network]{river_network()}}}
 
 \item{variable}{If state is defined, the column to use for plotting; see 'details'}
+
+\item{t}{Optional, time step to print; if missing, defaults to most recent}
+
+\item{zlim}{Optional, z limits for colour scales when plotting a state variable}
 
 \item{...}{Additional arguments to \code{\link[igraph:plot.igraph]{igraph::plot.igraph()}}}
 }

@@ -4,9 +4,11 @@
 #' species presence-absence.
 #' @param x A [river_network()]
 #' @param variable If state is defined, the column to use for plotting; see 'details'
+#' @param t Optional, time step to print; if missing, defaults to most recent
+#' @param zlim Optional, z limits for colour scales when plotting a state variable
 #' @param ... Additional arguments to [igraph::plot.igraph()]
 #' @export
-plot.river_network = function(x, variable = 1, ...) {
+plot.river_network = function(x, variable = 1, t, zlim, ...) {
 	if(!requireNamespace("igraph", quietly = TRUE)) {
 		stop("Package 'igraph' is required for plotting, please install it and try again")
 	}
@@ -18,23 +20,36 @@ plot.river_network = function(x, variable = 1, ...) {
 
 	## colour scale, if available and desired
 	if(variable == "site_by_species") {
-		nsp = ncol(site_by_species(x))
+		if(missing(t)) {
+			S = site_by_species(x)
+		} else {
+			S = site_by_species(x, TRUE)[[t]]
+		}
+		nsp = ncol(S)
 		# colours from colorbrewer
 		cols = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6")
 		args$vertex.label.color = '#444444'
 
 		par(mfrow = .set_mfrow(nsp))
 		for(i in 1:nsp) {
-			args$vertex.color = rep('white', nrow(site_by_species(x)))
-			args$vertex.color[site_by_species(x)[,i] == 1] = cols[(i %% length(cols))+1]
+			args$vertex.color = rep('white', nrow(S))
+			args$vertex.color[S[,i] == 1] = cols[(i %% length(cols))+1]
 			do.call(plot, args)
 		}
 	}
 	else {
 		if(!is.null(state(x)) && !("vertex.color" %in% names(args)) && requireNamespace("scales", quietly = TRUE)) {
-			args$vertex.color = scales::col_numeric("PuBu", range(state(x)[,variable]))(state(x)[,variable])
-			args$vertex.label.color = rev(scales::col_numeric("YlOrBr", range(state(x)[,variable]))(state(x)[,variable]))
+			if(missing(t)) {
+				R = state(x)[,variable]
+			} else {
+				R = state(x, TRUE)[[t]][,variable]
+			}
+			if(missing(zlim))
+				zlim = range(R)
+			args$vertex.color = scales::col_numeric("PuBu", zlim)(R)
+			args$vertex.label.color = rev(scales::col_numeric("YlOrBr", zlim)(R))
 		} else {
+			message("Install the scales package for plotting the state variable with a colour scale")
 			args$vertex.color = "#7BA08C"
 		}
 		do.call(plot, args)

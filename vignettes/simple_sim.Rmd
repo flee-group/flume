@@ -141,7 +141,7 @@ The other aspect of the river network's state is the community site-by-species m
 site_by_species(network)
 ```
 
-``````{r fig.height = 3, fig.width = 7}
+```{r fig.height = 3, fig.width = 7}
 set.seed("5111605")
 site_by_species(network) = random_community(network, sp_pool, prevalence = c(0.35, 0.65))
 site_by_species(network)
@@ -151,4 +151,29 @@ plot(network, variable = 'site_by_species', layout = layout, edge.arrow.size = 0
 ```
 
 
+# Running the simulation
+
+`flume` has a number of functions for running a simluation over time. First, it is important to know how to compute the time derivatives for both resources and species. Because presence/absence is a discrete variable and colonisations and extinctions are discrete events, and because the model takes place in discrete time steps, it makes more sense to talk about the c/e probability over a specified time period, rather than the rate; `flume` does this by default. Rates can be recovered if desired using the `components=TRUE` option. For resources, the time derivative is directly returned, and can be integrated using a variety of methods.
+
+All of these functions require a species pool and a river network as input. Additionally, the c/e functions require the time interval, in the same units as all the rates in the model. Output is a site by species or resource matrix with the probabilities or fluxes.
+
+```{r}
+col_prob(sp_pool, network, dt = 1)
+ext_prob(sp_pool, network, dt = 1)
+dRdt(sp_pool, network)	
+```
+
+It is usually not necessary to call these functions directly. Rather, a simulation is started by creating a `flume` object and then running functions on that object. A quick plot of starting and ending resource and species distributions shows the changes.
+
+```{r fig.height = 3, fig.width = 7}
+sim = flume(sp_pool, network, dt = 1)
+sim = run_simulation(sim, nt = 10)
+par(mfrow = c(1,2), mar=rep(0.1, 4))
+plot(sim$network, t = 1, zlim=c(0,1), layout=layout, edge.arrow.size = 0.2)
+plot(sim$network, t = 11, zlim=c(0,1), layout=layout, edge.arrow.size = 0.2)
+
+plot(sim$network, t = 1, variable = 'site_by_species', layout = layout, edge.arrow.size = 0.2)
+plot(sim$network, t = 11, variable = 'site_by_species', layout = layout, edge.arrow.size = 0.2)
+
+```
 

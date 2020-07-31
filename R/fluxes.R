@@ -30,10 +30,13 @@ col_prob = function(comm, network, dt, components = FALSE) {
 	immigration = matrix(as.vector(comm$boundary()), nrow = nsites, ncol = nsp, byrow = TRUE)
 	dispersal = P * (A + B*Q + immigration)
 
+	dimnames(col) = dimnames(dispersal) = dimnames(site_by_species(network))
 	if(components) {
 		return(list(colonisation = col, dispersal = dispersal))
 	} else {
-		return(1 - exp(-1 * col * dispersal * dt))
+		res = 1 - exp(-1 * col * dispersal * dt)
+		dimnames(res) = dimnames(site_by_species(network))
+		return(res)
 	}
 }
 
@@ -51,10 +54,13 @@ ext_prob = function(comm, network, dt, components = FALSE) {
 	m_ij = comm$competition ## species by species competition matrix
 	comp = S %*% m_ij * S ## this is witchcraft
 
+	dimnames(m_i) = dimnames(comp) = dimnames(S)
 	if(components) {
 		return(list(stochastic = m_i, competition = comp))
 	} else {
-		return(1 - exp(-1 * (m_i + comp) * dt))
+		res = 1 - exp(-1 * (m_i + comp) * dt)
+		dimnames(res) = dimnames(S)
+		return(res)
 	}
 
 }
@@ -75,17 +81,20 @@ dRdt = function(comm, network, components = FALSE) {
 	Ru = t(adjacency(network)) %*% R
 	Qu = t(adjacency(network)) %*% Q
 	A = network$area
-	l = reach_length(network) ## note to self; stored in the adjacency matrix, this function should extract it; what about outlet??
+	l = reach_length(network)
 
 	output = Q * R
-	input = apply(Ru, 2, function(x) Qu * x) + network$boundary()
+	input = apply(Ru, 2, function(x) Qu * x) + network$boundary() * lateral_discharge(network)
 	transport = (output - input) / (A*l)
 
 	rxn = ruf(S, R, comm)
 
+	dimnames(transport) = dimnames(rxn) = dimnames(R)
 	if(components) {
 		return(list(transport = transport, reaction = rxn))
 	} else {
-		return(rxn - transport)
+		res = rxn - transport
+		dimnames(res) = dimnames(R)
+		return(res)
 	}
 }

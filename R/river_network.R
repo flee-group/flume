@@ -32,6 +32,11 @@ river_network = function(adjacency, discharge, area, state, length = 1, skip_che
 			stop("Adjacency matrix failed validation; see '?river_network' for the requirements.")
 		stopifnot(length(discharge) == nrow(adjacency))
 	}
+
+	## TODO - make the package able to support Matrix::Matrix input; for now we coerce
+	if(methods::is(adjacency, "Matrix"))
+		adjacency = as(adjacency, "matrix")
+
 	if(any(! adjacency %in% c(0,1))) {
 		adjacency[adjacency != 0] = 1
 	}
@@ -102,6 +107,18 @@ reach_length = function(x) {
 	return(TRUE)
 }
 
+
+#' Compute lateral discharge
+#'
+#' Assumed to be the difference between Q of a site and the sum of Q of upstream sites
+#' @param x A river network
+#' @return A vector of discharge values
+#' @export
+lateral_discharge = function(x) {
+	Q = x$discharge
+	Qu = t(adjacency(x)) %*% Q
+	Q - Qu
+}
 
 #'@export
 state = function(x, ...)
