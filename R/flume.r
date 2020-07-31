@@ -23,7 +23,7 @@ NULL
 #' @return An S3 object of class 'flume'
 #' @export
 flume = function(comm, network, dt) {
-	structure(list(metacom = comm, network = network, dt = dt), class="flume")
+	structure(list(metacom = comm, networks = list(network), dt = dt), class="flume")
 }
 
 #' Run the simulation for a specified number of time steps
@@ -33,9 +33,14 @@ flume = function(comm, network, dt) {
 #'
 #' @param x A [flume()] object
 #' @param nt The number of time steps
-#' @return A modified copy of `x`, with state updated with the results of the simulation
+#' @param reps The number of replicate simulations to run; by default just a single sim is run
+#' @return A modified copy of `x`, with state updated with the results of the simulation. If reps
+#' is > 1, x will be converted to a `multiflume`
 #' @export
-run_simulation = function(x, nt) {
+run_simulation = function(x, nt, reps = 1) {
+	##### TODO x$network no longer exists, instead there will be a list of networks
+	## one for each simulation; need to update this function and the vignette
+
 	if(nt < 1)
 		stop("at least one time step is required")
 	MC = x[['metacom']]
