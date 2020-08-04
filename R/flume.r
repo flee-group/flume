@@ -33,26 +33,53 @@ flume = function(comm, network, dt) {
 #'
 #' @param x A [flume()] object
 #' @param nt The number of time steps
-#' @param reps The number of replicate simulations to run; by default just a single sim is run
-#' @return A modified copy of `x`, with state updated with the results of the simulation. If reps
-#' is > 1, x will be converted to a `multiflume`
+#' @param reps The number of replicate simulations to run; by default a single sim is run
+#' on a new flume; for continuing simulations, the same number of replicates will be used
+#' @return A modified copy of `x`, with state updated with the results of the simulation.
 #' @export
-run_simulation = function(x, nt, reps = 1) {
-	##### TODO x$network no longer exists, instead there will be a list of networks
-	## one for each simulation; need to update this function and the vignette
+run_simulation = function(x, nt, reps, parallel = TRUE) {
 
 	if(nt < 1)
 		stop("at least one time step is required")
-	MC = x[['metacom']]
-	RN = x[['network']]
-	dt = x[['dt']]
-	R = state(RN)
-	S = site_by_species(RN)
+
+	if(missing(reps))
+		reps = length(x[['networks']])
+
+	# normally flumes are initialized with only a single river network
+	# if more reps are desired, duplicate them
+	if(reps > 1 && length(x[['networks']]) == 1)
+		x[['networks']] = lapply(1:reps, function(i) x[['networks']][[1]])
+
+	if(reps != length(x[['networks']]))
+		warning("'reps' was specified, but it is not equal to the number of existing sims in 'x'\n",
+				"'reps' will be ignored and the number of simulations will be equal to length(x$networks) (",
+				length(x$networks), ")")
+
+	if(parallel) {
+		x[['networks']] = parallel::mclapply(x[['networks']], .do_sim, comm = x[['metacom']], dt = x[['dt']], nt = nt)
+	} else {
+		x[['networks']] = lapply(x[['networks']], .do_sim, comm = x[['metacom']], dt = x[['dt']], nt = nt)
+	}
+
+	return(x)
+}
+
+
+#' Worker function for running simulations in parallel
+#' @param network A river network
+#' @param comm A metacommunity
+#' @param dt The size of the time step
+#' @param nt The number of time steps
+#' @return A modified copy of `network` with the results of the simulation
+#' @keywords internal
+.do_sim = function(network, comm, dt, nt) {
+	R = state(network)
+	S = site_by_species(network)
 
 	for(tstep in 1:nt) {
-		cp = col_prob(MC, RN, dt = dt)
-		ep = ext_prob(MC, RN, dt = dt)
-		dR = dRdt(MC, RN)
+		cp = col_prob(comm, network, dt = dt)
+		ep = ext_prob(comm, network, dt = dt)
+		dR = dRdt(comm, network)
 
 		# no cols where already present, no exts where already absent
 		cp[S == 1] = 0
@@ -65,9 +92,8 @@ run_simulation = function(x, nt, reps = 1) {
 		## euler integration for now
 		R = R + dR * dt
 
-		site_by_species(RN) = S
-		state(RN) = R
+		site_by_species(network) = S
+		state(network) = R
 	}
-	x[['network']] = RN
-	return(x)
+	return(network)
 }

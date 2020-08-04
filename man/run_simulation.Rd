@@ -4,15 +4,18 @@
 \alias{run_simulation}
 \title{Run the simulation for a specified number of time steps}
 \usage{
-run_simulation(x, nt)
+run_simulation(x, nt, reps, parallel = TRUE)
 }
 \arguments{
 \item{x}{A \code{\link[=flume]{flume()}} object}
 
 \item{nt}{The number of time steps}
+
+\item{reps}{The number of replicate simulations to run; by default a single sim is run
+on a new flume; for continuing simulations, the same number of replicates will be used}
 }
 \value{
-A modified copy of \code{x}, with state updated with the results of the simulation
+A modified copy of \code{x}, with state updated with the results of the simulation.
 }
 \description{
 This function begins with the current state of \code{x}, runs the model for \code{nt} steps,
