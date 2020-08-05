@@ -26,6 +26,21 @@ flume = function(comm, network, dt) {
 	structure(list(metacom = comm, networks = list(network), dt = dt), class="flume")
 }
 
+
+#' Compute network-wide occupancy from a simulation
+occupancy_network = function(x) {
+	rn = x[['networks']]
+	res = data.table::rbindlist(lapply(rn, function(r){
+		S = site_by_species(r, history = TRUE)
+		data.table::rbindlist(lapply(S, function(s) {
+			nm = colnames(s)
+			if(is.null(nm))
+				nm = as.character(1:ncol(s))
+			data.table::data.table(species = nm, occupancy = colMeans(s))
+			}), idcol = "time")
+	}), idcol = "sim")
+}
+
 #' Run the simulation for a specified number of time steps
 #'
 #' This function begins with the current state of `x`, runs the model for `nt` steps,
@@ -37,7 +52,7 @@ flume = function(comm, network, dt) {
 #' on a new flume; for continuing simulations, the same number of replicates will be used
 #' @return A modified copy of `x`, with state updated with the results of the simulation.
 #' @export
-run_simulation = function(x, nt, reps, parallel = TRUE) {
+run_simulation = function(x, nt, reps, parallel = TRUE, cores = parallel::detectCores()) {
 
 	if(nt < 1)
 		stop("at least one time step is required")
@@ -55,8 +70,9 @@ run_simulation = function(x, nt, reps, parallel = TRUE) {
 				"'reps' will be ignored and the number of simulations will be equal to length(x$networks) (",
 				length(x$networks), ")")
 
-	if(parallel) {
-		x[['networks']] = parallel::mclapply(x[['networks']], .do_sim, comm = x[['metacom']], dt = x[['dt']], nt = nt)
+	if(parallel && reps > 1 && cores > 1) {
+		x[['networks']] = parallel::mclapply(x[['networks']], .do_sim, comm = x[['metacom']], dt = x[['dt']],
+				nt = nt, mc.cores = cores)
 	} else {
 		x[['networks']] = lapply(x[['networks']], .do_sim, comm = x[['metacom']], dt = x[['dt']], nt = nt)
 	}

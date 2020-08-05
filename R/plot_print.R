@@ -1,3 +1,22 @@
+#' Plot the results of a flume simulation
+#' @param x A [flume()]
+#' @param variable Variable to plot; 'occupancy' plots occupancy by species over time, 'resources' plots
+#' resource concentration over time
+#' @param type How to compute the plot; either shows the average for the entire network, or plots by reach.
+#' @return A ggplot2 object
+#' @export
+plot.flume = function(x, variable = c("occupancy", "resources"), type = c("network", "reach")) {
+	if(!requireNamespace("ggplot2", quietly=TRUE))
+		stop("Package ggplot2 is required for this functionality")
+
+	variable = match.arg(variable)
+	type = match.arg(type)
+}
+
+.occupancy_plot = function(x) {
+
+}
+
 #' Plot a river network
 #' @details The argument 'variable' can either be a column number from the state variable matrix, a column name from
 #' the state variable matrix, or the special name "site_by_species", which produces a plot of the network with
