@@ -4,7 +4,7 @@
 \alias{run_simulation}
 \title{Run the simulation for a specified number of time steps}
 \usage{
-run_simulation(x, nt, reps, parallel = TRUE)
+run_simulation(x, nt, reps, parallel = TRUE, cores = parallel::detectCores())
 }
 \arguments{
 \item{x}{A \code{\link[=flume]{flume()}} object}

@@ -27,19 +27,45 @@ flume = function(comm, network, dt) {
 }
 
 
-#' Compute network-wide occupancy from a simulation
+#' Compute post simulation statistics
+#' @name flumestats
+#' @param x A [flume()]
+#' @return A [data.table::data.table()][data.table] with the desired summary statistics
+#' @export
 occupancy_network = function(x) {
-	rn = x[['networks']]
-	res = data.table::rbindlist(lapply(rn, function(r){
-		S = site_by_species(r, history = TRUE)
-		data.table::rbindlist(lapply(S, function(s) {
-			nm = colnames(s)
-			if(is.null(nm))
-				nm = as.character(1:ncol(s))
-			data.table::data.table(species = nm, occupancy = colMeans(s))
-			}), idcol = "time")
-	}), idcol = "sim")
+	occ = .reshape_sim(x, fun = "species")
+	occ[, .(occupancy = sum(occupancy) / .N), keyby = .(species, time)]
 }
+
+#' @rdname flumestats
+#' @export
+occupancy_reach = function(x) {
+	occ = .reshape_sim(x, fun = "species")
+	occ[, .(occupancy = sum(occupancy) / .N), keyby = .(species, reach, time)]
+}
+
+#' Get a long-format occupancy by time by reach by network dataset
+#' @keywords internal
+.reshape_sim = function(x, variable = c("species", "resources")) {
+	variable = match.arg(variable)
+	if(variable == "species") {
+		fun = site_by_species
+	} else {
+		fun = state
+	}
+	data.table::rbindlist(parallel::mclapply(x[['networks']], function(r) {
+		S = fun(r, history = TRUE)
+		res = data.table::rbindlist(lapply(S, function(s) {
+			val = data.table::data.table(s)
+			val$reach = 1:nrow(val)
+			val
+		}), idcol = "time")
+		res = data.table::melt(res, id.vars=c("reach", "time"), variable.name="species", value.name = "occupancy")
+		res[['species']] = sub("V(.+)", "\\1", res[['species']])
+		res
+	}, mc.cores = parallel::detectCores()), idcol="network")
+}
+
 
 #' Run the simulation for a specified number of time steps
 #'
