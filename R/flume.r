@@ -30,18 +30,24 @@ flume = function(comm, network, dt) {
 #' Compute post simulation statistics
 #' @name flumestats
 #' @param x A [flume()]
+#' @import data.table
 #' @return A [data.table::data.table()][data.table] with the desired summary statistics
 #' @export
-occupancy_network = function(x) {
-	occ = .reshape_sim(x, fun = "species")
-	occ[, .(occupancy = sum(occupancy) / .N), keyby = .(species, time)]
+occupancy = function(x, type = c('network', 'reach')) {
+	occ = .reshape_sim(x, variable = "species")
+	if(type == 'network') {
+		keyby = c("species", "time")
+	} else {
+		keyby = c("species", "reach", "time")
+	}
+	return(occ[, .(occupancy = sum(occupancy) / .N), keyby = keyby])
 }
 
 #' @rdname flumestats
 #' @export
-occupancy_reach = function(x) {
-	occ = .reshape_sim(x, fun = "species")
-	occ[, .(occupancy = sum(occupancy) / .N), keyby = .(species, reach, time)]
+resource_summary = function(x) {
+	res = .reshape_sim(x, variable = "resources")
+	return(res[, .(concentration = mean(concentration)), keyby = .(resource, reach, time)])
 }
 
 #' Get a long-format occupancy by time by reach by network dataset
@@ -50,8 +56,12 @@ occupancy_reach = function(x) {
 	variable = match.arg(variable)
 	if(variable == "species") {
 		fun = site_by_species
+		variable.name = 'species'
+		value.name = 'occupancy'
 	} else {
 		fun = state
+		variable.name = 'resource'
+		value.name = 'concentration'
 	}
 	data.table::rbindlist(parallel::mclapply(x[['networks']], function(r) {
 		S = fun(r, history = TRUE)
@@ -60,8 +70,9 @@ occupancy_reach = function(x) {
 			val$reach = 1:nrow(val)
 			val
 		}), idcol = "time")
-		res = data.table::melt(res, id.vars=c("reach", "time"), variable.name="species", value.name = "occupancy")
-		res[['species']] = sub("V(.+)", "\\1", res[['species']])
+		res = data.table::melt(res, id.vars=c("reach", "time"), variable.name=variable.name, value.name = value.name)
+		if(variable.name == 'species')
+			res[[variable.name]] = sub("V(.+)", "\\1", res[[variable.name]])
 		res
 	}, mc.cores = parallel::detectCores()), idcol="network")
 }

@@ -2,13 +2,13 @@
 % Please edit documentation in R/flume.r
 \name{flumestats}
 \alias{flumestats}
-\alias{occupancy_network}
-\alias{occupancy_reach}
+\alias{occupancy}
+\alias{resource_summary}
 \title{Compute post simulation statistics}
 \usage{
-occupancy_network(x)
+occupancy(x, type = c("network", "reach"))
 
-occupancy_reach(x)
+resource_summary(x)
 }
 \arguments{
 \item{x}{A \code{\link[=flume]{flume()}}}

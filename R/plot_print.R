@@ -11,11 +11,31 @@ plot.flume = function(x, variable = c("occupancy", "resources"), type = c("netwo
 
 	variable = match.arg(variable)
 	type = match.arg(type)
+
+	if(variable == "occupancy") {
+		.occupancy_plot(x, type=type)
+	} else {
+		.resource_plot(x)
+	}
 }
 
-.occupancy_plot = function(x) {
-
+.occupancy_plot = function(x, type) {
+	occ = occupancy(x, type=type)
+	if(type == 'network') {
+		pl = ggplot2::ggplot(occ, ggplot2::aes(x = time, y = occupancy, colour = species))
+	} else {
+		pl = ggplot2::ggplot(occ, ggplot2::aes(x = time, y = occupancy, colour = as.factor(reach))) +
+			ggplot2::facet_grid(.~species)
+	}
+	pl + ggplot2::geom_line() + ggplot2::theme_minimal() + ggplot2::ylim(0,1)
 }
+
+.resource_plot = function(x) {
+	res = resource_summary(x)
+	ggplot2::ggplot(res, ggplot2::aes(x = time, y = concentration, colour = as.factor(reach))) +
+		ggplot2::geom_line() + ggplot2::theme_minimal() + ggplot2::facet_wrap(.~resource, scales = 'free')
+}
+
 
 #' Plot a river network
 #' @details The argument 'variable' can either be a column number from the state variable matrix, a column name from
