@@ -4,10 +4,12 @@
 \alias{lateral_discharge}
 \title{Compute lateral discharge}
 \usage{
-lateral_discharge(x)
+lateral_discharge(x, tm)
 }
 \arguments{
 \item{x}{A river network}
+
+\item{tm}{A time step}
 }
 \value{
 A vector of discharge values

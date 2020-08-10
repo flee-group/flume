@@ -16,9 +16,9 @@ river_network(
 \arguments{
 \item{adjacency}{An adjacency matrix; see 'details'}
 
-\item{discharge}{A vector for discharge values, one per row/column in adjacency}
+\item{discharge}{Optional discharge values, see \code{\link[=discharge.river_network]{discharge.river_network()}}}
 
-\item{area}{Optional vector for cross sectional area values, one per row/column in adjacency}
+\item{area}{Optional vector for cross sectional area values, one per reach}
 
 \item{state}{Optional, starting state of the network}
 

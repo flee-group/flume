@@ -5,8 +5,8 @@
 #' reach and the column the downstream (i.e., adjacency[i,j] == 1 indicates water flows from i to j). Nonzero elements
 #' will be set equal to one.
 #' @param adjacency An adjacency matrix; see 'details'
-#' @param discharge A vector for discharge values, one per row/column in adjacency
-#' @param area Optional vector for cross sectional area values, one per row/column in adjacency
+#' @param discharge Optional discharge values, see [discharge.river_network()]
+#' @param area Optional vector for cross sectional area values, one per reach
 #' @param state Optional, starting state of the network
 #' @param length The length of each reach, must be a single value (the model assumes all reaches are the same length)
 #' @param skip_checks Logical; if true, no checks for valid topology will be performed
@@ -30,28 +30,14 @@ river_network = function(adjacency, discharge, area, state, length = 1, skip_che
 		}
 		if(!.validate_adjacency(adjacency))
 			stop("Adjacency matrix failed validation; see '?river_network' for the requirements.")
-		stopifnot(length(discharge) == nrow(adjacency))
 	}
 
-	## TODO - make the package able to support Matrix::Matrix input; for now we coerce
-	if(methods::is(adjacency, "Matrix"))
-		adjacency = as(adjacency, "matrix")
-
-	if(any(! adjacency %in% c(0,1))) {
+	if(any(! as(adjacency, "vector") %in% c(0,1))) {
 		adjacency[adjacency != 0] = 1
 	}
 
-	if(missing(area)) {
-		if(!requireNamespace("WatershedTools", quietly = TRUE))
-			stop("WatershedTools is required to estimate area from discharge; ",
-			"use devtools::install_github('mtalluto/WatershedTools') to install")
 
-		area = WatershedTools::hydraulic_geometry(discharge)
-		area = area$depth * area$width
-	}
-
-	rn = structure(list(.adjacency = adjacency, discharge = discharge, area = area,
-						.state = list(), .length = length), class = "river_network")
+	rn = structure(list(.adjacency = adjacency, .state = list(), .length = length), class = "river_network")
 
 	## by default, boundary condition is set to equal the starting state
 	if(!missing(state)) {
@@ -60,6 +46,20 @@ river_network = function(adjacency, discharge, area, state, length = 1, skip_che
 	} else {
 		rn$boundary = function() return(rep(0, nrow(rn[['.adjacency']])))
 	}
+
+	if(!missing(discharge))
+		discharge(rn) = discharge
+	if(missing(area)) {
+		## TODO fix this, make it a method that gets called when needed, import the code from wshedtools to eliminate
+		## dependency
+		if(!requireNamespace("WatershedTools", quietly = TRUE))
+			stop("WatershedTools is required to estimate area from discharge; ",
+				 "use devtools::install_github('mtalluto/WatershedTools') to install")
+
+		area = WatershedTools::hydraulic_geometry(discharge)
+		area = area$depth * area$width
+	}
+	cs_area(rn) = area
 	return(rn)
 }
 
@@ -112,26 +112,32 @@ reach_length = function(x) {
 #'
 #' Assumed to be the difference between Q of a site and the sum of Q of upstream sites
 #' @param x A river network
+#' @param tm A time step
 #' @return A vector of discharge values
 #' @export
-lateral_discharge = function(x) {
-	Q = x$discharge
+lateral_discharge = function(x, tm) {
+	Q = discharge(x, tm)
 	Qu = t(adjacency(x)) %*% Q
 	Q - Qu
 }
 
-#'@export
+#' @export
 state = function(x, ...)
 	UseMethod("state", x)
-#'@export
+
+#' @export
 'state<-' = function(x, value)
 	UseMethod('state<-', x)
-#'@export
+
+#' @export
 site_by_species = function(x, ...)
 	UseMethod("site_by_species", x)
-#'@export
+
+#' @export
 'site_by_species<-' = function(x, value)
 	UseMethod('site_by_species<-', x)
+
+
 
 #' Setter and getter methods for river network state variables
 #' @name state
@@ -206,3 +212,11 @@ prevalence = function(x) {
 	adj %*% site_by_species(x)
 }
 
+
+#' Number of nodes in a river network
+#' @param x A river network
+#' @return The number of nodes in the network
+#' @export
+length.river_network = function(x) {
+	return(nrow(adjacency(x)))
+}

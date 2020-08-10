@@ -26,7 +26,7 @@ col_prob = function(comm, network, dt, components = FALSE) {
 	P = prevalence(network)
 	A = matrix(dispersal_params(comm)$alpha, nrow=nsites, ncol = nsp, byrow = TRUE) # repeat the alphas across all sites in a matrix
 	B = matrix(dispersal_params(comm)$beta, nrow=nsites, ncol = nsp, byrow = TRUE) # same for beta
-	Q = matrix(network$discharge, nrow=nsites, ncol = nsp) # repeat discharge by site across all species
+	Q = matrix(discharge(network), nrow=nsites, ncol = nsp) # repeat discharge by site across all species
 	immigration = matrix(as.vector(comm$boundary()), nrow = nsites, ncol = nsp, byrow = TRUE)
 	dispersal = P * (A + B*Q + immigration)
 
@@ -77,13 +77,20 @@ ext_prob = function(comm, network, dt, components = FALSE) {
 dRdt = function(comm, network, components = FALSE) {
 	S = site_by_species(network)
 	R = state(network)
-	Q = network$discharge
-	Ru = t(adjacency(network)) %*% R
-	Qu = t(adjacency(network)) %*% Q
-	A = network$area
+	Q = discharge(network)
+	Ru = t(adjacency(network)) %*% R ## upstream resource concentration
+	Qu = t(adjacency(network)) %*% Q ## upstream discharge
+	A = cs_area(network)
 	l = reach_length(network)
 
 	output = Q * R
+
+	### TODO need to check for negative lateral discharge (when the river is shrinking)
+	### when this happens, there are a few reasonable options for resource concentration
+	### 1. export resources at the same concentration as is present in the reac
+	### 2. export zero resources
+	### 3. something in between
+	### right now multiplying by the boundary condition doesn't make sense when lateral discharge is negative
 	input = apply(Ru, 2, function(x) Qu * x) + network$boundary() * lateral_discharge(network)
 	transport = (output - input) / (A*l)
 
