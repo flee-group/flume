@@ -47,4 +47,11 @@ a discharge vector with one element per node in the river network.
 
 Cross sectional area can either be missing or provided in the same format as discharge. If missing, then cross
 sectional area will be computed using hydrological scaling relationships; see \code{\link[=geometry]{geometry()}} for details.
+
+Note that if cross-sectional area is provided, then the discharge model is changed (e.g., from constant to variable),
+it is strongly recommended (and not checked!) that the user ALSO update cross-sectional area to match the new model,
+otherwise undefined behavior will occur.
+
+\code{cs_area(x) <- NULL} will delete any provided cross sectional area and revert to the default behavior, computing
+area using \code{\link[=geometry]{geometry()}}
 }

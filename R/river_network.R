@@ -15,6 +15,7 @@
 #' * `discharge` A discharge vector
 #' * `area` Cross sectional area at each node
 #' * `.state` The state history of the network; access with [state][state.river_network()].
+#' * `layout` Optional, layout for plotting
 #' @examples
 #' Q = rep(1, 4)
 #' adj = matrix(0, nrow = 4, ncol = 4)
@@ -108,18 +109,6 @@ reach_length = function(x) {
 }
 
 
-#' Compute lateral discharge
-#'
-#' Assumed to be the difference between Q of a site and the sum of Q of upstream sites
-#' @param x A river network
-#' @param tm A time step
-#' @return A vector of discharge values
-#' @export
-lateral_discharge = function(x, tm) {
-	Q = discharge(x, tm)
-	Qu = t(adjacency(x)) %*% Q
-	Q - Qu
-}
 
 #' @export
 state = function(x, ...)

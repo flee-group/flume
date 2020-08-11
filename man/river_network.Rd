@@ -33,6 +33,7 @@ An S3 object of class 'river_network', with the following attributes:
 \item \code{discharge} A discharge vector
 \item \code{area} Cross sectional area at each node
 \item \code{.state} The state history of the network; access with \link[=state.river_network]{state}.
+\item \code{layout} Optional, layout for plotting
 }
 }
 \description{

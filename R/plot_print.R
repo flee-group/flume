@@ -54,8 +54,10 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 
 	args = .default_river_plot_options(...)
 	args$x = igraph::graph_from_adjacency_matrix(adjacency(x), mode = "directed")
-	wt = x$discharge[2:nrow(adjacency(x))]
+	wt = discharge(x)[2:nrow(adjacency(x))]
 	args$edge.width = (wt / max(wt)) * args$edge.width
+	if(!("layout" %in% args) && "layout" %in% names(attributes(x)))
+		args$layout = attr(x, "layout")
 
 	## colour scale, if available and desired
 	if(variable == "site_by_species") {

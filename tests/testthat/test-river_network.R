@@ -33,7 +33,7 @@ test_that("River network creation", {
 	adj[4,3] = 1
 
 	# invalid discharge
-	expect_error(river_network(adj, Q[1:3]), regex = "length\\(discharge\\)")
+	expect_error(river_network(adj, Q[1:3]), regex = "nrow\\(discharge\\)")
 
 	# works with regular and Matrix matrices
 	expect_error(river_network(adj, Q), regex = NA)

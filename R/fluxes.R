@@ -82,16 +82,20 @@ dRdt = function(comm, network, components = FALSE) {
 	Qu = t(adjacency(network)) %*% Q ## upstream discharge
 	A = cs_area(network)
 	l = reach_length(network)
+	lQ = lateral_discharge(network)
+	lR = network$boundary()
 
 	output = Q * R
 
-	### TODO need to check for negative lateral discharge (when the river is shrinking)
-	### when this happens, there are a few reasonable options for resource concentration
-	### 1. export resources at the same concentration as is present in the reac
-	### 2. export zero resources
-	### 3. something in between
-	### right now multiplying by the boundary condition doesn't make sense when lateral discharge is negative
-	input = apply(Ru, 2, function(x) Qu * x) + network$boundary() * lateral_discharge(network)
+	# when lateral discharge is NEGATIVE (i.e., the stream is shrinking) we export based on the concentration
+	# in the stream, not the boundary condition
+	# TODO: this will need to be improved for intermittent rivers
+	if(any(lQ < 0)) {
+		for(i in 1:ncol(lR))
+			lR[lQ < 0, i] = R[lQ < 0, i]
+	}
+
+	input = apply(Ru, 2, function(x) Qu * x) + apply(lR, 2, function(x) lQ * x)
 	transport = (output - input) / (A*l)
 
 	rxn = ruf(S, R, comm)

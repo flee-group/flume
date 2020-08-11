@@ -35,19 +35,26 @@ cs_area = function(x, ...)
 #' Cross sectional area can either be missing or provided in the same format as discharge. If missing, then cross
 #' sectional area will be computed using hydrological scaling relationships; see [geometry()] for details.
 #'
+#' Note that if cross-sectional area is provided, then the discharge model is changed (e.g., from constant to variable),
+#' it is strongly recommended (and not checked!) that the user ALSO update cross-sectional area to match the new model,
+#' otherwise undefined behavior will occur.
+#'
+#' `cs_area(x) <- NULL` will delete any provided cross sectional area and revert to the default behavior, computing
+#' area using [geometry()]
+#'
 #' @param x A [river_network()]
 #' @param value Discharge/cross-sectional area (see 'details')
 #' @name discharge
 #' @return A discharge vector
 #' @export
 discharge.river_network = function(x) {
-	Q = .get_hydro_attr(x, ".Q")
+	.get_hydro_attr(x, ".Q")
 }
 
 #' @rdname discharge
 #' @export
 'discharge<-.river_network' = function(x, value) {
-	if(is.vector(value))
+	if(is.vector(value) && is.atomic(value))
 		value = matrix(value, ncol=1)
 
 	if(is.function(value)) {
@@ -73,7 +80,7 @@ discharge.river_network = function(x) {
 #' @return Cross-sectional area vector
 #' @export
 cs_area.river_network = function(x) {
-	if('.area' %in% ls(x)) {
+	if('.area' %in% ls(x, all.names=TRUE)) {
 		A = .get_hydro_attr(x, '.area')
 	} else {
 		A = geometry(discharge(x))
@@ -85,7 +92,12 @@ cs_area.river_network = function(x) {
 #' @rdname discharge
 #' @export
 'cs_area<-.river_network' = function(x, value) {
-	if(is.vector(value))
+	if(is.null(value)) {
+		x[['.area']] = NULL
+		return(x)
+	}
+
+	if(is.vector(value) && is.atomic(value))
 		value = matrix(value, ncol = 1)
 
 	if(!is.function(value) && any(value < 0))
@@ -95,8 +107,8 @@ cs_area.river_network = function(x) {
 		if(!is.matrix(value) || ! ncol(value) == 1 || !nrow(value) == length(x))
 			stop("Areas must be a 1-column matrix or a vector with length == length(x)")
 	} else if(attr(x, "discharge_model") == "variable") {
-		if(! is.matrix(value) || !nrow(value) == length(x))
-			stop("Areas must be a matrix with nrow == length(x)")
+		if(!(is.matrix(value) && identical(dim(value), dim(x[[".Q"]]))))
+			stop("Areas must be a matrix with dimensions identical to dim(discharge(x))")
 	} else {
 		if(! is.function(value))
 			stop("Areas must be a function")
@@ -120,12 +132,12 @@ geometry = function(Q) {
 	wa <- 2.56
 	wb <- 0.423
 
-	velocity = exp(va + vb * log(discharge))
-	depth = exp(da + db * log(discharge))
-	width = exp(wa + wb * log(discharge))
-	ind = which(discharge == 0)
+	velocity = exp(va + vb * log(Q))
+	depth = exp(da + db * log(Q))
+	width = exp(wa + wb * log(Q))
+	ind = which(Q == 0)
 	velocity[ind] = depth[ind] = width[ind] = 0
-	data.frame(discharge, velocity, depth, width)
+	data.frame(Q, velocity, depth, width)
 }
 
 #' Pull out discharge/cross sectional area
@@ -136,7 +148,7 @@ geometry = function(Q) {
 	attr = match.arg(attr)
 	tm = length(x[['.state']]) ## determine what time step we are at from how many states we have saved
 	if(attr(x, "discharge_model") == "constant") {
-		val = x[[attr]]
+		val = x[[attr]][,1]  ## note, this is always stored as a matrix for compatibility, but returned as a vector
 	} else if(attr(x, "discharge_model") == "variable") {
 		if(tm > ncol(x[[attr]])) {
 			tm = tm %% ncol(x[[attr]])
@@ -151,3 +163,15 @@ geometry = function(Q) {
 }
 
 
+#' Compute lateral discharge
+#'
+#' Assumed to be the difference between Q of a site and the sum of Q of upstream sites
+#' @param x A river network
+#' @param tm A time step
+#' @return A vector of discharge values
+#' @export
+lateral_discharge = function(x) {
+	Q = discharge(x)
+	Qu = t(adjacency(x)) %*% Q
+	as.vector(Q - Qu)
+}
