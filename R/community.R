@@ -223,8 +223,15 @@ species = function(c_type, e_type, c_par, e_par, alpha=0, beta=0) {
 
 
 #' Create parameter sets for CE functions
+#' @param type The type of c-e function
+#' @param n The number of species
+#' @param scale The maximum y-value of the function
+#' @param xmin The minimum value(s) to use for generating niches
+#' @param xmax The maximum value(s) for generating niches
+#' @param k The number of niche dimensions
+#' @return A parameter set for the c-e function chosen
 #' @keywords internal
-.generate_ce_params = function(type, n, scale, xmin, xmax) {
+.generate_ce_params = function(type, n, scale, xmin, xmax, k = length(xmin)) {
 	switch(type,
 		'constant' = lapply(1:n, function(x) list(scale = scale)),
 		'linear' = {
@@ -236,10 +243,35 @@ species = function(c_type, e_type, c_par, e_par, alpha=0, beta=0) {
 		   	mapply(function(a,b) list(a=a, b=b), a,b, SIMPLIFY=FALSE)},
 		'gaussian' = {
 		   	stop("Gaussian not implemented yet")
-		   	scale = rep(scale[1], n_species)
-		   	## mean = this is difficult to do generally for multiple variables; simple for one
-		   	## maybe to start we only consider a single, or we at least consider variables independently
-	})
+			## for single variable, spread niches evenly
+			if(k == 1) {
+				## for small numbers of species, we create some buffer around the edges
+				if(n < 6) {
+					mean = seq(xmin, xmax, length.out = n+2)
+					mean = mean[2:(length(mean)-1)]
+				} else {
+					mean = seq(xmin, xmax, length.out = n)
+				}
+				sd = mean[2] - mean[1]
+			} else {
+				## for multiple vars, just fuck it and set niches randomly
+				if(length(xmin) == 1)
+					xmin = rep(xmin, k)
+				if(length(xmax) == 1)
+					xmax = rep(xmax, k)
+
+				mean = lapply(1:n, function(i) runif(k, xmin, xmax))
+				sd_avg = (xmax - xmin) / n
+				sd_sd = sd_avg / 4
+				sd = lapply(1:n, function(i) {
+					y = matrix(0, nrow=k, ncol=k)
+					diag(y) = rnorm(k, sd_avg, sd_sd)
+					y
+				})
+			}
+			mapply(function(sc,me,st) list(scale=sc, mean=me, sd=st), scale, mean, sd, SIMPLIFY = FALSE)
+		}
+	)
 }
 
 
