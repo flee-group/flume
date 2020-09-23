@@ -39,12 +39,24 @@ metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, n
 	# n is the number of sites
 	comm$boundary = function(n=1) matrix(0, nrow=n, ncol=n_species)
 
+	if(nx == 1) {
+		opt_method = "Brent"
+		lower = xmin
+		upper = xmax
+	} else {
+		opt_method = "Nelder-Mead"
+		lower = -Inf
+		upper = Inf
+	}
+	opt_fun = function(r, sp) {
+		r = matrix(r, nrow=1, ncol=nx)
+		f_niche(sp, r)
+	}
+	start = colMeans(rbind(xmin, xmax))
 	attr(comm, "niche_max") =
 		sapply(comm$species, function(sp) {
-			optimise(function(r, sp) {
-				r = matrix(r, nrow=1, ncol=1)
-				f_niche(sp, r)[1,1]
-			}, c(xmin, xmax), sp = sp, maximum = TRUE)$objective
+			optim(start, opt_fun, method = opt_method, lower = lower, upper = upper, sp = sp,
+				  control = list(fnscale = -1)[['value']])
 		})
 	attr(comm, "xmin") = xmin
 	attr(comm, "xmax") = xmax
@@ -193,17 +205,31 @@ species = function(c_type, e_type, c_par, e_par, alpha=0, beta=0) {
 #' @keywords internal
 #' @return a matrix giving pairwise competition coefficients
 .compute_comp_matrix = function(sp, xmin, xmax) {
+	if(length(xmin) == 1) {
+		integration_fun = integrate
+		integral_name = "value"
+	} else {
+		if(!requireNamespace("cubature", quietly = TRUE))
+			stop("Multidimensional niches require the 'mvtnorm' and 'cubature' packages")
+		integral_name = "integral"
+		if(length(xmin) < 4) {
+			integration_fun = cubature::pcubature
+		} else {
+			integration_fun = cubature::hcubature
+		}
+
+	}
 	comp = matrix(0., nrow=length(sp), ncol=length(sp))
 	for(i in 1:(length(sp) - 1)) {
 		si = sp[[i]]
-		comp[i,i] = integrate(.pairwise_comp(si, si), xmin, xmax)$value
+		comp[i,i] = integration_fun(.pairwise_comp(si, si), xmin, xmax)[[integral_name]]
 		for(j in (i+1):length(sp)) {
 			sj = sp[[j]]
-			comp[i,j] = integrate(.pairwise_comp(si, sj), xmin, xmax)$value
+			comp[i,j] = integration_fun(.pairwise_comp(si, sj), xmin, xmax)[[integral_name]]
 			comp[j,i] = comp[i,j]
 		}
 	}
-	comp[j,j] = integrate(.pairwise_comp(sj, sj), xmin, xmax)$value
+	comp[j,j] = integration_fun(.pairwise_comp(sj, sj), xmin, xmax)[[integral_name]]
 	return(comp)
 }
 
@@ -214,8 +240,8 @@ species = function(c_type, e_type, c_par, e_par, alpha=0, beta=0) {
 #' @keywords internal
 .pairwise_comp = function(s1, s2) {
 	function(x) {
-		l1 = s1$col(x) - s1$ext(x)
-		l2 = s2$col(x) - s2$ext(x)
+		l1 = f_niche(s1, x)
+		l2 = f_niche(s2, x)
 		ifelse(l1 > l2, l2, l1)
 	}
 }
@@ -242,7 +268,6 @@ species = function(c_type, e_type, c_par, e_par, alpha=0, beta=0) {
 		   	a = c(y1[1] - b[1] * x[1], y2[1] - b[2] * x[1])
 		   	mapply(function(a,b) list(a=a, b=b), a,b, SIMPLIFY=FALSE)},
 		'gaussian' = {
-		   	stop("Gaussian not implemented yet")
 			## for single variable, spread niches evenly
 			if(k == 1) {
 				## for small numbers of species, we create some buffer around the edges

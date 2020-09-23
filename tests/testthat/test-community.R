@@ -16,6 +16,7 @@ test_that("Species creation", {
 	expect_equal(sp$col(0.5), 1)
 	expect_equal(sp$ext(1), 0)
 
+	# default, 2 species metacommunity, linear niches
 	expect_error(comm <<- metacommunity(), regex = NA)
 	pool = comm$species
 	expect_equal(length(pool), 2)
@@ -24,6 +25,15 @@ test_that("Species creation", {
 	expect_equal(mean(pool[[1]]$col(R)), mean(pool[[2]]$col(R)))
 	default_mat = matrix(c(0.30, 0.05, 0.05, 0.30), ncol=2)
 	expect_equal(comm$competition, default_mat)
+
+	# gaussian niches, 2 species
+	expect_error(comm <<- metacommunity(c_type = 'gaussian'), regex = NA)
+
+	# gaussian niches, 3 species
+	expect_error(comm <<- metacommunity(n_species = 3, c_type = 'gaussian'), regex = NA)
+
+	# gaussian niches, 3 species, 2 variables
+	expect_error(comm <<- metacommunity(n_species = 3, nx = 2, c_type = 'gaussian'), regex = NA)
 
 	# check that dispersal function works
 	expect_error(di <- dispersal_params(comm), regex=NA)

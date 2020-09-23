@@ -38,14 +38,22 @@ ce_linear = function(parm) {
 ce_constant = function(parm) {
 	if(!'scale' %in% names(parm))
 		stop("constant functions require named parameter 'scale'")
-	function(x) return(rep(parm$scale, length(x)))
+	function(x) return(parm$scale)
 }
 
 #' @rdname ce_funs
 ce_gaussian = function(parm) {
 	if(!'scale' %in% names(parm) || !'mean' %in% names(parm) || !'sd' %in% names(parm))
 		stop("gaussian functions require named parameters 'scale', 'mean', and 'sd'")
-	function(x) parm$scale * exp(-((x - parm$mean)^2)/(2 * parm$sd^2))
+	if(length(parm$mean) == 1) {
+		return(function(x) parm$scale * exp(-((x - parm$mean)^2)/(2 * parm$sd^2)))
+	} else {
+		if(!requireNamespace("mvtnorm", quietly = TRUE))
+			stop("Multidimensional niches require the 'mvtnorm' and 'cubature' packages")
+		return(function(x) parm$scale * mvtnorm::dmvnorm(x, parm$mean, parm$sd) /
+			   	mvtnorm::dmvnorm(parm$mean, parm$mean, parm$sd))
+	}
+
 }
 
 
