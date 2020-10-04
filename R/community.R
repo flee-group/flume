@@ -120,7 +120,7 @@ random_community = function(rn, mc, prevalence = 0.25) {
 #' @examples
 #' ## create a default 2-species pool
 #' spp = flume:::species_pool()
-species_pool = function(n_species = 2, nx = 1, c_type = 'linear', e_type = 'constant', scale = c(1, 0.2),
+species_pool = function(n_species = 2, nx = 1, c_type = 'gaussian', e_type = 'constant', scale = c(1, 0.2),
 						xmin = rep(0, nx), xmax=rep(1, nx), alpha, beta) {
 	if((c_type == 'linear' || e_type == 'linear') && (n_species > 2 || nx > 1))
 		stop("Linear functions are only supported for <=2 species and 1 variable")

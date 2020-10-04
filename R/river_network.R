@@ -24,6 +24,11 @@
 #' plot(rn)
 #' @export
 river_network = function(adjacency, discharge, area, state, length = 1, skip_checks = FALSE) {
+
+	if(any(! as(adjacency, "vector") %in% c(0,1))) {
+		adjacency[adjacency != 0] = 1
+	}
+
 	if(!skip_checks) {
 		if(!requireNamespace("igraph", quietly = TRUE) || !requireNamespace("Matrix", quietly = TRUE)) {
 			stop("Packages igraph and Matrix are required for topology checks; please install to proceed. ",
@@ -32,11 +37,6 @@ river_network = function(adjacency, discharge, area, state, length = 1, skip_che
 		if(!.validate_adjacency(adjacency))
 			stop("Adjacency matrix failed validation; see '?river_network' for the requirements.")
 	}
-
-	if(any(! as(adjacency, "vector") %in% c(0,1))) {
-		adjacency[adjacency != 0] = 1
-	}
-
 
 	rn = structure(list(.adjacency = adjacency, .state = list(), .length = length), class = "river_network")
 
@@ -67,14 +67,10 @@ river_network = function(adjacency, discharge, area, state, length = 1, skip_che
 #' River network adjacency matrix
 #'
 #' @param x A river network
-#' @param weighted boolean, default to FALSE, if true returns the weighted adjacency matrix
 #' @return A matrix Y, such that non-zero values in Y[i,j] indicate flow from i to j
 #' @export
-adjacency = function(x, weighted = FALSE) {
-	adj = x[['.adjacency']]
-	# if(!weighted)  ## removed weights from adjacency matrix
-	# 	adj = (adj > 0) * 1
-	return(adj)
+adjacency = function(x) {
+	return(x[['.adjacency']])
 }
 
 

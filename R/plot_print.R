@@ -113,7 +113,7 @@ plot.metacommunity = function(x, R, axis = 1, ...) {
 	if(length(cols) > length(x))
 		cols = cols[1:length(x)]
 
-	args = .default_plot_pool_options()
+	args = .default_plot_pool_options(...)
 	args$x = 0
 	args$y = 0
 	args$xlim = range(R[,axis])
@@ -186,10 +186,14 @@ plot.species = function(x, R, axis = 1, ...) {
 #' Set default plot options when not user-specified
 #' @keywords internal
 .default_plot_pool_options = function(...) {
+	dots_orig = list(...)
+	nms = names(dots_orig)
 	dots = 	.default_plot_species_options(...)
-	dots$ylab = "Dominant eigenvalue"
-	dots$type = "n"
+	if(!"ylab" %in% nms) dots$ylab = "Dominant eigenvalue"
+	if(!"type" %in% nms) dots$type = "n"
 	dots$col = NULL
+	# print(dots_orig)
+	# print(dots)
 	return(dots)
 }
 
