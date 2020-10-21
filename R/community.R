@@ -56,7 +56,7 @@ metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, n
 	attr(comm, "niche_max") =
 		sapply(comm$species, function(sp) {
 			optim(start, opt_fun, method = opt_method, lower = lower, upper = upper, sp = sp,
-				  control = list(fnscale = -1)[['value']])
+				  control = list(fnscale = -1))[['value']]
 		})
 	attr(comm, "xmin") = xmin
 	attr(comm, "xmax") = xmax

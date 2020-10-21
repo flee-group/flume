@@ -38,7 +38,7 @@ ce_linear = function(parm) {
 ce_constant = function(parm) {
 	if(!'scale' %in% names(parm))
 		stop("constant functions require named parameter 'scale'")
-	function(x) return(parm$scale)
+	function(x) return(rep(parm$scale, length(x)))
 }
 
 #' @rdname ce_funs
