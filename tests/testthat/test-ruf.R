@@ -1,5 +1,5 @@
 test_that("Resource use functions", {
-	comm = metacommunity(r_scale = matrix(c(0.05, 0.1), nrow=2))
+	comm = metacommunity(r_scale = matrix(c(0.05, 0.1), nrow=2), c_type='linear')
 	Q = rep(1, 4)
 	adj = matrix(0, nrow = 4, ncol = 4)
 	adj[1,2] = adj[2,3] = adj[4,3] = 1

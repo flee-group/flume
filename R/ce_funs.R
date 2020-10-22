@@ -19,7 +19,7 @@
 #'      - `mean`: the centre of the curve, x-value where y == `scale`
 #'      - `sd`: the width of the curve
 #'
-#' @param x state variable matrix; input for c/e functions; one row per site, one column per variable
+#' @param x state variable matrix; input for c/e functions; one row per site, one column per variable.
 #' @param parm Parameter list, a named list containing parameters for the c/e functions; see 'details'
 #'
 #' @return For c/e functions, a vector of colonisation/extinction rates with length == `nrow(x)`
@@ -38,7 +38,11 @@ ce_linear = function(parm) {
 ce_constant = function(parm) {
 	if(!'scale' %in% names(parm))
 		stop("constant functions require named parameter 'scale'")
-	function(x) return(rep(parm$scale, length(x)))
+	function(x) {
+		if(!is.matrix(x))
+		   x = matrix(x, ncol = length(parm))
+		return(rep(parm$scale, nrow(x)))
+	}
 }
 
 #' @rdname ce_funs
