@@ -34,6 +34,7 @@ flume = function(comm, network, dt) {
 #' @return A [data.table::data.table()][data.table] with the desired summary statistics
 #' @export
 occupancy = function(x, type = c('network', 'reach')) {
+	type = match.arg(type)
 	occ = .reshape_sim(x, variable = "species")
 	if(type == 'network') {
 		keyby = c("species", "time")
