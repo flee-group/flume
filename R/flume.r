@@ -64,6 +64,7 @@ resource_summary = function(x) {
 		variable.name = 'resource'
 		value.name = 'concentration'
 	}
+	cores = ifelse(.Platform$OS.type == "unix", parallel::detectCores(), 1)
 	data.table::rbindlist(parallel::mclapply(x[['networks']], function(r) {
 		S = fun(r, history = TRUE)
 		res = data.table::rbindlist(lapply(S, function(s) {
@@ -75,7 +76,7 @@ resource_summary = function(x) {
 		if(variable.name == 'species')
 			res[[variable.name]] = sub("V(.+)", "\\1", res[[variable.name]])
 		res
-	}, mc.cores = parallel::detectCores()), idcol="network")
+	}, mc.cores = cores, idcol="network")
 }
 
 
