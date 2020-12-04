@@ -76,7 +76,7 @@ resource_summary = function(x) {
 		if(variable.name == 'species')
 			res[[variable.name]] = sub("V(.+)", "\\1", res[[variable.name]])
 		res
-	}, mc.cores = cores, idcol="network"))
+	}, mc.cores = cores), idcol="network")
 }
 
 
