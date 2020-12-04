@@ -76,7 +76,7 @@ resource_summary = function(x) {
 		if(variable.name == 'species')
 			res[[variable.name]] = sub("V(.+)", "\\1", res[[variable.name]])
 		res
-	}, mc.cores = cores, idcol="network")
+	}, mc.cores = cores, idcol="network"))
 }
 
 
@@ -98,6 +98,8 @@ run_simulation = function(x, nt, reps, parallel = TRUE, cores = parallel::detect
 
 	if(missing(reps))
 		reps = length(x[['networks']])
+
+	parallel = parallel && (.Platform$OS.type == "unix")
 
 	# normally flumes are initialized with only a single river network
 	# if more reps are desired, duplicate them
