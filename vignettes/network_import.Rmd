@@ -1,0 +1,36 @@
+---
+title: "Importing a river network into flume"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Importing a river network into flume}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(flume)
+```
+
+
+For anything more than the simplest simulation, you will want something resembling a realistic river network. Creating this is quite tedious by hand, so this vignette will walk through various options for importing a network.
+
+At minimum, a river network in `flume` consists of the following:
+
+  * A square (n by n) **adjacency matrix**, which we call **A**. Each row/column represents a reach, and reaches are (roughly) equal in length. If `A[i,j] == 0`, then reach `i` and `j` are not adjacent. A value of 1 indicates that reach `i` is **upstream** of reach `j`.
+  * An n by k **attributes matrix** (**X**). Each column is one of *k* attributes, each row is a reach. Required attributes and assumed units are:
+    - Cross-sectional area ($m^2$).
+    - Reach length ($m$), generally measured from centroid to centroid or from outlet to outlet.
+    - Discharge ($m^3s^{-1}$), if using a constant-discharge model. For variable discharge, it is supplied via a separate discharge matrix.
+  * Optional features:
+    - x-y coordinates (provided in a projected coordinate system, in m). Useful for visualisation.
+    - A vector GIS layer in `sf` format. More details on formatting this are provided below.
+
+All of these except for discharge can be derived from a digital elevation model using the `watershed` package (https://github.com/flee-group/watershed)[https://github.com/flee-group/watershed]. We will use the `ybbs` dataset, which is included with that package.
+
