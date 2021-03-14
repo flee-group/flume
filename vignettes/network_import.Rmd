@@ -32,5 +32,5 @@ At minimum, a river network in `flume` consists of the following:
     - x-y coordinates (provided in a projected coordinate system, in m). Useful for visualisation.
     - A vector GIS layer in `sf` format. More details on formatting this are provided below.
 
-All of these except for discharge can be derived from a digital elevation model using the `watershed` package (https://github.com/flee-group/watershed)[https://github.com/flee-group/watershed]. We will use the `ybbs` dataset, which is included with that package.
+All of these except for discharge can be derived from a digital elevation model using the `watershed` package (https://github.com/flee-group/watershed)[https://github.com/flee-group/watershed]. We will use the `kamp` dataset, which is included with that package.
 
