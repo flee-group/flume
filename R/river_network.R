@@ -9,13 +9,15 @@
 #' @param area Optional vector for cross sectional area values, one per reach
 #' @param state Optional, starting state of the network
 #' @param length The length of each reach, must be a single value (the model assumes all reaches are the same length)
+#' @param layout Optional, matrix of x-y coordinates used for plotting the network
 #' @param skip_checks Logical; if true, no checks for valid topology will be performed
-#' @return An S3 object of class 'river_network', with the following attributes:
+#' @return An S3 object of class 'river_network', with the following members:
 #' * `adjacency` The adjacency matrix
 #' * `discharge` A discharge vector
 #' * `area` Cross sectional area at each node
 #' * `.state` The state history of the network; access with [state][state.river_network()].
-#' * `layout` Optional, layout for plotting
+#'
+#' Additionally, the `layout` attribute, if used, is a matrix of coordinates for plotting
 #' @examples
 #' Q = rep(1, 4)
 #' adj = matrix(0, nrow = 4, ncol = 4)
@@ -23,7 +25,7 @@
 #' rn = river_network(adj, Q)
 #' plot(rn)
 #' @export
-river_network = function(adjacency, discharge, area, state, length = 1, skip_checks = FALSE) {
+river_network = function(adjacency, discharge, area, state, length = 1, layout, skip_checks = FALSE) {
 
 	if(any(! as(adjacency, "vector") %in% c(0,1))) {
 		adjacency[adjacency != 0] = 1
@@ -42,6 +44,8 @@ river_network = function(adjacency, discharge, area, state, length = 1, skip_che
 
 	## by default, boundary condition is set to equal the starting state
 	if(!missing(state)) {
+		if(!is.matrix(state))
+			state = matrix(state, nrow=nrow(adjacency), ncol=1)
 		state(rn) = state
 		rn$boundary = function() return(state)
 	} else {
@@ -50,17 +54,12 @@ river_network = function(adjacency, discharge, area, state, length = 1, skip_che
 
 	if(!missing(discharge))
 		discharge(rn) = discharge
-	if(missing(area)) {
-		## TODO fix this, make it a method that gets called when needed, import the code from wshedtools to eliminate
-		## dependency
-		if(!requireNamespace("WatershedTools", quietly = TRUE))
-			stop("WatershedTools is required to estimate area from discharge; ",
-				 "use devtools::install_github('mtalluto/WatershedTools') to install")
+	if(!missing(area))
+		cs_area(rn) = area
 
-		area = WatershedTools::hydraulic_geometry(discharge)
-		area = area$depth * area$width
-	}
-	cs_area(rn) = area
+	if(!missing(layout))
+		attr(rn, "layout") = layout
+
 	return(rn)
 }
 

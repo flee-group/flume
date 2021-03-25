@@ -10,12 +10,10 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.height = 8,
+  fig.width = 8
 )
-```
-
-```{r setup}
-library(flume)
 ```
 
 
@@ -23,14 +21,73 @@ For anything more than the simplest simulation, you will want something resembli
 
 At minimum, a river network in `flume` consists of the following:
 
-  * A square (n by n) **adjacency matrix**, which we call **A**. Each row/column represents a reach, and reaches are (roughly) equal in length. If `A[i,j] == 0`, then reach `i` and `j` are not adjacent. A value of 1 indicates that reach `i` is **upstream** of reach `j`.
-  * An n by k **attributes matrix** (**X**). Each column is one of *k* attributes, each row is a reach. Required attributes and assumed units are:
-    - Cross-sectional area ($m^2$).
-    - Reach length ($m$), generally measured from centroid to centroid or from outlet to outlet.
-    - Discharge ($m^3s^{-1}$), if using a constant-discharge model. For variable discharge, it is supplied via a separate discharge matrix.
-  * Optional features:
-    - x-y coordinates (provided in a projected coordinate system, in m). Useful for visualisation.
-    - A vector GIS layer in `sf` format. More details on formatting this are provided below.
+  * A square (n by n) **adjacency matrix** (or **Topology**), which we call `A`. Each row/column represents a reach, and reaches are (roughly) equal in length. Note that `flume` itself treats all reaches as having equal length, so networks imported from a real river will necessarily be altered a little bit. 
+  * The adjacency matrix is structured such that if `A[i,j] == 0`, then reach `i` and `j` are not adjacent. A nonzero value indicates that reach `i` is **upstream** of reach `j`.
+  * **Attributes**. The following attributes (with assumed units and dimensions) are required:
+    - Cross-sectional area ($m^2$). A vector of length $n$.
+    - Discharge ($m^3s^{-1}$). An $n$ by $t$ matrix, where $t$ is the number of time steps in the model. If using constant discharge, then a single column matrix or a vector.
+    - Reach length ($m$). A single value (all reaches are identical length).
+  * Optionally:
+    - x-y coordinates of a single point on each reach (e.g., the midpoint) (projected, in $m$); an $n$ by 2 matrix. Used for plotting the network
 
-All of these except for discharge can be derived from a digital elevation model using the `watershed` package (https://github.com/flee-group/watershed)[https://github.com/flee-group/watershed]. We will use the `kamp` dataset, which is included with that package.
+## Using the watershed package
+
+We can use the package [watershed](https://github/com/flee-group/watershed) to derive everything needed from a digital elevation model and a single (at least) measurement of discharge. This package relies on GRASS, which is not included, so be sure to follow the installation instructions before proceeding.
+
+We will use the `kamp_dem` dataset provided with the `watershed` for an example. For more options on the procedure, there is also a [vignette](https://flee-group.github.io/watershed/watershed) available with the package.
+
+First we delineate the network. Here it is also important to choose a reach length to use for `flume`; we set it to 2000m. For convenience, we can also convert the GIS layer to a vector layer. It is normal for a bit of output and/or some warnings to come out of these steps.
+
+```{r delineate, message = FALSE, warning = FALSE}
+library(watershed)
+library(raster)
+library(sf)
+library(Matrix)
+library(flume)
+
+data(kamp_dem)
+kamp = delineate(kamp_dem, outlet = NA, reach_len = 2000)
+```
+
+Next, we can build the adjacency matrix. This happens in two steps: first, we build a topology for all pixels, then we derive one for the reaches. We can also use this to create a vector layer of the stream.
+
+```{r topology}
+Tp = pixel_topology(kamp)
+A = reach_topology(kamp, Tp)
+
+kv = vectorise_stream(kamp[["stream"]], Tp)
+plot(kamp_dem, col=terrain.colors(20), axes = FALSE)
+plot(st_geometry(kv), col='blue', add = TRUE)
+
+```
+
+Third we estimate discharge and hydraulic geometry for each reach. To do this, we need catchment area for each reach from the `catchment` function, as well as some calibration measurements, available in the `kamp_q` dataset.
+
+```{r discharge}
+data(kamp_q)
+kv$ca = catchment(kamp, type = 'reach', Tp = Tp)
+
+## The points must be exactly on the stream to get reliable estimates of catchment area
+kamp_q = st_snap(kamp_q, kv, tolerance=100)
+kamp_q$ca = catchment(kamp, type = "points", y = st_coordinates(kamp_q))
+
+## calibrate the discharge model and predict to the reach-level parameters
+kv = cbind(kv, hydraulic_geometry(kamp_q$ca, kamp_q$discharge, kv$ca))
+
+```
+
+Finally we can use this information together to create a `river_network` for `flume`. I use a vector of zeros as the starting values for the state at the moment; what should be used will depend on the modelling needs. We provide the startpoint of each line using the `lwgeom` package.
+
+```{r}
+layout =  st_coordinates(lwgeom::st_startpoint(kv))
+
+## flume doesn't yet support units objects, so drop the units
+kv$Q = units::drop_units(kv$Q)
+kv$z = units::drop_units(kv$z)
+kv$w = units::drop_units(kv$w)
+rn = river_network(A, discharge = kv$Q, area = kv$z*kv$w, state = matrix(kv$Q, nrow=nrow(A), ncol=1), 
+              length = 2000, layout = layout)
+plot(rn, edge.arrow.size=0, vertex.size=2, vertex.label=NA)
+
+```
 
