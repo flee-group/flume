@@ -44,9 +44,8 @@ river_network = function(adjacency, discharge, area, state, length = 1, layout, 
 
 	## by default, boundary condition is set to equal the starting state
 	if(!missing(state)) {
-		if(!is.matrix(state))
-			state = matrix(state, nrow=nrow(adjacency), ncol=1)
-		state(rn) = state
+		rn = reset_state(rn, state)
+		state = state(rn) ## reset_state will correctly format state as a matrix if needed
 		rn$boundary = function() return(state)
 	} else {
 		rn$boundary = function() return(rep(0, nrow(rn[['.adjacency']])))
@@ -121,12 +120,21 @@ site_by_species = function(x, ...)
 'site_by_species<-' = function(x, value)
 	UseMethod('site_by_species<-', x)
 
-
+#' @rdname(state)
+#' @export
+reset_state = function(x, value) {
+	if(!is.matrix(value))
+		value = matrix(value, nrow=nrow(adjacency(x)), ncol=1)
+	x[['.state']] = list()
+	state(x) = value
+	x
+}
 
 #' Setter and getter methods for river network state variables
 #' @name state
 #' @details By default, setting state will save the current state in the state history, then update current state
-#' to `value`.
+#' to `value`. `reset_state` erases the state variable and sets a new one, and does not check that the
+#' dimensions make sense. Other methods update state and do dimension checking.
 #' @param x A river network
 #' @param history Logical; if TRUE, entire state history is returned
 #' @param value The value to update the attribute with
@@ -145,6 +153,8 @@ state.river_network = function(x, history = FALSE) {
 #' @rdname state
 #' @export
 'state<-.river_network' = function(x, value) {
+	if(!is.matrix(value))
+		stop("Can only assign a matrix to state")
 	if(nrow(value) != nrow(adjacency(x)))
 		stop("nrow(value) must be equal to the number of nodes in the river network")
 

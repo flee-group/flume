@@ -62,6 +62,11 @@ test_that("River network state manipulation", {
 	expect_identical(state(rn), st + 1)
 	expect_identical(state(rn, history = TRUE)[[1]], st)
 	expect_identical(state(rn, history = TRUE)[[2]], state(rn))
+
+	# reset state
+	expect_error(rn <- reset_state(rn, 1:nrow(adj)), regex=NA)
+	expect_equal(length(state(rn, history = TRUE)), 1)
+	expect_equal(dim(state(rn, history = TRUE)[[1]]), c(nrow(adj), 1))
 })
 
 test_that("River network community matrix", {
