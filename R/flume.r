@@ -26,12 +26,20 @@ flume = function(comm, network, dt) {
 	structure(list(metacom = comm, networks = list(network), dt = dt), class="flume")
 }
 
+#' Flume river network and associated data for the Kamp River catchment in Austria
+#'
+#' @format A `list`, with members:
+#' \describe{
+#'   \item{network}{A [river_network]}
+#' }
+"kamp"
+
 
 #' Compute post simulation statistics
 #' @name flumestats
 #' @param x A [flume()]
 #' @import data.table
-#' @return A [data.table::data.table()][data.table] with the desired summary statistics
+#' @return A [data.table::data.table()] with the desired summary statistics
 #' @export
 occupancy = function(x, type = c('network', 'reach')) {
 	type = match.arg(type)

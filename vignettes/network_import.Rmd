@@ -36,7 +36,7 @@ We can use the package [watershed](https://github/com/flee-group/watershed) to d
 
 We will use the `kamp_dem` dataset provided with the `watershed` for an example. For more options on the procedure, there is also a [vignette](https://flee-group.github.io/watershed/watershed) available with the package.
 
-First we delineate the network. Here it is also important to choose a reach length to use for `flume`; we set it to 3000 m. We set the threshold for including streams relatively high in order to make the resulting network for `flume` simpler. For convenience, we can also convert the GIS layer to a vector layer. It is normal for a bit of output and/or some warnings to come out of these steps.
+First we delineate the network. Here it is also important to choose a reach length to use for `flume`; we set it to 5000 m. We set the threshold for including streams relatively high in order to make the resulting network for `flume` simpler. For convenience, we can also convert the GIS layer to a vector layer. It is normal for a bit of output and/or some warnings to come out of these steps.
 
 ```{r delineate, message = FALSE, warning = FALSE}
 library(watershed)
@@ -46,8 +46,8 @@ library(Matrix)
 library(flume)
 
 data(kamp_dem)
-thresh = 4e6
-rlen = 3000
+thresh = 5e6
+rlen = 5000
 kamp = delineate(kamp_dem, outlet = NA, reach_len = rlen, threshold = thresh)
 ```
 
@@ -95,4 +95,6 @@ rn = river_network(A, discharge = kv$Q, area = kv$z*kv$w, state = matrix(0, nrow
 plot(rn, edge.arrow.size=0, vertex.size=2, vertex.label=NA)
 
 ```
+
+This network is also available with `flume` to use in further examples, it can be loaded with `data('kamp')` and accessed with `kamp[['network']]`.
 

@@ -1,6 +1,6 @@
 Package: flume
 Title: A Model For Fluvial Meta-Ecosystems
-Version: 0.2.4
+Version: 0.2.5
 Authors@R: 
     person(given = "Matthew",
            family = "Talluto",
@@ -29,3 +29,5 @@ Suggests:
     cubature,
     lwgeom
 VignetteBuilder: knitr
+Depends: 
+    R (>= 2.10)

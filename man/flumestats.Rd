@@ -14,7 +14,7 @@ resource_summary(x)
 \item{x}{A \code{\link[=flume]{flume()}}}
 }
 \value{
-A \link[=data.table]{data.table::data.table()} with the desired summary statistics
+A \code{\link[data.table:data.table]{data.table::data.table()}} with the desired summary statistics
 }
 \description{
 Compute post simulation statistics
