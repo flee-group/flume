@@ -10,6 +10,7 @@ river_network(
   area,
   state,
   length = 1,
+  layout,
   skip_checks = FALSE
 )
 }
@@ -24,17 +25,20 @@ river_network(
 
 \item{length}{The length of each reach, must be a single value (the model assumes all reaches are the same length)}
 
+\item{layout}{Optional, matrix of x-y coordinates used for plotting the network}
+
 \item{skip_checks}{Logical; if true, no checks for valid topology will be performed}
 }
 \value{
-An S3 object of class 'river_network', with the following attributes:
+An S3 object of class 'river_network', with the following members:
 \itemize{
 \item \code{adjacency} The adjacency matrix
 \item \code{discharge} A discharge vector
 \item \code{area} Cross sectional area at each node
 \item \code{.state} The state history of the network; access with \link[=state.river_network]{state}.
-\item \code{layout} Optional, layout for plotting
 }
+
+Additionally, the \code{layout} attribute, if used, is a matrix of coordinates for plotting
 }
 \description{
 Create a river network

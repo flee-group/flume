@@ -36,7 +36,7 @@ We can use the package [watershed](https://github/com/flee-group/watershed) to d
 
 We will use the `kamp_dem` dataset provided with the `watershed` for an example. For more options on the procedure, there is also a [vignette](https://flee-group.github.io/watershed/watershed) available with the package.
 
-First we delineate the network. Here it is also important to choose a reach length to use for `flume`; we set it to 2000m. For convenience, we can also convert the GIS layer to a vector layer. It is normal for a bit of output and/or some warnings to come out of these steps.
+First we delineate the network. Here it is also important to choose a reach length to use for `flume`; we set it to 3000 m. We set the threshold for including streams relatively high in order to make the resulting network for `flume` simpler. For convenience, we can also convert the GIS layer to a vector layer. It is normal for a bit of output and/or some warnings to come out of these steps.
 
 ```{r delineate, message = FALSE, warning = FALSE}
 library(watershed)
@@ -46,7 +46,9 @@ library(Matrix)
 library(flume)
 
 data(kamp_dem)
-kamp = delineate(kamp_dem, outlet = NA, reach_len = 2000)
+thresh = 4e6
+rlen = 3000
+kamp = delineate(kamp_dem, outlet = NA, reach_len = rlen, threshold = thresh)
 ```
 
 Next, we can build the adjacency matrix. This happens in two steps: first, we build a topology for all pixels, then we derive one for the reaches. We can also use this to create a vector layer of the stream.
@@ -68,8 +70,11 @@ data(kamp_q)
 kv$ca = catchment(kamp, type = 'reach', Tp = Tp)
 
 ## The points must be exactly on the stream to get reliable estimates of catchment area
+## We drop anything with a catchment area below the threshold we used to make the network
+## These points were on small streams and aren't useful for our purposes
 kamp_q = st_snap(kamp_q, kv, tolerance=100)
 kamp_q$ca = catchment(kamp, type = "points", y = st_coordinates(kamp_q))
+kamp_q = subset(kamp_q, ca >= thresh)
 
 ## calibrate the discharge model and predict to the reach-level parameters
 kv = cbind(kv, hydraulic_geometry(kamp_q$ca, kamp_q$discharge, kv$ca))
@@ -85,7 +90,7 @@ layout =  st_coordinates(lwgeom::st_startpoint(kv))
 kv$Q = units::drop_units(kv$Q)
 kv$z = units::drop_units(kv$z)
 kv$w = units::drop_units(kv$w)
-rn = river_network(A, discharge = kv$Q, area = kv$z*kv$w, state = matrix(kv$Q, nrow=nrow(A), ncol=1), 
+rn = river_network(A, discharge = kv$Q, area = kv$z*kv$w, state = matrix(0, nrow=nrow(A), ncol=1), 
               length = 2000, layout = layout)
 plot(rn, edge.arrow.size=0, vertex.size=2, vertex.label=NA)
 

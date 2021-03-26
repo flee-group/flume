@@ -56,8 +56,9 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 	args$x = igraph::graph_from_adjacency_matrix(adjacency(x), mode = "directed")
 
 	## weight the plot by discharge for the UPSTREAM node
-	wt = discharge(x)[Matrix::which(adjacency(x) != 0, arr.ind = TRUE)[,1]]
-#	wt = discharge(x)[2:nrow(adjacency(x))]
+	up_nodes = as.integer(igraph::ends(args$x, igraph::E(args$x))[,1])
+	wt = discharge(x)[up_nodes]
+
 	args$edge.width = (wt / max(wt)) * args$edge.width
 	if(!("layout" %in% args) && "layout" %in% names(attributes(x)))
 		args$layout = attr(x, "layout")

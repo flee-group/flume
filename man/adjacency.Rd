@@ -4,12 +4,10 @@
 \alias{adjacency}
 \title{River network adjacency matrix}
 \usage{
-adjacency(x, weighted = FALSE)
+adjacency(x)
 }
 \arguments{
 \item{x}{A river network}
-
-\item{weighted}{boolean, default to FALSE, if true returns the weighted adjacency matrix}
 }
 \value{
 A matrix Y, such that non-zero values in Y\link{i,j} indicate flow from i to j

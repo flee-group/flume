@@ -1,6 +1,6 @@
 Package: flume
 Title: A Model For Fluvial Meta-Ecosystems
-Version: 0.2.3
+Version: 0.2.4
 Authors@R: 
     person(given = "Matthew",
            family = "Talluto",
@@ -15,6 +15,7 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Imports:
+    Matrix (>= 1.2),
     data.table (>= 1.12)
 Suggests: 
     ggplot2 (>= 3.3),
@@ -23,8 +24,8 @@ Suggests:
     rmarkdown,
     vdiffr,
     igraph (>= 1.2),
-    Matrix (>= 1.2),
     scales (>= 1.1),
     mvtnorm,
-    cubature
+    cubature,
+    lwgeom
 VignetteBuilder: knitr

@@ -16,7 +16,7 @@ ce_gaussian(parm)
 \arguments{
 \item{parm}{Parameter list, a named list containing parameters for the c/e functions; see 'details'}
 
-\item{x}{state variable matrix; input for c/e functions; one row per site, one column per variable}
+\item{x}{state variable matrix; input for c/e functions; one row per site, one column per variable.}
 }
 \value{
 For c/e functions, a vector of colonisation/extinction rates with length == \code{nrow(x)}
