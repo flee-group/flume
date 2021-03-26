@@ -1,0 +1,36 @@
+---
+title: "Creating metacommunities"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Creating metacommunities}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(flume)
+```
+
+
+The metacommunity is one of the two main components for creating a `flume` model. It describes the collection of species that can occur in the model, including all of their traits related to the niche, species interactions, and dispersal.
+
+For all pieces of information that are required, there is also default behaviour. In this way, a metacommunity can be generated with real species in mind, or completely randomly, or something in between. It is useful to check out the help file to understand the defaults for the various options.
+
+## Niche shape
+
+The niche contains two components, a colonisation and an extinction function. Currently, the only implemented shape is a `gaussian` colonisation function and a `constant` extinction function. Each of them have parameters:
+
+### Gaussian
+  * scale: the maximum value of the curve
+  * location: where on the resource axis the peak of the curve is
+  * width: How broad (i.e., the standard deviation of the gaussian function)
+  
+### Constant
+  * scale: the height of the function

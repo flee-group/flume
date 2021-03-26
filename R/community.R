@@ -1,4 +1,72 @@
-#' Greate a community for simulations
+#' Create a metacommunity
+#' @param par_c A list of colonisation function parameters, see 'details'
+#' @param par_e A list of extinction function parameters, see 'details'
+#' @param alpha A vector, active dispersal ability for each species
+#' @param beta A vector, passive dispersal ability for each species
+
+#' @details The parameter lists `par_c` and `par_e` should be lists of matrices, with names
+#' corresponding to the colonisation/extinction functions. For example, for the "gaussian" colonisation
+#' function (the only one presently implemented), `par_c` must contain a matrices named `scale`,
+#' `location`, and `width`. For the "constant" function, a `scale` matrix is required.
+#'
+#' These matrices have 1 row per species in the metacommunity, and one column per niche axis. At a minimum
+#' the `location` parameter in `par_c` must have a unique value for all species and resources. All other
+#' parameters can be specified with a single value, in which case it will be repeated for all species,
+#' or they can be missing, in which case a default value will be used.
+#' @return A metacommunity object
+metacommunity = function(par_c, par_e, alpha = 0.05, beta = 0.5) {
+	comm = structure(list(), class = "metacommunity")
+
+	## dim checking
+	nsp = nrow(par_c[['location']])
+	nrx = ncol(par_c[['location']])
+	par_c = .check_par_c(par_c)
+	if(missing(par_e))
+		par_e = list(scale = 0.2)
+	par_e = .check_par_e(par_e, nsp, nrx)
+	if(length(alpha) != 1 && length(alpha) != nsp)
+		stop("alpha must have length 1 or length equal to the number of species")
+	if(length(beta) != 1 && length(beta) != nsp)
+		stop("beta must have length 1 or length equal to the number of species")
+
+}
+
+#' Check and fix dimensions for parameters
+#' @name check_par_c
+#' @keywords internal
+.check_par_c = function(p) {
+	nsp = nrow(p[['location']])
+	nrx = ncol(p[['location']])
+	if(!('width' %in% names(p))) {
+		p[['width']] = matrix(0.5, nrow = nsp, ncol = nrx)
+	} else if(length(p[['width']]) == 1) {
+		p[['width']] = matrix(p[['width']], nrow = nsp, ncol = nrx)
+	} else if(!all.equal(dim(p[['width']]), c(nsp, nrx))) {
+		stop("Niche parameters must be missing, a single value, or have the same dimensions as location")
+	}
+	if(!('scale' %in% names(p))) {
+		p[['scale']] = matrix(0.5, nrow = nsp, ncol = nrx)
+	} else if(length(p[['scale']]) == 1) {
+		p[['scale']] = matrix(p[['scale']], nrow = nsp, ncol = nrx)
+	} else if(!all.equal(dim(p[['scale']]), c(nsp, nrx))) {
+		stop("Niche parameters must be missing, a single value, or have the same dimensions as location")
+	}
+	p
+}
+
+
+#' @name check_par_e
+#' @keywords internal
+.check_par_e = function(p, nsp, nrx) {
+	if(length(p[['scale']]) == 1) {
+		p[['scale']] = matrix(p[['scale']], nrow = nsp, ncol = nrx)
+	} else if(!all.equal(dim(p[['scale']]), c(nsp, nrx))) {
+		stop("Niche parameters must be missing, a single value, or have the same dimensions as location")
+	}
+	p
+}
+
+#' Create a community for simulations
 #' @details The `r_scale` parameter must either be a single value (in which case it is repeated for all species/resources),
 #' a vector of length equal to `nx` (allowing all species to have identical effects, but that differ by resource),
 #' or a matrix with nrow == n_species and ncol == nx
@@ -22,7 +90,7 @@
 #' comm = community()
 #' plot(comm)
 #' @export
-metacommunity = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, nx), r_scale = 0.05, alpha = 0,
+metacommunity_old = function(n_species = 2, nx = 1, xmin = rep(0, nx), xmax=rep(1, nx), r_scale = 0.05, alpha = 0,
 					beta = 0.5, ...) {
 	comm = structure(list(), class = "metacommunity")
 
@@ -157,10 +225,10 @@ dispersal_params = function(x) {
 #' The resource use function is set automatically by default, but can be set to an arbitrary function; see
 #' [resource use functions][ruf()] for details on how this function should behave.
 #'
-#' @param c_type Form of [colonisation function][ce_funs]
-#' @param e_type Form of [extinction function][ce_funs]
-#' @param c_par Named parameter list; constant parameters to include in the c/e functions, see [colonisation functions][ce_funs]
-#' @param e_par Named parameter list; constant parameters to include in the c/e functions, see [extinction functions][ce_funs]
+#' @param par_c Named parameter list; constant parameters to include in the c/e functions,
+#'      see [colonisation functions][ce_funs]
+#' @param par_e Named parameter list; constant parameters to include in the c/e functions,
+#'      see [extinction functions][ce_funs]
 #' @param alpha Active dispersal ability
 #' @param beta Passive dispersal ability
 #' @return An S3 object of class 'species', which contains the following named elements:
@@ -171,27 +239,29 @@ dispersal_params = function(x) {
 #'       `alpha`: Active dispersal ability
 #'       `beta`: Passive dispersal ability
 #' @examples
-#' sp = flume:::species('linear', 'constant', list(a=0, b=1), e_par = list(scale = 0.2))
+#' sp = flume:::species(par_c = list(center = 0, scale = 1, width = 0.5), par_e = list(scale = 0.2))
 #' plot(sp)
 #' @export
-species = function(c_type, e_type, c_par, e_par, alpha=0, beta=0) {
+species = function(par_c, par_e, alpha=0, beta=0) {
+	c_type = "gaussian"
+	e_type = "constant"
 	x = structure(list(), class = "species")
 	x$col = switch(c_type,
-				   "constant" = ce_constant(c_par),
-				   "linear" = ce_linear(c_par),
-				   "gaussian" = ce_gaussian(c_par),
+				   "constant" = ce_constant(par_c),
+				   "linear" = ce_linear(par_c),
+				   "gaussian" = ce_gaussian(par_c),
 				   stop("unknown colonisation function type:", c_type)
 	)
 
 	x$ext = switch(e_type,
-				   "constant" = ce_constant(e_par),
-				   "linear" = ce_linear(e_par),
+				   "constant" = ce_constant(par_e),
+				   "linear" = ce_linear(par_e),
 				   "gaussian" = stop('gaussian extinction functions not recommended'),
 				   stop("unknown extinction function type:", e_type)
 	)
 
-	x$c_par = c_par
-	x$e_par = e_par
+	x$c_par = par_c
+	x$e_par = par_e
 	x$alpha = alpha
 	x$beta = beta
 
