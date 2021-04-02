@@ -4,23 +4,10 @@
 #' @details Colonisation/extinction functions take a number of forms. Each form has its own
 #' set of parameters that are provided when the function is created (e.g., when creating a species).
 #' These functions represent the niche of a species, so the parameters are fixed.
-#'
-#' Regardless of their form, the functions all have the same signature.
-#'
-#' The parameter lists contain different named items depending on the type of function
-#'
-#' * 'constant'
-#'      - `scale`: the height of the function
-#' * 'linear'
-#'      - `a`: the y-intercept
-#'      - `b`: the slope
-#' * 'gaussian'
-#'      - `scale`: the maximum value of the curve
-#'      - `mean`: the centre of the curve, x-value where y == `scale`
-#'      - `sd`: the width of the curve
-#'
 #' @param x state variable matrix; input for c/e functions; one row per site, one column per variable.
-#' @param parm Parameter list, a named list containing parameters for the c/e functions; see 'details'
+#' @param location Location optimum for functions with an optimum
+#' @param breadth Breadth of the function (e.g., standard deviation or vcv matrix for gaussian)
+#' @param scale Height of the col/ext function
 #'
 #' @return For c/e functions, a vector of colonisation/extinction rates with length == `nrow(x)`
 #' For all others, a c/e function of the desired form
@@ -35,27 +22,23 @@ ce_linear = function(parm) {
 }
 
 #' @rdname ce_funs
-ce_constant = function(parm) {
-	if(!'scale' %in% names(parm))
-		stop("constant functions require named parameter 'scale'")
+ce_constant = function(scale) {
 	function(x) {
 		if(!is.matrix(x))
-		   x = matrix(x, ncol = length(parm))
-		return(rep(parm$scale, nrow(x)))
+		   x = matrix(x, ncol = 1)
+		return(rep(scale, nrow(x)))
 	}
 }
 
 #' @rdname ce_funs
-ce_gaussian = function(parm) {
-	if(!'scale' %in% names(parm) || !'mean' %in% names(parm) || !'sd' %in% names(parm))
-		stop("gaussian functions require named parameters 'scale', 'mean', and 'sd'")
-	if(length(parm$mean) == 1) {
-		return(function(x) parm$scale * exp(-((x - parm$mean)^2)/(2 * parm$sd^2)))
+ce_gaussian = function(location, breadth, scale) {
+	if(length(location) == 1) {
+		return(function(x) scale * exp(-((x - location)^2)/(2 * breadth^2)))
 	} else {
 		if(!requireNamespace("mvtnorm", quietly = TRUE))
 			stop("Multidimensional niches require the 'mvtnorm' and 'cubature' packages")
-		return(function(x) parm$scale * mvtnorm::dmvnorm(x, parm$mean, parm$sd) /
-			   	mvtnorm::dmvnorm(parm$mean, parm$mean, parm$sd))
+		return(function(x) scale * mvtnorm::dmvnorm(x, location, width) /
+			   	mvtnorm::dmvnorm(location, location, width))
 	}
 
 }

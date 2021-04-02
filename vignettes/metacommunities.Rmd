@@ -25,7 +25,7 @@ For all pieces of information that are required, there is also default behaviour
 
 ## Niche shape
 
-The niche contains two components, a colonisation and an extinction function. Currently, the only implemented shape is a `gaussian` colonisation function and a `constant` extinction function. Each of them have parameters:
+The niche contains two components, a colonisation and an extinction function. Currently, the only implemented shape is a `gaussian` colonisation function and a `constant` extinction function. Each of them has parameters:
 
 ### Gaussian
   * scale: the maximum value of the curve
