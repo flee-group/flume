@@ -9,12 +9,16 @@
 \usage{
 ce_linear(parm)
 
-ce_constant(parm)
+ce_constant(scale)
 
-ce_gaussian(parm)
+ce_gaussian(location, breadth, scale)
 }
 \arguments{
-\item{parm}{Parameter list, a named list containing parameters for the c/e functions; see 'details'}
+\item{scale}{Height of the col/ext function}
+
+\item{location}{Location optimum for functions with an optimum}
+
+\item{breadth}{Breadth of the function (e.g., standard deviation or vcv matrix for gaussian)}
 
 \item{x}{state variable matrix; input for c/e functions; one row per site, one column per variable.}
 }
@@ -29,27 +33,6 @@ Colonisation and extinction functions
 Colonisation/extinction functions take a number of forms. Each form has its own
 set of parameters that are provided when the function is created (e.g., when creating a species).
 These functions represent the niche of a species, so the parameters are fixed.
-
-Regardless of their form, the functions all have the same signature.
-
-The parameter lists contain different named items depending on the type of function
-\itemize{
-\item 'constant'
-\itemize{
-\item \code{scale}: the height of the function
-}
-\item 'linear'
-\itemize{
-\item \code{a}: the y-intercept
-\item \code{b}: the slope
-}
-\item 'gaussian'
-\itemize{
-\item \code{scale}: the maximum value of the curve
-\item \code{mean}: the centre of the curve, x-value where y == \code{scale}
-\item \code{sd}: the width of the curve
-}
-}
 }
 \examples{
 fun = ce_linear(parm=list(a=0, b = 1))

@@ -20,22 +20,22 @@ A matrix of the same dimensions as \code{R} giving the rate of change of each re
 Generate a resource use function
 }
 \details{
-Resource use functions describe the impact a species has on the state of a location. This impact will commonly
-be zero (for static habitat features, for example), but for many resources (e.g., nutrient concentrations)
-the result will be negative (i.e., species deplete resources).
+Resource use functions describe the impact a species has on the state of a location.
+This impact will commonly be zero (for static habitat features, for example), but for many
+resources (e.g., nutrient concentrations) the result will be negative (i.e., species deplete resources).
 
-This function is intended as an example, and can be replaced with a user-defined function. The function must take
-a site by species matrix and a resource state matrix as its first two arguments, and it must return a matrix
-with the same dimensions as R giving the instantaneous rate of change in each resource. The units must match
-whatever is being used for the reaction-transport portion of the model; often something like
-$g-Resource L^{-1} min^{-1}$.
+This function is intended as an example, and can be replaced with a user-defined function.
+The function must take a site by species matrix and a resource state matrix as its first two
+arguments, and it must return a matrix with the same dimensions as R giving the instantaneous
+rate of change in each resource. The units must match whatever is being used for the
+reaction-transport portion of the model; often something like $g-Resource L^{-1} min^{-1}$.
 
-The default behaviour is for species to consume more resources the closer they are to the niche optimum. This is done
-by computing the value of the niche at the current concentration (\code{sp$col(R) - sp$ext(R)}) and taking the ratio with
-the \code{niche_max} attribute (note that for linear niches, this value can exceed one if resource concentrations grow
-beyond the original definition). This ratio is then multiplied by the \code{r_scale} to get the rate of change. This
-leads to a convenient definition of the scale, which is the number of units of resources depleted by a species at its
-maximum growth, per unit time.
+The default behaviour is for species to consume more resources the closer they are to the
+niche optimum. This is done by computing the value of the niche at the current concentration
+(\code{sp$col(R) - sp$ext(R)}) using \code{\link[=f_niche]{f_niche()}} and taking the ratio with the \code{niche_max} attribute
+for each species. This ratio is then multiplied by the \code{r_scale} of each species to get the rate
+of change. This leads to a convenient definition of the r_scale, which is the number of units
+of resources depleted by a species at its maximum growth, per unit time.
 }
 \examples{
 comm = metacommunity()

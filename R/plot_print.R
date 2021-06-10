@@ -107,26 +107,31 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 #' @param axis Which resource axis (i.e., column in R) to plot along
 #' @export
 plot.metacommunity = function(x, R, axis = 1, ...) {
-	x = x$species
-	if(missing(R)) R = matrix(seq(0, 1, length.out=50), ncol=1)
-	ypl = lapply(x, function(sp) sp$col(R) - sp$ext(R))
+	if(missing(R)) {
+		res = 100
+		R = matrix(0, nrow = res, ncol = nrow(attr(x, "niche_lim")))
+		R[, axis] = seq(attr(x, "niche_lim")[axis, 1], attr(x, "niche_lim")[axis, 2],
+			length.out = res)
+	}
+	ypl = lapply(x$species, function(sp) f_niche(sp, R))
 	yl = c(0, max(unlist(ypl)))
 
 	# colours from colorbrewer
-	cols = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6")
-	if(length(cols) > length(x))
-		cols = cols[1:length(x)]
+	cols = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", 
+		"#ff7f00", "#cab2d6")
+	if(length(cols) > length(x$species))
+		cols = cols[1:length(x$species)]
 
 	args = .default_plot_pool_options(...)
 	args$x = 0
 	args$y = 0
-	args$xlim = range(R[,axis])
+	args$xlim = range(R[, axis])
 	args$ylim = yl
-	par(mar = c(5,4,4,6))
+	par(mar = c(5, 4, 4, 6))
 	do.call(plot, args)
 
 	.make_line = function(y, col, args) {
-		args$x = R[,axis]
+		args$x = R[, axis]
 		args$y = y
 		args$col = col
 		args$type = 'l'
@@ -136,11 +141,21 @@ plot.metacommunity = function(x, R, axis = 1, ...) {
 
 	xpd = par()$xpd
 	par(xpd = TRUE)
-	legend("topright", legend = 1:length(x), col = cols, title = "species",
-		   lty = args$lty, lwd = args$lwd, bty = "n", inset=c(-0.15,0), cex=0.7)
+	legend("topright", legend = attr(x, "spnames"), col = cols, title = "species",
+		   lty = args$lty, lwd = args$lwd, bty = "n", inset = c(-0.15, 0), cex = 0.7)
 	par(xpd = xpd)
 
 }
+
+
+### ggplot competition plot; make other plot ggplot to be able to put onto a single plot
+comp = x$competition
+comp[upper.tri(comp)] = NA
+comp = reshape2::melt(comp)
+comp = comp[complete.cases(comp),]
+colnames(comp) = c("sp1", "sp2", "competition")
+ggplot2::ggplot(comp) + ggplot2::geom_tile(ggplot2::aes(x = sp1, y = sp2, fill = competition)) + 
+	ggplot2::scale_fill_viridis_c()
 
 
 #' Plot species niches

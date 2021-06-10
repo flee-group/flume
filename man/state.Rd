@@ -28,5 +28,6 @@ Setter and getter methods for river network state variables
 }
 \details{
 By default, setting state will save the current state in the state history, then update current state
-to \code{value}.
+to \code{value}. \code{reset_state} erases the state variable and sets a new one, and does not check that the
+dimensions make sense. Other methods update state and do dimension checking.
 }

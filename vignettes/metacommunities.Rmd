@@ -15,17 +15,24 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-library(flume)
+# library(flume)
+devtools::load_all()  # for dev, remove when stable version done
 ```
 
 
-The metacommunity is one of the two main components for creating a `flume` model. It describes the collection of species that can occur in the model, including all of their traits related to the niche, species interactions, and dispersal.
+The metacommunity is one of the two main components for creating a `flume` model. It describes the 
+collection of species that can occur in the model, including all of their traits related to the 
+niche, species interactions, and dispersal.
 
-For all pieces of information that are required, there is also default behaviour. In this way, a metacommunity can be generated with real species in mind, or completely randomly, or something in between. It is useful to check out the help file to understand the defaults for the various options.
+For all pieces of information that are required, there is also default behaviour. In this way, a 
+metacommunity can be generated with real species in mind, or completely randomly, or something in 
+between. It is useful to check out the help file to understand the defaults for the various options.
 
 ## Niche shape
 
-The niche contains two components, a colonisation and an extinction function. Currently, the only implemented shape is a `gaussian` colonisation function and a `constant` extinction function. Each of them has parameters:
+The niche contains two components, a colonisation and an extinction function. Currently, the only 
+implemented shape is a `gaussian` colonisation function and a `constant` extinction function. Each 
+of them has parameters:
 
 ### Gaussian
   * scale: the maximum value of the curve
@@ -34,3 +41,46 @@ The niche contains two components, a colonisation and an extinction function. Cu
   
 ### Constant
   * scale: the height of the function
+
+These parameters can be specified to vary by species, vary by resource axis, or both, and to have 
+orthogonal or covarying resource axes. The help file explains how to provide each of these cases.
+
+
+## Dispersal parameters
+
+Species can disperse in the river network in two ways. **Active dispersal**, controlled by a
+parameter `alpha`, indicates the ability of a species to move under its own power; active dispersal
+occurs along the stream, in both up- and down-stream directions. Passive dispersal that occurs
+when one species is transported by another species should also be included in `alpha`. **Passive
+dispersal** is dispersal with the flow of water, and only occurs downstream. It is specified with a
+parameter `beta`. Both `alpha` and  `beta` can be a scalar (all species have the same disperal
+ability) or a vector with one entry per species.
+
+
+## Resource use
+
+A single parameter, `r_scale`, controls the resource use of species. Generally speaking, species 
+consume resources faster closer to their niche optimum, scaled by this parameter. Like the niche
+parameters, resource use can vary by species, resource, or both.
+
+
+## Generating metacommunities
+
+### Creating metacommunities by hand
+
+Here we generate a metacommunity for algae by hand. *nb use the stuff from the thomas_flume_ex.r*
+
+```{r algae}
+# niche locations
+niche_loc = c(ASV_4 = 200.51879, ASV_5 = 200.51879, ASV_17 = 139.15023, ASV_63 = 18.47656,
+	ASV_67 = 414.07093)
+
+# niche widths
+niche_wid = c(ASV_4 = 164.629301, ASV_5 = 164.629301, ASV_17 = 102.373506, ASV_63 = 3.765155,
+	ASV_67 = 160.079609)
+
+mc = metacommunity(niche_loc, niche_wid, niche_lim = c(0, 650))
+```
+
+
+### Creating metacommunities using scenarios

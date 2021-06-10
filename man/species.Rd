@@ -4,44 +4,55 @@
 \alias{species}
 \title{Creates species}
 \usage{
-species(c_type, e_type, c_par, e_par, alpha = 0, beta = 0)
+species(location, breadth, scale_c, scale_e, alpha, beta, r_scale)
 }
 \arguments{
-\item{c_type}{Form of \link[=ce_funs]{colonisation function}}
+\item{location}{Location of the niche optimum; one per niche axis}
 
-\item{e_type}{Form of \link[=ce_funs]{extinction function}}
+\item{breadth}{Niche breadth, or variance-covariance matrix for multivariate}
 
-\item{c_par}{Named parameter list; constant parameters to include in the c/e functions, see \link[=ce_funs]{colonisation functions}}
+\item{scale_c}{Scale of the colonisation portion of the niche}
 
-\item{e_par}{Named parameter list; constant parameters to include in the c/e functions, see \link[=ce_funs]{extinction functions}}
+\item{scale_e}{Scale of the extinction portion of the niche}
 
 \item{alpha}{Active dispersal ability}
 
 \item{beta}{Passive dispersal ability}
+
+\item{r_scale}{Resource use scaling parameter, one per niche axis}
 }
 \value{
 An S3 object of class 'species', which contains the following named elements:
-\code{col}: The colonisation function, takes a state matrix R and returns a vector of colonisation rates
-\code{ext}: The extinction function
-\code{c_par}: colonisation niche parameters
-\code{e_par}: extinction niche parameters
-\code{alpha}: Active dispersal ability
-\code{beta}: Passive dispersal ability
+\itemize{
+\item \code{col}: The colonisation function, takes a state matrix R and returns a vector of
+colonisation rates
+\item \code{ext}: The extinction function
+\item \code{par_c}: colonisation niche parameters
+\item \code{par_e}: extinction niche parameters
+\item \code{alpha}: Active dispersal ability
+\item \code{beta}: Passive dispersal ability
+\item \code{r_use}: Resource use rate per niche axis
+}
+
+Additionally, the following attributes:
+\itemize{
+\item \code{niche_max}: the maximum possible value of the fundamental niche
+}
 }
 \description{
 Creates species
 }
 \details{
-Creates a species, which is defined by its niche parameters and its colonisation/extinction functions
+Creates a species, which is defined by its niche parameters and its
+colonisation/extinction functions.
 
 Note that for gaussian functions in multiple variables, \code{scale} is always a scalar, but
-\code{mean} must be a location vector of length \code{nx}, and \code{sd} must be a variance covariance matrix
-with \code{dim=c(nx,nx)}.
+\code{location} must be a location vector of length \code{nx}, and \code{width} must be a variance covariance
+matrix with \code{dim=c(nx,nx)}.
 
-The resource use function is set automatically by default, but can be set to an arbitrary function; see
-\link[=ruf]{resource use functions} for details on how this function should behave.
+The resource use function is set automatically by default, but can be set to an arbitrary
+function; see \link[=ruf]{resource use functions} for details on how this function should behave.
 }
 \examples{
-sp = flume:::species('linear', 'constant', list(a=0, b=1), e_par = list(scale = 0.2))
-plot(sp)
+NULL
 }

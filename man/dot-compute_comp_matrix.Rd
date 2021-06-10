@@ -7,7 +7,7 @@
 .compute_comp_matrix(sp, xmin, xmax)
 }
 \arguments{
-\item{sp}{A \code{\link[=species_pool]{species_pool()}}}
+\item{sp}{A list of \code{\link[=species]{species()}}}
 
 \item{xmin}{The minimum for integration}
 

@@ -2,59 +2,98 @@
 % Please edit documentation in R/community.R
 \name{metacommunity}
 \alias{metacommunity}
-\title{Greate a community for simulations}
+\title{Create a metacommunity}
 \usage{
 metacommunity(
-  n_species = 2,
-  nx = 1,
-  xmin = rep(0, nx),
-  xmax = rep(1, nx),
-  r_scale = 0.05,
-  alpha = 0,
+  location,
+  breadth = 1,
+  scale_c = 0.5,
+  scale_e = 0.2,
+  alpha = 0.05,
   beta = 0.5,
-  ...
+  r_scale = 0.05
 )
 }
 \arguments{
-\item{n_species}{The number of species}
+\item{location}{Location parameter for the niche, see 'details'.}
 
-\item{nx}{The number of niche axes}
+\item{breadth}{Niche breadth, see 'details'.}
 
-\item{xmin}{Vector, length=nx, the minimum values for each resource for scaling the fitness functions}
+\item{scale_c}{Niche height for colonisation, see 'details'.}
 
-\item{xmax}{Vector, length=nx, the maximum values for each resource for scaling the fitness functions}
+\item{scale_e}{Niche height for extinction, see 'details'.}
 
-\item{r_scale}{Scales for \link[=ruf]{resource use functions}, see 'details'}
+\item{alpha}{A scalar or a vector, active dispersal ability for each species}
 
-\item{alpha}{Active dispersal ability for each species}
+\item{beta}{A scalar or a vector, passive dispersal ability for each species}
 
-\item{beta}{Passive dispersal ability for each species}
-
-\item{...}{Additional parameters to pass to \code{\link[=species_pool]{species_pool()}}}
+\item{r_scale}{Resource use scaling parameter, see 'details}
 }
 \value{
-An object of class \code{community}, with the following items:
-\itemize{
-\item \code{species} a \link[=species_pool]{species pool}
-\item \code{competition} a \code{\link[=competition]{competition()}} matrix
-}
-
-Additionally, the following attributes:
-\itemize{
-\item \code{niche_max} the maximum value of the niche along the x interval given
-\item \code{xmin} the minimum value of the environmental gradient
-\item \code{xmax} the maximum value of the environmental gradient
-}
+A metacommunity object
 }
 \description{
-Greate a community for simulations
+Create a metacommunity
 }
 \details{
-The \code{r_scale} parameter must either be a single value (in which case it is repeated for all species/resources),
-a vector of length equal to \code{nx} (allowing all species to have identical effects, but that differ by resource),
-or a matrix with nrow == n_species and ncol == nx
+The metacommunity describes the possible biological space for a \code{flume} model. It
+consists of a few named elements:
+\itemize{
+\item \code{species}: a list of \code{\link[=species]{species()}} objects, describing the niche and dispersal parameters
+for each possible species
+\item \code{competition}: A square species interaction matrix describing the effect of each species
+on each other species; generated using the overlap between species'
+\href{f_niche.species()}{fundamental niches}.
+\item \code{boundary}: A function that returns a site by species matrix giving the colonisation flux
+from outside the river network; by default returns zero for all sites/species.
+}
+
+Each species' fundamental niche is defined as the difference between a Gaussian colonisation
+function and a constant extinction function; a species will be present when c - e > 0.
+Niches can be automatically generated (see \code{\link[=generate_niches]{generate_niches()}}; alternatively, to specify
+the parameters manually, the following can be specified.
+
+\code{location}: Required; the location of the niche optimum for each species-resource combination.
+Must be a matrix with one row per species (\code{nsp}), one column per niche axis (\code{nrx}). For a
+single niche axis, a vector with one entry per species is also accepted. The location is the
+mean of the Gaussian colonisation function.
+
+\code{scale_c}, \code{scale_e}: The (relative) height of the Gaussian colonisation function or
+the constant extinction function, must be a positive real number.
+Can be supplied as a scalar (all species have the same scale) or a vector of length \code{nsp}.
+If missing a default value of 0.5 (for colonisation) or 0.2 (for extinction) will be used.
+
+\code{breadth}: Optional, niche breadth; standard deviation of the Gaussian colonisation function;
+larger values indicate species can occur in a wider variety of environments. For a single
+niche dimension, either a scalar (all species have the same breadth) or a vector of length \code{nsp}.
+For multivariate niches, the following are possible:
+\itemize{
+\item A \strong{scalar}: all species have the same breadth in each niche dimension
+\item A \strong{vector} of length \code{nsp}: each species has a different breadth, but breadth is the same
+for each niche axis.
+\item A \strong{vector} of length \code{nrx}: niche breadth varies by axis, but all species have the same
+breadth for each niche axis. If \code{nrx == nsp}, then this option is not possible, instead the
+former applies.
+\item A \strong{matrix} of \code{nsp} rows and \code{nrx} columns: each species-resource combo has a unique
+breadth, but all resources are orthogonal. In other words, performance for a given resource
+cannot depend on the concentration of any other resource.
+\item A \strong{list} of length \code{nsp}, each element is a square symmetric \code{nrx} by \code{nrx} matrix. Similar
+to the matrix above, but a full variance-covariance matrix is supplied for each species,
+describing the breadth of the niche along each axis but also how the axes covary.
+}
+
+Dispersal parameters are \code{alpha} and \code{beta}, for specifying active (i.e., either up- or
+downstream) or passive (downstream only) dispersal, respectively. These can either be a scalar,
+in which case all species have the same dispersal ability, or a vector of length \code{nsp}.
+
+Resource use by each species can be scaled using the \code{r_scale} parameter; larger values indicate
+faster consumption of resources, see \code{\link[=ruf]{ruf()}} for more details. This can be a scalar (all species
+consume all resources at the same rate relative to niche position), a vector of length \code{nsp}
+(species behave differently, but all resources within species are consumed identically),
+a vector of length \code{nrx} (all species have identical behaviour, but each resource is consumed at
+a different rate), or a matrix with \code{nsp} rows and \code{nrx} columns. Note that immutable niche axes
+(see \code{\link[=river_network]{river_network()}}) ignore this parameter.
 }
 \examples{
-comm = community()
-plot(comm)
+NULL
 }
