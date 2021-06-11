@@ -19,7 +19,6 @@ knitr::opts_chunk$set(
 devtools::load_all()  # for dev, remove when stable version done
 ```
 
-
 The metacommunity is one of the two main components for creating a `flume` model. It describes the 
 collection of species that can occur in the model, including all of their traits related to the 
 niche, species interactions, and dispersal.
@@ -68,19 +67,23 @@ parameters, resource use can vary by species, resource, or both.
 
 ### Creating metacommunities by hand
 
-Here we generate a metacommunity for algae by hand. *nb use the stuff from the thomas_flume_ex.r*
+Here we generate by hand a metacommunity for algae using N:P ratio. We know little about dispersal,
+nor about resource use, so for the moment we use the defaults and focus on defining the niche shape.
 
-```{r algae}
+If we add names to the location vector, these will be used in the resulting metacommunity for 
+plotting and other output.
+
+```{r algae, fig.width = 9, fig.height = 3.5}
 # niche locations
-niche_loc = c(ASV_4 = 200.51879, ASV_5 = 200.51879, ASV_17 = 139.15023, ASV_63 = 18.47656,
-	ASV_67 = 414.07093)
+niche_loc = matrix(c(200.51879,  200.51879, 139.15023, 18.47656, 414.07093), ncol = 1,
+	dimnames = list(c("ASV_4", "ASV_5", "ASV_17", "ASV_63", "ASV_67"), "N:P"))
 
 # niche widths
-niche_wid = c(ASV_4 = 164.629301, ASV_5 = 164.629301, ASV_17 = 102.373506, ASV_63 = 3.765155,
-	ASV_67 = 160.079609)
+niche_wid = c(164.629301, 164.629301, 102.373506, 3.765155, 160.079609)
+names(niche_wid) = rownames(niche_loc) ## optional
 
 mc = metacommunity(niche_loc, niche_wid, niche_lim = c(0, 650))
+plot(mc, res = 2000)
 ```
-
 
 ### Creating metacommunities using scenarios

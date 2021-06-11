@@ -37,8 +37,8 @@ ce_gaussian = function(location, breadth, scale) {
 	} else {
 		if(!requireNamespace("mvtnorm", quietly = TRUE))
 			stop("Multidimensional niches require the 'mvtnorm' and 'cubature' packages")
-		return(function(x) scale * mvtnorm::dmvnorm(x, location, width) /
-			   	mvtnorm::dmvnorm(location, location, width))
+		return(function(x) scale * mvtnorm::dmvnorm(x, location, breadth) /
+			   	mvtnorm::dmvnorm(location, location, breadth))
 	}
 
 }

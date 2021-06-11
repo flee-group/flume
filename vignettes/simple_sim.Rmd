@@ -8,45 +8,48 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(fig.width=5.5, fig.height=5.5, collapse = TRUE, comment = "##")
+knitr::opts_chunk$set(fig.width = 5.5, fig.height = 5.5, collapse = TRUE, comment = "##")
 
 library(flume)
 library(igraph)
 ```
 
 
-Here we demonstrate the model using a simple simulation with generated data. There are several essential components:
+Here we demonstrate the model using a simple simulation with generated data. There are several 
+essential components:
 
-1. A `metacommunity` object, which describes all the possible species that can occur in the simulation, gives their niches, and includes the pairwise competition strength
-2. A `river_network`, which describes the topology of the network and gives other important attributes, such as discharge.
-3. State variables; these are (mostly) dynamic attributes describing the state of the model at a given time. 
-4. Boundary conditions: input, both to the biological community (via immigration from the surrounding landscape) and to the resources (via terrestrial runoff, groundwater intrusion, etc).
+1. A `metacommunity` object, which describes all the possible species that can occur in the 
+simulation, gives their niches, and includes the pairwise competition strength
+2. A `river_network`, which describes the topology of the network and gives other important 
+attributes, such as discharge.
+3. State variables; these are (mostly) dynamic attributes describing the state of the model at a 
+given time. 
+4. Boundary conditions: input, both to the biological community 
+(via immigration from the surrounding landscape) and to the resources (via terrestrial runoff, 
+groundwater intrusion, etc).
 
 
 ## 1. The metacommunity
 
-The metacommunity is an S3 object created by `flume` that describes all of the species that can possibly occur in the model. It is created using the `metacommunity()` function. Additional species can be added using `species()`, although care should be taken when doing this.
+The metacommunity is an S3 object created by `flume` that describes all of the species that can
+possibly occur in the model. It also describes the possible resources and other habitat variables,
+their range of possible values, how the resources behave, the species' niches, how species
+compete for resources, and species' dispersal abilities.
 
-By default, species are dispersed in niche space, with a fundamental niche following a gaussian shape. The more species, the more tightly packed the niche space:
+Here we generate a metacommunity using a scenario. It is also possible to have finer control over
+how the metacommunity is modelled; see the "[metacommunities](metacommunities.html)" vignette for 
+more details.
 
-```{r fig.height = 3, fig.width = 7}
-mcom = metacommunity(n_species = 3, nx = 1)
-plot(mcom)
-
-mcom = metacommunity(n_species = 5, nx = 1)
-plot(mcom, ylab = "Performance", yaxt='n', bty='l', lwd=6, xaxt='n', cex.lab=2, mgp=c(2,0.5,0))
-```
-
-For this exercise, we will use a 2-species system. In addition to seeing all species' fundamental niches, we can see individual colonisation and extinction functions using the `mcom$species` attribute.
-
-The height of the niche also determines species' resource uses. The model allows some species to be "greedier," i.e., to use more resources at a given niche height; this is done by setting the `r_scale` parameter. Here we read it's default value, then triple the greediness of species 2.
 
 ```{r fig.height = 3, fig.width = 7}
-mcom = metacommunity(n_species = 2, nx = 1)
-r_scale(mcom)
-r_scale(mcom) = r_scale(mcom) * c(1,3)
-
+mc = metacommunity(scenario  = uniform_niches(nsp = 3, nr = 1))
+plot(mc)
 ```
+
+By default, all of the resources in the model are assumed to be `dynamic`; these represent
+chemicals, nutrients, and other resources that are consumed by species and will run out if not
+replenished. Resources may instead be `static`; these represent fixed habitat features (e.g. light,
+habitat structure) that do not change. Here, we generate 
 
 
 

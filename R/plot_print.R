@@ -105,57 +105,42 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 #' @param x A [metacommunity()]
 #' @param R an optional resource state matrix
 #' @param axis Which resource axis (i.e., column in R) to plot along
+#' @param res Plotting resolution, how many points along the x-axis to plot; more produces smoother
+#'		lines.
 #' @export
-plot.metacommunity = function(x, R, axis = 1, ...) {
+plot.metacommunity = function(x, R, axis = 1, res = 100, ...) {
 	if(missing(R)) {
-		res = 100
 		R = matrix(0, nrow = res, ncol = nrow(attr(x, "niche_lim")))
 		R[, axis] = seq(attr(x, "niche_lim")[axis, 1], attr(x, "niche_lim")[axis, 2],
 			length.out = res)
 	}
-	ypl = lapply(x$species, function(sp) f_niche(sp, R))
-	yl = c(0, max(unlist(ypl)))
+	pdat = lapply(x$species, function(sp)
+		data.table::data.table(R = R[, axis], lam = f_niche(sp, R)))
+	names(pdat) = attr(x, "spnames")
+	pdat = data.table::rbindlist(pdat, idcol = "species")
 
-	# colours from colorbrewer
-	cols = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", 
-		"#ff7f00", "#cab2d6")
-	if(length(cols) > length(x$species))
-		cols = cols[1:length(x$species)]
+	p1 = ggplot2::ggplot(pdat, ggplot2::aes(x = R, y = lam.V1, colour = species)) +
+		ggplot2::geom_line() + ggplot2::scale_colour_brewer(type = "qual", palette = "Set2") +
+		ggplot2::theme_minimal() + ggplot2::xlab(attr(x, "rnames")[axis]) +
+		ggplot2::ylab("Dominant Eigenvalue") + ggplot2::geom_hline(ggplot2::aes(yintercept = 0))
 
-	args = .default_plot_pool_options(...)
-	args$x = 0
-	args$y = 0
-	args$xlim = range(R[, axis])
-	args$ylim = yl
-	par(mar = c(5, 4, 4, 6))
-	do.call(plot, args)
+	comp = x$competition
+	comp[upper.tri(comp)] = NA
+	comp = reshape2::melt(comp)
+	comp = comp[complete.cases(comp), ]
+	colnames(comp) = c("sp1", "sp2", "competition")
 
-	.make_line = function(y, col, args) {
-		args$x = R[, axis]
-		args$y = y
-		args$col = col
-		args$type = 'l'
-		do.call(lines, args)
-	}
-	invisible(mapply(.make_line, ypl, cols, MoreArgs = list(args = args)))
+	p2 = ggplot2::ggplot(comp) +
+		ggplot2::geom_tile(ggplot2::aes(x = sp1, y = sp2, fill = competition)) +
+		ggplot2::scale_fill_viridis_c(option = "plasma") + ggplot2::theme_minimal() +
+		ggplot2::xlab("") + ggplot2::ylab("")
 
-	xpd = par()$xpd
-	par(xpd = TRUE)
-	legend("topright", legend = attr(x, "spnames"), col = cols, title = "species",
-		   lty = args$lty, lwd = args$lwd, bty = "n", inset = c(-0.15, 0), cex = 0.7)
-	par(xpd = xpd)
-
+	gridExtra::grid.arrange(p1, p2, nrow = 1)
 }
 
 
 ### ggplot competition plot; make other plot ggplot to be able to put onto a single plot
-comp = x$competition
-comp[upper.tri(comp)] = NA
-comp = reshape2::melt(comp)
-comp = comp[complete.cases(comp),]
-colnames(comp) = c("sp1", "sp2", "competition")
-ggplot2::ggplot(comp) + ggplot2::geom_tile(ggplot2::aes(x = sp1, y = sp2, fill = competition)) + 
-	ggplot2::scale_fill_viridis_c()
+
 
 
 #' Plot species niches

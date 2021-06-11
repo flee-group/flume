@@ -1,70 +1,199 @@
+## exported functions
+# f_niche
+# dispersal_params
+
 test_that("Species creation", {
 
 	# input validation
-	expect_error(species('line', 'constant', NULL, NULL), regex = "line")
-	expect_error(species('linear', 'constant', list(scale = 0.2), NULL), regex = "a")
-	expect_error(sp <- species('linear', 'gaussian', list(a = 0, b = 1), list(scale=0.2)), regex="gaussian")
+	# many parameters must not be negative
+	expect_error(species(location = 0, breadth = -1, scale_c = 1, scale_e = 1, alpha = 1, beta = 1,
+		r_scale = 1), regex = "negative")
+	expect_error(species(location = 0, breadth = 1, scale_c = -1, scale_e = 1, alpha = 1, beta = 1,
+		r_scale = 1), regex = "negative")
+	expect_error(species(location = 0, breadth = 1, scale_c = 1, scale_e = -1, alpha = 1, beta = 1,
+		r_scale = 1), regex = "negative")
+	expect_error(species(location = 0, breadth = 1, scale_c = 1, scale_e = 1, alpha = -1, beta = 1,
+		r_scale = 1), regex = "negative")
+	expect_error(species(location = 0, breadth = 1, scale_c = 1, scale_e = 1, alpha = 1, beta = -1,
+		r_scale = 1), regex = "negative")
 
-	expect_error(sp <- species('linear', 'constant', list(a = 0, b = 1), list(scale=0.2)), regex=NA)
-	expect_equal(sp$col(1), 1)
-	expect_equal(sp$ext(1), 0.2)
+	# some parameters may be negative or positive
+	expect_error(species(location = 1, breadth = 1, scale_c = 1, scale_e = 1, alpha = 1, beta = 1,
+		r_scale = 1), regex = NA)
+	expect_error(species(location = -1, breadth = 1, scale_c = 1, scale_e = 1, alpha = 1, beta = 1,
+		r_scale = -1), regex = NA)
 
-	expect_error(sp <- species('constant', 'constant', list(scale=0.3), list(scale=0.2)), regex=NA)
-	expect_equal(sp$col(1), 0.3)
 
-	expect_error(sp <- species('gaussian', 'linear', list(scale=1, mean=0.5, sd=0.2), list(a=1, b=-1)), regex=NA)
-	expect_equal(sp$col(0.5), 1)
-	expect_equal(sp$ext(1), 0)
+	# multivariate niches
+	loc = c(1, 2)
+	rsc = c(1, 2)
+	rsc_wrong = 1:3
+	bre = matrix(c(1, 0, 0, 1), nrow = 2)
+	bre_wrong = matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1), nrow = 3)
 
-	# default, 2 species metacommunity, linear niches
-	expect_error(comm <<- metacommunity(c_type="linear"), regex = NA)
-	pool = comm$species
-	expect_equal(length(pool), 2)
-	expect_equal(pool[[1]]$ext(1), pool[[2]]$ext(1))
-	R <- matrix(seq(0,1,length.out=20), ncol=1)
-	expect_equal(mean(pool[[1]]$col(R)), mean(pool[[2]]$col(R)))
-	default_mat = matrix(c(0.30, 0.05, 0.05, 0.30), ncol=2)
-	expect_equal(comm$competition, default_mat)
+	# all dimensions must agree
+	expect_error(species(location = loc, breadth = bre_wrong, scale_c = 1, scale_e = 1, alpha = 1,
+		beta = 1, r_scale = rsc), regex = "dimension mismatch")
+	expect_error(species(location = 1, breadth = bre, scale_c = 1, scale_e = 1, alpha = 1,
+		beta = 1, r_scale = rsc), regex = "dimension mismatch")
+	expect_error(species(location = loc, breadth = bre, scale_c = 1, scale_e = 1, alpha = 1,
+		beta = 1, r_scale = rsc_wrong), regex = "dimension mismatch")
+	expect_error(species(location = loc, breadth = bre[1, ], scale_c = 1, scale_e = 1, alpha = 1,
+		beta = 1, r_scale = rsc_wrong), regex = "dimension mismatch")
 
-	# gaussian niches, 2 species
-	expect_error(comm <- metacommunity(c_type = 'gaussian'), regex = NA)
+	# also check that no entries in vcv matrix are negative
+	expect_error(species(location = loc, breadth = -1 * bre, scale_c = 1, scale_e = 1, alpha = 1,
+		beta = 1, r_scale = rsc), regex = "negative")
 
-	# gaussian niches, 3 species
-	expect_error(comm <- metacommunity(n_species = 3, c_type = 'gaussian'), regex = NA)
+	# scale_c, scale_e, alpha and beta must be single values
+	expect_error(species(location = loc, breadth = bre, scale_c = c(1, 2), scale_e = 1, alpha = 1,
+		beta = 1, r_scale = rsc), regex = "single value")
+	expect_error(species(location = loc, breadth = bre, scale_c = 1, scale_e = c(1, 2), alpha = 1,
+		beta = 1, r_scale = rsc), regex = "single value")
+	expect_error(species(location = loc, breadth = bre, scale_c = 1, scale_e = 1, alpha = c(1, 0),
+		beta = 1, r_scale = rsc), regex = "single value")
+	expect_error(species(location = loc, breadth = bre, scale_c = 1, scale_e = 1, alpha = 1,
+		beta = c(1, 0), r_scale = rsc), regex = "single value")
+})
 
-	# gaussian niches, 3 species, 2 variables
-	expect_error(comm <- metacommunity(n_species = 3, nx = 2, c_type = 'gaussian'), regex = NA)
+test_that("Metacommunity creation", {
 
-	# check that dispersal function works
-	expect_error(di <- dispersal_params(comm), regex=NA)
-	expect_true(is(di, "list"))
-	expect_equal(length(di$alpha), length(di$beta))
-	expect_equal(length(di$alpha), length(comm$species))
+	# dimension checking
+	# to check
+	# location
+	loc2 = c(1, 2)
+
+	# breadth
+	br2 = c(1, 1.5)
+
+	# scale_c
+	scc2 = c(0.5, 0.7)
+
+	# scale_e
+	sce2 = c(0.2, 0.3)
+
+	# alpha
+	al2 = c(0.05, 0.07)
+	# beta
+	be2 = c(0.4, 0.3)
+
+	# r_scale
+	rsc2 = c(0.5, 0.4)
+
+	# niche_lim
+	nl1 = c(0, 1)
+
+	# single species, single niche axis
+	expect_error(metacommunity(location = 1), regex = NA)
+	expect_error(metacommunity(location = 1, breadth = br2), regex = "niche breadth")
+	expect_error(metacommunity(location = 1, scale_c = scc2), regex = "Scale parameters")
+	expect_error(metacommunity(location = 1, scale_e = sce2), regex = "Scale parameters")
+	expect_error(metacommunity(location = 1, alpha = al2), regex = "alpha")
+	expect_error(metacommunity(location = 1, beta = be2), regex = "beta")
+	expect_error(metacommunity(location = 1, r_scale = rsc2), regex = "r_scale")
+	expect_error(metacommunity(location = 1, niche_lim = rbind(nl1, nl1)), regex = "niche_lim")
+
+	# multiple species, single niche axis
+	expect_error(metacommunity(location = loc2), regex = NA)
+	expect_error(metacommunity(location = loc2, breadth = br2, scale_c = scc2, scale_e = sce2,
+			alpha = al2, beta = be2, r_scale = rsc2, niche_lim = nl1), regex = NA)
+	expect_error(metacommunity(location = loc2, breadth = rep(br2, 2), scale_c = scc2,
+			scale_e = sce2, alpha = al2, beta = be2, r_scale = rsc2, niche_lim = nl1),
+			regex = "niche breadth")
+	expect_error(metacommunity(location = loc2, breadth = br2, scale_c = scc2,
+			scale_e = rep(sce2, 2), alpha = al2, beta = be2, r_scale = rsc2, niche_lim = nl1),
+			regex = "Scale parameters")
+	expect_error(metacommunity(location = loc2, breadth = br2, scale_c = scc2,
+			scale_e = sce2, alpha = rep(al2, 2), beta = be2, r_scale = rsc2, niche_lim = nl1),
+			regex = "alpha")
+	expect_error(metacommunity(location = loc2, breadth = br2, scale_c = scc2,
+			scale_e = sce2, alpha = al2, beta = rep(be2, 2), r_scale = rsc2, niche_lim = nl1),
+			regex = "beta")
+	expect_error(metacommunity(location = loc2, breadth = br2, scale_c = scc2,
+			scale_e = sce2, alpha = al2, beta = be2, r_scale = rep(rsc2, 2), niche_lim = nl1),
+			regex = "r_scale")
+	expect_error(metacommunity(location = loc2, breadth = br2, scale_c = scc2,
+			scale_e = sce2, alpha = al2, beta = be2, r_scale = rsc2,
+			niche_lim = rbind(nl1, nl1)), regex = "niche_lim")
+})
+
+
+test_that("Multivariate metacommunities", {
+	skip_on_cran()
+	skip_if_not(identical(Sys.getenv("SLOW_TESTS"), "TRUE"))
+
+	# location
+	loc_1_2 = matrix(c(1, 2), ncol = 2)
+	loc_3_2 = rbind(loc_1_2, loc_1_2 + 0.25, loc_1_2 - 0.25)
+
+	# breadth
+	br_1_2 = c(1, 1.5)
+	br_3_2_vsp = c(1, 2, 3)
+	br_3_2_vr = c(1, 2)
+	br_3_2_m = cbind(br_3_2_vsp, br_3_2_vsp)
+	br_3_2_vcv = matrix(c(1, 0.3, 0.3, 1), nrow = 2)
+	br_3_2_l = list(br_3_2_vcv, br_3_2_vcv, br_3_2_vcv)
+
+	# r_scale
+	rsc_1_2 = c(0.5, 0.4)
+	rsc_3_2 = rbind(rsc_1_2, rsc_1_2, rsc_1_2)
+
+	# niche_lim
+	nl_2 = rbind(c(0, 1), c(0, 1))
+
+	# single species, multiple niche axes
+	expect_error(metacommunity(location = loc_1_2, niche_lim = nl_2), regex = NA)
+	expect_error(metacommunity(location = loc_1_2, breadth = br_1_2, r_scale = rsc_1_2,
+		niche_lim = nl_2), regex = NA)
+	expect_error(metacommunity(location = loc_1_2, breadth = rep(br_1_2, 2),
+		niche_lim = nl_2), regex = "niche breadth")
+	expect_error(metacommunity(location = loc_1_2, r_scale = rep(rsc_1_2, 2),
+		niche_lim = nl_2), regex = "r_scale")
+
+	# multiple species, multiple niche axes
+	expect_error(metacommunity(location = loc_3_2, niche_lim = nl_2), regex = NA)
+	expect_error(metacommunity(location = loc_3_2, breadth = br_3_2_vsp, niche_lim = nl_2),
+		regex = NA)
+	expect_error(metacommunity(location = loc_3_2, breadth = br_3_2_vr, niche_lim = nl_2),
+		regex = NA)
+	expect_error(metacommunity(location = loc_3_2, breadth = br_3_2_m, niche_lim = nl_2),
+		regex = NA)
+	expect_error(metacommunity(location = loc_3_2, breadth = br_3_2_l, niche_lim = nl_2),
+		regex = NA)
+	expect_error(metacommunity(location = loc_3_2, r_scale = rsc_3_2, niche_lim = nl_2), regex = NA)
+
+	expect_error(metacommunity(location = loc_3_2, breadth = rep(br_3_2_vsp, 2), niche_lim = nl_2),
+		regex = "niche breadth")
+	expect_error(metacommunity(location = loc_3_2, breadth = rbind(br_3_2_m, br_3_2_m),
+		niche_lim = nl_2), regex = "niche breadth")
+	expect_error(metacommunity(location = loc_3_2, breadth = c(br_3_2_l, br_3_2_l),
+		niche_lim = nl_2), regex = "niche breadth")
+
+	expect_error(metacommunity(location = loc_3_2, r_scale = rsc_3_2[1:2, ], niche_lim = nl_2),
+		regex = "r_scale")
+
 })
 
 test_that("Niches estimated correctly", {
-	comm <- metacommunity(c_type = 'gaussian')
-	st = matrix(seq(0, 1, length.out = 4), ncol = 1, dimnames = list(NULL, 'R'))
-	expect_error(sp_niche <- f_niche(comm$species[[1]], st), regex=NA)
+	# data(algae, package = "flume")
+	loc = c(0.25, 0.75)
+	scale_c = 0.5
+	scale_e = 0.2
+	comm = metacommunity(location = loc, scale_c = scale_c, scale_e = scale_e)
+	expect_equal(attr(comm$species[[1]], "niche_max"), scale_c - scale_e, check.names = FALSE)
+	expect_equal(f_niche(comm$species[[1]], loc[1]), attr(comm$species[[1]], "niche_max"))
+
+	# species 2 performs worse at species 1's optimum
+	expect_gt(f_niche(comm$species[[1]], loc[1]), f_niche(comm$species[[2]], loc[1]))
+
+	st = matrix(seq(0, 1, 0.05), ncol = 1)
+	expect_error(sp_niche <- f_niche(comm$species[[1]], st), regex = NA)
 	expect_true(is(sp_niche, "matrix"))
 	expect_equal(dim(sp_niche), c(nrow(st), 1))
 	expect_identical(sp_niche, comm$species[[1]]$col(st) - comm$species[[1]]$ext(st))
 
-	expect_error(c_niche <- f_niche(comm, st), regex=NA)
+	expect_error(c_niche <- f_niche(comm, st), regex = NA)
 	expect_true(is(c_niche, "matrix"))
 	expect_equal(dim(c_niche), c(nrow(st), length(comm$species)))
-	expect_identical(c_niche[,1, drop=FALSE], sp_niche)
-
-})
-
-test_that("Random community creation", {
-	Q = rep(1, 4)
-	adj = matrix(0, nrow = 4, ncol = 4)
-	adj[1,2] = adj[2,3] = adj[4,3] = 1
-	rn = river_network(adj, Q)
-
-	expect_warning(random_community(rn, comm, 0.01), regex = "low prevalence")
-	expect_error(si_sp <- random_community(rn, comm), regex = NA)
-	expect_equal(ncol(si_sp), length(comm$species))
-	expect_equal(nrow(si_sp), nrow(adj))
+	expect_identical(c_niche[, 1, drop = FALSE], sp_niche)
 })

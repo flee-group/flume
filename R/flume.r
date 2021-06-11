@@ -1,39 +1,20 @@
-#' flume: A package for modelling FLUvial Meta-Ecosystems
-#'
-#' Implementation of a theoretical/mechanistic model for exploring fluvial meta-ecosystems.
-#'
-#' @section Key functions:
-#'
-#' * [metacommunity()] Create species pools and associated attributes
-#' * [river_network()] Build a river network object
-#' * [flume()] Creates a model
-#' * [run_simulation()] Runs the simulation
-#'
-#' @docType package
-#' @name flume_package
-NULL
-
-
 #' Create a FLUvial Meta-Ecosystem model
 #'
 #' @param comm A [metacommunity()]
 #' @param network A [river_network()]
+#' @param species Initial site by species matrix
+#' @param state_i Initial state of the model
+#' @param boundary Boundary condition for the resources
 #' @param dt The time step for the model, in the same time units as all fluxes
 #'
-#' @return An S3 object of class 'flume'
+#' @return An S3 object of class "flume"
 #' @export
-flume = function(comm, network, dt) {
-	structure(list(metacom = comm, networks = list(network), dt = dt), class="flume")
+flume = function(comm, network, species, state_i, boundary = state_i, dt = 1) {
+	x = structure(list(metacom = comm, networks = list(network), dt = dt), class = "flume")
+
+	## not sure if it makes more sense to do this here, or when defining the network
+	state(x$networks[[1]]) = state_i
 }
-
-#' Flume river network and associated data for the Kamp River catchment in Austria
-#'
-#' @format A `list`, with members:
-#' \describe{
-#'   \item{network}{A [river_network]}
-#' }
-"kamp"
-
 
 #' Compute post simulation statistics
 #' @name flumestats
@@ -41,10 +22,10 @@ flume = function(comm, network, dt) {
 #' @import data.table
 #' @return A [data.table::data.table()] with the desired summary statistics
 #' @export
-occupancy = function(x, type = c('network', 'reach')) {
+occupancy = function(x, type = c("network", "reach")) {
 	type = match.arg(type)
 	occ = .reshape_sim(x, variable = "species")
-	if(type == 'network') {
+	if(type == "network") {
 		keyby = c("species", "time")
 	} else {
 		keyby = c("species", "reach", "time")
@@ -65,26 +46,27 @@ resource_summary = function(x) {
 	variable = match.arg(variable)
 	if(variable == "species") {
 		fun = site_by_species
-		variable.name = 'species'
-		value.name = 'occupancy'
+		variable.name = "species"
+		value.name = "occupancy"
 	} else {
 		fun = state
-		variable.name = 'resource'
-		value.name = 'concentration'
+		variable.name = "resource"
+		value.name = "concentration"
 	}
 	cores = ifelse(.Platform$OS.type == "unix", parallel::detectCores(), 1)
-	data.table::rbindlist(parallel::mclapply(x[['networks']], function(r) {
+	data.table::rbindlist(parallel::mclapply(x[["networks"]], function(r) {
 		S = fun(r, history = TRUE)
 		res = data.table::rbindlist(lapply(S, function(s) {
 			val = data.table::data.table(s)
-			val$reach = 1:nrow(val)
+			val$reach = seq_len(nrow(val))
 			val
 		}), idcol = "time")
-		res = data.table::melt(res, id.vars=c("reach", "time"), variable.name=variable.name, value.name = value.name)
-		if(variable.name == 'species')
+		res = data.table::melt(res, id.vars = c("reach", "time"), variable.name = variable.name,
+			value.name = value.name)
+		if(variable.name == "species")
 			res[[variable.name]] = sub("V(.+)", "\\1", res[[variable.name]])
 		res
-	}, mc.cores = cores), idcol="network")
+	}, mc.cores = cores), idcol = "network")
 }
 
 
@@ -105,25 +87,25 @@ run_simulation = function(x, nt, reps, parallel = TRUE, cores = parallel::detect
 		stop("at least one time step is required")
 
 	if(missing(reps))
-		reps = length(x[['networks']])
+		reps = length(x[["networks"]])
 
 	parallel = parallel && (.Platform$OS.type == "unix")
 
 	# normally flumes are initialized with only a single river network
 	# if more reps are desired, duplicate them
-	if(reps > 1 && length(x[['networks']]) == 1)
-		x[['networks']] = lapply(1:reps, function(i) x[['networks']][[1]])
+	if(reps > 1 && length(x[["networks"]]) == 1)
+		x[["networks"]] = lapply(1:reps, function(i) x[["networks"]][[1]])
 
-	if(reps != length(x[['networks']]))
+	if(reps != length(x[["networks"]]))
 		warning("'reps' was specified, but it is not equal to the number of existing sims in 'x'\n",
 				"'reps' will be ignored and the number of simulations will be equal to length(x$networks) (",
 				length(x$networks), ")")
 
 	if(parallel && reps > 1 && cores > 1) {
-		x[['networks']] = parallel::mclapply(x[['networks']], .do_sim, comm = x[['metacom']], dt = x[['dt']],
+		x[["networks"]] = parallel::mclapply(x[["networks"]], .do_sim, comm = x[["metacom"]], dt = x[["dt"]],
 				nt = nt, mc.cores = cores)
 	} else {
-		x[['networks']] = lapply(x[['networks']], .do_sim, comm = x[['metacom']], dt = x[['dt']], nt = nt)
+		x[["networks"]] = lapply(x[["networks"]], .do_sim, comm = x[["metacom"]], dt = x[["dt"]], nt = nt)
 	}
 
 	return(x)

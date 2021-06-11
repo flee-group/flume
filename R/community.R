@@ -64,14 +64,31 @@
 #' (see [river_network()]) ignore this parameter.
 #'
 #' @return A metacommunity object
-#' @examples NULL
+#' @examples
+#' \donttest{
+#'		# defaults
+#'		mc = metacommunity()
+#'
+#'		# multiple species
+#'		mc = metacommunity(location = c(1, 2))
+#'
+#'		# multiple resources
+#'		nlim = matrix(c(0, 0, 1, 1), ncol = 2) # we need to specify the limits manually
+#'		mc = metacommunity(location = matrix(c(1, 2), ncol = 2), niche_lim = nlim)
+#'
+#'		# multiple species and resources with variance covariance matrices
+#'		loc = matrix(c(1, 2, 1, 3, 2, 4), ncol = 2) # 3 species, 2 resources
+#'		br_sp1 = matrix(c(1, 0.2, 0.2, 1), ncol = 2) # vcv matrix for one species
+#'		breadth = list(br_sp1, br_sp1, br_sp1) # assume the same matrix for all species
+#'		mc = metacommunity(location = loc, breadth = bre, niche_lim = nlim)
+#' }
 #' @export
 metacommunity = function(location, breadth = 1, scale_c = 0.5, scale_e = 0.2, alpha = 0.05,
 						 beta = 0.5, r_scale = 0.05, niche_lim = c(0, 1)) {
 	comm = structure(list(), class = "metacommunity")
 
 	## niche parameters
-	if(!is.matrix(location)) 
+	if(!is.matrix(location))
 		location = matrix(location, ncol = 1, dimnames = list(names(location), "r1"))
 	nsp = nrow(location)
 	nrx = ncol(location)
@@ -80,21 +97,23 @@ metacommunity = function(location, breadth = 1, scale_c = 0.5, scale_e = 0.2, al
 	} else {
 		spnames = rownames(location)
 	}
+
 	if(is.null(colnames(location))) {
-		spnames = paste0("r", 1:nrx)
+		rnames = paste0("r", 1:nrx)
 	} else {
 		rnames = colnames(location)
 	}
+
 	location = lapply(1:nsp, function(i) location[i, ])
 	breadth = .check_breadth(breadth, nsp, nrx)
 	scale_c = .check_scale(scale_c, nsp)
 	scale_e = .check_scale(scale_e, nsp)
 	r_scale = .check_r_scale(r_scale, nsp, nrx)
 
-	if(!is.matrix(niche_lim) & nrx == 1) {
-		niche_lim = matrix(niche_lim, ncol=2)
-	}
-	if(!is.matrix(niche_lim) | !all.equal(dim(niche_lim), c(nrx, 2)))
+	if(!is.matrix(niche_lim))
+		niche_lim = matrix(niche_lim, ncol = 2)
+
+	if(nrow(niche_lim) != nrx)
 		stop("niche_lim must be a matrix with 1 row per resource and 2 columns")
 
 	if(length(alpha) == 1)
@@ -108,9 +127,10 @@ metacommunity = function(location, breadth = 1, scale_c = 0.5, scale_e = 0.2, al
 
 	## create a list of species
 	comm[["species"]] = mapply(species, location = location, breadth = breadth, scale_c = scale_c,
-		   scale_e = scale_e, alpha = alpha, beta = beta, r_scale = r_scale, SIMPLIFY = FALSE, 
+		   scale_e = scale_e, alpha = alpha, beta = beta,
+		   r_scale = lapply(seq_len(nrow(r_scale)), function(i) r_scale[i, ]), SIMPLIFY = FALSE,
 		   USE.NAMES = FALSE)
-	comm[["competition"]] = .compute_comp_matrix(comm$species, niche_lim[1], niche_lim[2])
+	comm[["competition"]] = .compute_comp_matrix(comm$species, niche_lim[, 1], niche_lim[, 2])
 	comm[["boundary"]] = function(n=1) matrix(0, nrow = n, ncol = n_species)
 	attr(comm, "niche_lim") = niche_lim
 	attr(comm, "spnames") = spnames
@@ -139,18 +159,18 @@ metacommunity = function(location, breadth = 1, scale_c = 0.5, scale_e = 0.2, al
 	if(length(p) == 1)
 		p = rep(p, nsp)
 
-	if(length(p) == nsp) {
+	if(!is.list(p) && length(p) == nsp) {
 		p = matrix(p, nrow = nsp, ncol = nrx)
-	} else if(length(p) == nrx) {
-		p = matrix(p, nrow = nsp, ncol = nrx, byrow=TRUE)
+	} else if(!is.list(p) && length(p) == nrx) {
+		p = matrix(p, nrow = nsp, ncol = nrx, byrow = TRUE)
 	}
 
 	## univariate niches
 	if(nrx == 1) {
 		if(!(is.matrix(p) && nrow(p) == nsp && ncol(p) == 1))
-			stop("Niche bredth must be a scale, vector, or one-column matrix")
+			stop("Invalid niche breadth: must be a scalar, vector, or one-column matrix")
 		## convert back to a vector so it plays nicely with mapply
-		p = p[,1]
+		p = p[, 1]
 	} else {
 		## for multivariate niches
 		p = .check_breadth_multi(p, nsp, nrx)
@@ -163,22 +183,23 @@ metacommunity = function(location, breadth = 1, scale_c = 0.5, scale_e = 0.2, al
 .check_breadth_multi = function(p, nsp, nrx) {
 	if(is.matrix(p)) {
 		if(nrow(p) != nsp || ncol(p) != nrx)
-			stop("Invalid niche bredth; see ?metacommunity")
+			stop("Invalid niche breadth; see ?metacommunity")
 		p = lapply(1:nsp, function(i) {
-			mat = matrix(0, nrow=nrx, ncol=nrx)
-			diag(mat) = p[i,]
+			mat = matrix(0, nrow = nrx, ncol = nrx)
+			diag(mat) = p[i, ]
 			mat
 		})
 	}
+
 	## test proper dimensions of the breadth param for multivariate niches
 	## must be a list, one entry per species
 	## each entry a square matrix with dimension nrx
 	if(!(is.list(p) &&
-		 length(p == nsp) &&
-		 all(sapply(p, is.matrix)) &&
-		 all((sapply(p, nrow) - nrx) == 0) &&
-		 all((sapply(p, ncol) - nrx) == 0))) {
-		stop("Width parameter specified incorrectly, see ?metacommunity for instructions")
+		length(p) == nsp &&
+		all(sapply(p, is.matrix)) &&
+		all((sapply(p, nrow) - nrx) == 0) &&
+		all((sapply(p, ncol) - nrx) == 0))) {
+		stop("Invalid niche breadth; see ?metacommunity")
 	}
 	p
 }
@@ -189,25 +210,53 @@ metacommunity = function(location, breadth = 1, scale_c = 0.5, scale_e = 0.2, al
 	if(length(p) == 1)
 		p = rep(p, nsp)
 
-	if(length(p) == nsp) {
+	if(!is.matrix(p) && length(p) == nsp) {
 		p = matrix(p, nrow = nsp, ncol = nrx)
-	} else if(length(p) == nrx) {
+	} else if(!is.matrix(p) && length(p) == nrx) {
 		p = matrix(p, nrow = nsp, ncol = nrx, byrow = TRUE)
 	}
 
-	if(!(is.matrix(p) & nrow(p) == nsp & ncol(p) == nrx))
+	if(!(is.matrix(p) && nrow(p) == nsp && ncol(p) == nrx))
 		stop("r_scale must be a matrix with one row per species and one column per niche axis")
 	p
 }
 
+#' @rdname check_par
+#' @keywords internal
+.check_species_params = function(x) {
+	loc = x$par_c$location
+	bre = x$par_c$breadth
+	csc = x$par_c$scale
+	rsc = x$r_scale
+	esc = x$par_e$scale
+	alpha = x$alpha
+	beta = x$beta
 
+	if(length(csc) != 1 | length(esc) != 1 | length(alpha) != 1 | length(beta) != 1)
+		stop("The following parameters must be single values: ",
+			"c_scale, e_scale, alpha, beta")
+
+	if(any(bre < 0) | csc < 0 | esc < 0 | alpha < 0 | beta < 0)
+		stop("The following parameters must not be negative: ",
+			"breadth, scale_c, scale_e, alpha, beta")
+
+	if(length(loc) == 1 & length(bre) != 1)
+		stop("dimension mismatch: breadth and r_scale must be length 1 with a single niche",
+				"dimension")
+	if(length(loc) > 1 & (!is.matrix(bre) | !identical(dim(bre), rep(length(loc), 2))))
+		stop("dimension mismatch: breadth must be a square matrix with one row/column per ",
+			"niche dimension")
+	if(length(rsc) != length(loc))
+		stop("dimension mismatch: r_scale must have the same length as location")
+}
 
 
 
 
 #' Returns dispersal parameters for a metacommunity
 #' @param x A [metacommunity()]
-#' @return Named list with two elements, `alpha` and `beta`, each one a vector of dispersal parameters for each species
+#' @return Named list with two elements, `alpha` and `beta`, each one a vector of dispersal
+#'		parameters for each species
 #' @export
 #' @examples
 #' comm = community()
@@ -215,7 +264,7 @@ metacommunity = function(location, breadth = 1, scale_c = 0.5, scale_e = 0.2, al
 dispersal_params = function(x) {
 	alpha = sapply(x$species, function(y) y$alpha)
 	beta = sapply(x$species, function(y) y$beta)
-	list(alpha=alpha, beta=beta)
+	list(alpha = alpha, beta = beta)
 }
 
 #' Creates species
@@ -225,7 +274,7 @@ dispersal_params = function(x) {
 #'
 #' Note that for gaussian functions in multiple variables, `scale` is always a scalar, but
 #' `location` must be a location vector of length `nx`, and `width` must be a variance covariance
-#' matrix with `dim=c(nx,nx)`.
+#' matrix with `dim = c(nx, nx)`.
 #'
 #' The resource use function is set automatically by default, but can be set to an arbitrary
 #' function; see [resource use functions][ruf()] for details on how this function should behave.
@@ -257,15 +306,14 @@ species = function(location, breadth, scale_c, scale_e, alpha, beta, r_scale) {
 	x$par_e = list(scale = scale_e)
 	x$alpha = alpha
 	x$beta = beta
-	x$col = ce_gaussian(location, breadth, scale_c)
-	x$ext = ce_constant(scale_e)
 	if(length(r_scale) == 1)
 		r_scale = rep(r_scale, length(location))
-	stopifnot(length(r_scale) == length(location))
 	x$r_scale = r_scale
+	.check_species_params(x)
+	x$col = ce_gaussian(location, breadth, scale_c)
+	x$ext = ce_constant(scale_e)
 
-	attr(x, "niche_max") = f_niche(x, matrix(location, nrow=1))
-
+	attr(x, "niche_max") = f_niche(x, location)
 	return(x)
 }
 
@@ -290,17 +338,23 @@ species = function(location, breadth, scale_c, scale_e, alpha, beta, r_scale) {
 		}
 
 	}
-	comp = matrix(0., nrow=length(sp), ncol=length(sp))
-	for(i in 1:(length(sp) - 1)) {
-		si = sp[[i]]
-		comp[i,i] = integration_fun(.pairwise_comp(si, si), xmin, xmax)[[integral_name]]
-		for(j in (i+1):length(sp)) {
-			sj = sp[[j]]
-			comp[i,j] = integration_fun(.pairwise_comp(si, sj), xmin, xmax)[[integral_name]]
-			comp[j,i] = comp[i,j]
+	## guard against case when there is only one species
+	if(length(sp) == 1) {
+		comp = matrix(integration_fun(.pairwise_comp(sp[[1]], sp[[1]]), xmin, xmax)[[integral_name]],
+			nrow = 1, ncol = 1)
+	} else {
+		comp = matrix(0., nrow = length(sp), ncol = length(sp))
+		for(i in seq_len(length(sp) - 1)) {
+			si = sp[[i]]
+			comp[i, i] = integration_fun(.pairwise_comp(si, si), xmin, xmax)[[integral_name]]
+			for(j in (i + 1):length(sp)) {
+				sj = sp[[j]]
+				comp[i, j] = integration_fun(.pairwise_comp(si, sj), xmin, xmax)[[integral_name]]
+				comp[j, i] = comp[i, j]
+			}
 		}
+		comp[j, j] = integration_fun(.pairwise_comp(sj, sj), xmin, xmax)[[integral_name]]
 	}
-	comp[j,j] = integration_fun(.pairwise_comp(sj, sj), xmin, xmax)[[integral_name]]
 	return(comp)
 }
 
@@ -350,5 +404,5 @@ f_niche.species = function(x, R) {
 #' @rdname niche
 #' @export
 f_niche.metacommunity = function(x, R) {
-	do.call(cbind, lapply(x$species, f_niche, R=R))
+	do.call(cbind, lapply(x$species, f_niche, R = R))
 }

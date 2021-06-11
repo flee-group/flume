@@ -1,6 +1,6 @@
 test_that("Model creation", {
-	sp_pool = readRDS(system.file("testdata/metacom.rds", package="flume"))
-	network = readRDS(system.file("testdata/river_network.rds", package="flume"))
+	sp_pool = readRDS(system.file("testdata/metacom.rds", package = "flume"))
+	network = readRDS(system.file("testdata/river_network.rds", package = "flume"))
 
 	sbysp = site_by_species(network)
 	R = state(network)
