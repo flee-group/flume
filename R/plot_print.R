@@ -110,8 +110,8 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 #' @export
 plot.metacommunity = function(x, R, axis = 1, res = 100, ...) {
 	if(missing(R)) {
-		R = matrix(0, nrow = res, ncol = nrow(attr(x, "niche_lim")))
-		R[, axis] = seq(attr(x, "niche_lim")[axis, 1], attr(x, "niche_lim")[axis, 2],
+		R = matrix(0, nrow = res, ncol = attr(x, "n_r"))
+		R[, axis] = seq(attr(x, "r_lim")[axis, 1], attr(x, "r_lim")[axis, 2],
 			length.out = res)
 	}
 	pdat = lapply(x$species, function(sp)
@@ -119,9 +119,10 @@ plot.metacommunity = function(x, R, axis = 1, res = 100, ...) {
 	names(pdat) = attr(x, "spnames")
 	pdat = data.table::rbindlist(pdat, idcol = "species")
 
-	p1 = ggplot2::ggplot(pdat, ggplot2::aes(x = R, y = lam.V1, colour = species)) +
+	p1 = ggplot2::ggplot(pdat, ggplot2::aes(x = R, y = lam.V1, colour = factor(species))) +
 		ggplot2::geom_line() + ggplot2::scale_colour_brewer(type = "qual", palette = "Set2") +
 		ggplot2::theme_minimal() + ggplot2::xlab(attr(x, "rnames")[axis]) +
+		ggplot2::labs(colour = "Species") + 
 		ggplot2::ylab("Dominant Eigenvalue") + ggplot2::geom_hline(ggplot2::aes(yintercept = 0))
 
 	comp = x$competition
@@ -137,9 +138,6 @@ plot.metacommunity = function(x, R, axis = 1, res = 100, ...) {
 
 	gridExtra::grid.arrange(p1, p2, nrow = 1)
 }
-
-
-### ggplot competition plot; make other plot ggplot to be able to put onto a single plot
 
 
 
@@ -182,24 +180,24 @@ plot.species = function(x, R, axis = 1, ...) {
 	nms = names(dots)
 	if(!"edge.width" %in% nms) dots$edge.width = 10
 	if(!"edge.color" %in% nms) dots$edge.color = "#a6bddb"
-	if(!"edge.arrow.size" %in% nms) dots$edge.arrow.size = 0.2 * dots$edge.width
+	if(!"edge.arrow.size" %in% nms) dots$edge.arrow.size = 0.1 * dots$edge.width
 	return(dots)
 }
 
 
-#' Set default plot options when not user-specified
-#' @keywords internal
-.default_plot_pool_options = function(...) {
-	dots_orig = list(...)
-	nms = names(dots_orig)
-	dots = 	.default_plot_species_options(...)
-	if(!"ylab" %in% nms) dots$ylab = "Dominant eigenvalue"
-	if(!"type" %in% nms) dots$type = "n"
-	dots$col = NULL
-	# print(dots_orig)
-	# print(dots)
-	return(dots)
-}
+# #' Set default plot options when not user-specified
+# #' @keywords internal
+# .default_plot_pool_options = function(...) {
+# 	dots_orig = list(...)
+# 	nms = names(dots_orig)
+# 	dots = 	.default_plot_species_options(...)
+# 	if(!"ylab" %in% nms) dots$ylab = "Dominant eigenvalue"
+# 	if(!"type" %in% nms) dots$type = "n"
+# 	dots$col = NULL
+# 	# print(dots_orig)
+# 	# print(dots)
+# 	return(dots)
+# }
 
 #' Set default plot options when not user-specified
 #' @keywords internal

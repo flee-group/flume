@@ -1,15 +1,17 @@
 #' Create a river network
 #'
-#' @details The adjacency matrix must be a square matrix, with a row/column for each river network reach. Zero entries
-#' indicate no adjacency between reaches. Nonzero entries indicate adjacency, with the row indicating the upstream
-#' reach and the column the downstream (i.e., adjacency[i,j] == 1 indicates water flows from i to j). Nonzero elements
-#' will be set equal to one.
+#' @details The adjacency matrix must be a square matrix, with a row/column for each river network
+#' reach. Zero entries indicate no adjacency between reaches. Nonzero entries indicate adjacency,
+#' with the row indicating the upstream reach and the column the downstream 
+#' (i.e., adjacency[i,j] == 1 indicates water flows from i to j). Nonzero elements will be set
+#' equal to one.
 #' @param adjacency An adjacency matrix; see 'details'
 #' @param discharge Optional discharge values, see [discharge.river_network()]
 #' @param area Optional vector for cross sectional area values, one per reach
-#' @param state Optional, starting state of the network
-#' @param length The length of each reach, must be a single value (the model assumes all reaches are the same length)
+#' @param length The length of each reach, must be a single value (the model assumes all reaches
+#' are the same length)
 #' @param layout Optional, matrix of x-y coordinates used for plotting the network
+#' @param site_names Optional vector of site names
 #' @param skip_checks Logical; if true, no checks for valid topology will be performed
 #' @return An S3 object of class 'river_network', with the following members:
 #' * `adjacency` The adjacency matrix
@@ -25,31 +27,29 @@
 #' rn = river_network(adj, Q)
 #' plot(rn)
 #' @export
-river_network = function(adjacency, discharge, area, state, length = 1, layout, skip_checks = FALSE) {
+river_network = function(adjacency, discharge, area, length = 1, layout, site_names,
+	skip_checks = FALSE) {
 
 	if(any(! as(adjacency, "vector") %in% c(0,1))) {
 		adjacency[adjacency != 0] = 1
 	}
 
 	if(!skip_checks) {
-		if(!requireNamespace("igraph", quietly = TRUE) || !requireNamespace("Matrix", quietly = TRUE)) {
-			stop("Packages igraph and Matrix are required for topology checks; please install to proceed. ",
-				"If no topology checks are required, disable this error with skip_checks = TRUE.")
+		if(!requireNamespace("igraph", quietly = TRUE) || 
+					!requireNamespace("Matrix", quietly = TRUE)) {
+			stop("Packages igraph and Matrix are required for topology checks; please install to ",
+				"proceed. If no topology checks are required, disable this error with ",
+				"skip_checks = TRUE.")
 		}
 		if(!.validate_adjacency(adjacency))
 			stop("Adjacency matrix failed validation; see '?river_network' for the requirements.")
 	}
 
-	rn = structure(list(.adjacency = adjacency, .state = list(), .length = length), class = "river_network")
+	if(missing(site_names))
+		site_names = paste0("n", 1:nrow(adjacency))
 
-	## by default, boundary condition is set to equal the starting state
-	if(!missing(state)) {
-		rn = reset_state(rn, state)
-		state = state(rn) ## reset_state will correctly format state as a matrix if needed
-		rn$boundary = function() return(state)
-	} else {
-		rn$boundary = function() return(rep(0, nrow(rn[['.adjacency']])))
-	}
+	rn = structure(list(.adjacency = adjacency, .state = list(), .length = length),
+		class = "river_network")
 
 	if(!missing(discharge))
 		discharge(rn) = discharge
@@ -58,6 +58,8 @@ river_network = function(adjacency, discharge, area, state, length = 1, layout, 
 
 	if(!missing(layout))
 		attr(rn, "layout") = layout
+	attr(rn, "n_sites") = nrow(adjacency)
+	attr(rn, "site_names") = site_names
 
 	return(rn)
 }
@@ -88,7 +90,7 @@ reach_length = function(x) {
 #' @keywords internal
 #' @return Logical, TRUE if the validation passes
 .validate_adjacency = function(adjacency) {
-	if(!(is.matrix(adjacency) || is(adjacency, "Matrix")) ||   ## must be standard or Matrix package matrix
+	if(!(is.matrix(adjacency) || is(adjacency, "Matrix")) ||   ## must be standard matrix/Matrix
 	   any(adjacency < 0) ||                 ## negative distances not allowed
 	   any(is.infinite(adjacency)) ||        ## nor infinite/NA
 	   any(rowSums(adjacency) > 1) ||        ## a node may be upstream of at most one other node
@@ -113,6 +115,14 @@ state = function(x, ...)
 	UseMethod('state<-', x)
 
 #' @export
+boundary = function(x, ...)
+	UseMethod("boundary", x)
+
+#' @export
+'boundary<-' = function(x, value)
+	UseMethod('boundary<-', x)
+
+#' @export
 site_by_species = function(x, ...)
 	UseMethod("site_by_species", x)
 
@@ -120,21 +130,50 @@ site_by_species = function(x, ...)
 'site_by_species<-' = function(x, value)
 	UseMethod('site_by_species<-', x)
 
-#' @rdname(state)
+#' @export
+boundary_species = function(x, ...)
+	UseMethod("boundary_species", x)
+
+#' @export
+'boundary_species<-' = function(x, value)
+	UseMethod('boundary_species<-', x)
+
+
+#' @rdname state
 #' @export
 reset_state = function(x, value) {
 	if(!is.matrix(value))
 		value = matrix(value, nrow=nrow(adjacency(x)), ncol=1)
+	attr(x, "r_names") = colnames(value)
 	x[['.state']] = list()
 	state(x) = value
 	x
 }
 
+#' @rdname state
+#' @export
+reset_species = function(x, value) {
+	if(!is.matrix(value))
+		value = matrix(value, nrow=nrow(adjacency(x)), ncol=1)
+	attr(x, "sp_names") = colnames(value)
+	x[['si_by_sp']] = list()
+	site_by_species(x) = value
+	x
+}
+
+
+
 #' Setter and getter methods for river network state variables
 #' @name state
-#' @details By default, setting state will save the current state in the state history, then update current state
-#' to `value`. `reset_state` erases the state variable and sets a new one, and does not check that the
-#' dimensions make sense. Other methods update state and do dimension checking.
+#' @rdname state
+#' @title Get/set the (resource) state of a river network
+#' @details By default, setting state will save the current state in the state history, then update
+#' current state to `value`. `reset_state` erases the state variable and sets a new one, and does
+#' not check that the dimensions make sense. Other methods update state and do dimension checking.
+#'
+#' `boundary()` returns the boundary condition of the river network, as a site by resource matrix.
+#' `boundary() <-` sets the boundary; it must be a site by resoure matrix in the same format as
+#' state.
 #' @param x A river network
 #' @param history Logical; if TRUE, entire state history is returned
 #' @param value The value to update the attribute with
@@ -152,21 +191,45 @@ state.river_network = function(x, history = FALSE) {
 
 #' @rdname state
 #' @export
-'state<-.river_network' = function(x, value) {
-	if(!is.matrix(value))
+boundary.river_network = function(x) {
+	return(x[['.boundary']])
+}
+
+#' Check state matrix for errors
+#' @param x The state matrix to check
+#' @param nn The number of nodes in the network
+#' @param nr The number of resources, if NA, this is not checked
+#' @keywords internal
+.check_state = function(x, nn, nr = NA) {
+	if(!is.matrix(x))
 		stop("Can only assign a matrix to state")
-	if(nrow(value) != nrow(adjacency(x)))
-		stop("nrow(value) must be equal to the number of nodes in the river network")
+	if(nrow(x) != nn)
+		stop("State matrix must have one row per reach in the network")
+	if(!is.na(nr) && ncol(x) != nr)
+		stop("State matrix must have one column per resource")
+}
 
+#' @rdname state
+#' @export
+'state<-.river_network' = function(x, value) {
 	i = length(x[['.state']])
-	if(i > 0) {
-		## changing state dimensions is not allowed
-		stopifnot(ncol(value) == ncol(state(x)))
-	}
-
+	.check_state(value, nrow(adjacency(x)), ifelse(i == 0, NA, ncol(state(x))))
+	rownames(value) = attr(x, "site_names")
+	colnames(value) = attr(x, "r_names")
 	x[['.state']][[i + 1]] = value
 	return(x)
 }
+
+#' @rdname state
+#' @export
+'boundary<-.river_network' = function(x, value) {
+	.check_state(value, nrow(adjacency(x)), ncol(state(x)))
+	rownames(value) = attr(x, "site_names")
+	colnames(value) = attr(x, "r_names")
+	x[['.boundary']] = value
+	return(x)
+}
+
 
 #' @rdname state
 #' @export
@@ -182,6 +245,22 @@ site_by_species.river_network = function(x, history = FALSE) {
 
 #' @rdname state
 #' @export
+boundary_species.river_network = function(x) {
+	return(x[['.boundary_sp']])
+}
+
+#' @rdname state
+#' @export
+'boundary_species<-.river_network' = function(x, value) {
+	.check_state(value, nrow(adjacency(x)), ncol(site_by_species(x)))
+	rownames(value) = attr(x, "site_names")
+	colnames(value) = attr(x, "sp_names")
+	x[['.boundary_sp']] = value
+	return(x)
+}
+
+#' @rdname state
+#' @export
 'site_by_species<-.river_network' = function(x, value) {
 	if(!"si_by_sp" %in% names(x))
 		x[['si_by_sp']] = list()
@@ -191,6 +270,8 @@ site_by_species.river_network = function(x, history = FALSE) {
 		## changing state dimensions is not allowed
 		stopifnot(identical(dim(value), dim(site_by_species(x))))
 	}
+	rownames(value) = attr(x, "site_names")
+	colnames(value) = attr(x, "sp_names")
 	x[['si_by_sp']][[i + 1]] = value
 	return(x)
 }

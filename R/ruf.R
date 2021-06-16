@@ -2,7 +2,8 @@
 #'
 #' @details Resource use functions describe the impact a species has on the state of a location.
 #' This impact will commonly be zero (for static habitat features, for example), but for many
-#' resources (e.g., nutrient concentrations) the result will be negative (i.e., species deplete resources).
+#' resources (e.g., nutrient concentrations) the result will be negative (i.e., species deplete
+#' resources).
 #'
 #' This function is intended as an example, and can be replaced with a user-defined function.
 #' The function must take a site by species matrix and a resource state matrix as its first two
@@ -22,20 +23,23 @@
 #' @param C A [metacommunity()]
 #' @return A matrix of the same dimensions as `R` giving the rate of change of each resource
 #' @examples
-#' comm = metacommunity()
-#' Q = rep(1, 4)
-#' adj = matrix(0, nrow = 4, ncol = 4)
-#' adj[1,2] = adj[2,3] = adj[4,3] = 1
-#' rn = river_network(adj, Q)
-#' site_by_species(rn) = random_community(rn, comm)
-#' ruf(site_by_species(rn), state(rn), r_scale(comm))
+#'	comm = metacommunity()
+#'	Q = rep(1, 4)
+#'	adj = matrix(0, nrow = 4, ncol = 4)
+#'	adj[1,2] = adj[2,3] = adj[4,3] = 1
+#'	st = matrix(seq(0, 1, length.out = length(Q)), ncol = 1, dimnames = list(NULL, 'R'))
+#'	rn = river_network(adj, Q, state = st)
+#'	site_by_species(rn) = matrix(1, nrow = length(Q), ncol = length(comm$species))
 ruf = function(x, R, C) {
 	niche_max = sapply(C[['species']], function(sp) attr(sp, "niche_max"))
-	r_scale = do.call(rbind, lapply(C[['species']], function(sp) sp$r_scale))
+	r_use_scale = do.call(rbind, lapply(C[['species']], function(sp) sp$r_use))
 	n_ht = f_niche(C, R) / niche_max
 
+	# we assume that species that are outside their niche have a negligible effect on resource use
+	n_ht[n_ht < 0] = 0
+
 	# this produces the resources consumed, so the rate of change will have the opposite sign
-	r_use = n_ht %*% r_scale
+	r_use = n_ht %*% r_use_scale
 	-1 * r_use
 }
 

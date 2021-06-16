@@ -11,7 +11,6 @@ vignette: >
 knitr::opts_chunk$set(fig.width = 5.5, fig.height = 5.5, collapse = TRUE, comment = "##")
 
 library(flume)
-library(igraph)
 ```
 
 
@@ -19,7 +18,7 @@ Here we demonstrate the model using a simple simulation with generated data. The
 essential components:
 
 1. A `metacommunity` object, which describes all the possible species that can occur in the 
-simulation, gives their niches, and includes the pairwise competition strength
+simulation, gives their niches, and includes the pairwise competition strength.
 2. A `river_network`, which describes the topology of the network and gives other important 
 attributes, such as discharge.
 3. State variables; these are (mostly) dynamic attributes describing the state of the model at a 
@@ -31,7 +30,7 @@ groundwater intrusion, etc).
 
 ## 1. The metacommunity
 
-The metacommunity is an S3 object created by `flume` that describes all of the species that can
+The metacommunity is an object created by `flume` that describes all of the species that can
 possibly occur in the model. It also describes the possible resources and other habitat variables,
 their range of possible values, how the resources behave, the species' niches, how species
 compete for resources, and species' dispersal abilities.
@@ -42,197 +41,75 @@ more details.
 
 
 ```{r fig.height = 3, fig.width = 7}
-mc = metacommunity(scenario  = uniform_niches(nsp = 3, nr = 1))
+mc = metacommunity(nsp = 3, nr = 1, niches = niches_uniform)
 plot(mc)
 ```
-
-By default, all of the resources in the model are assumed to be `dynamic`; these represent
-chemicals, nutrients, and other resources that are consumed by species and will run out if not
-replenished. Resources may instead be `static`; these represent fixed habitat features (e.g. light,
-habitat structure) that do not change. Here, we generate 
-
-
-
-
 
 
 ## 2. The river network
 
-The main component of the river network is a weighted digraph; i.e., the topological relationships between locations. The network graph in `flume` uses equal-length stream reaches as nodes, while the edges describe which reaches are neighbours of each other. The simplest way to define a network is using an attribute list and a weighted adjacency matrix.
+The main component of the river network is a weighted digraph; i.e., the topological relationships
+between locations. The network graph in `flume` uses equal-length stream reaches as nodes, while
+the edges describe which reaches are neighbours of each other. The simplest way to define a network
+is using an attribute list and a weighted adjacency matrix.
 
-Discharge and cross-sectional area are required attributes (although area can be estimated from Q if omitted). Other attributes can be specified with a named list, but we will not use them for this example. Here, Q grows by 1 each time we move downstream (i.e., when we traverse an edge, representing lateral input), and we add reaches together at confluences. We define node 1 to be the most downstream node (this is purely an arbitrary choice).
+Discharge and cross-sectional area are required attributes (although area can be estimated from Q
+if omitted). Here, Q grows by 1 each time we move downstream (i.e., when we traverse an edge,
+representing lateral input), and we add reaches together at confluences. We define node 1 to be the
+most downstream node (this is purely an arbitrary choice).
 
 ```{r}
 Q = c(13,12,8,7,1,4,1,1,2,1)
 ```
 
+The adjacency matrix describes the spatial relationships among nodes. The matrix must be square,
+with one row and column per node. For two sites `i` and `j`, `adj[i,j]` will be nonzero if `i` is
+upstream of `j`. The layout matrix shows where to plot each vertex; this is optional but can be
+useful for nicer plots.
 
-The adjacency matrix describes the spatial relationships among nodes. The matrix must be square, with one row and column per node. For two sites `i` and `j`, `adj[i,j]` will be nonzero if `i` is upstream of `j`.
-
-By default, plotting the network will show the edges weighted by discharge. Node ('vertex') colours can be set by `vertex.color`; I use a simple gradient following the order of sites, because this is also how I will set up my resource gradients (in **3. State Variables** below). Edge weight is proportional to the discharge between sites. The layout matrix shows where to plot each vertex; this is optional but can be useful for nicer plots.
-
-```{r fig.height = 5, fig.width = 5}
+```{r}
 nsites = length(Q)
 adj = matrix(0, nrow=nsites, ncol=nsites)
-adj[2,1] = adj[3,2] = adj[9,2] = adj[4,3] = adj[5,4] = adj[6,4] = adj[7,6] = adj[8,6] = adj[10,9] = 1
-
-network = river_network(adjacency = adj, discharge = Q)
+adj[2,1] = adj[3,2] = adj[9,2] = adj[4,3] = adj[5,4] = adj[6,4] = adj[7,6] = adj[8,6] = 
+  adj[10,9] = 1
 layout = matrix(c(0,0,0,1,-0.5,2,-0.5,3,-1,4,0,4,-0.5,5,0.5,5,0.5,2,1,3), byrow=TRUE, nrow=nsites)
-plot(network, layout = layout, edge.arrow.size = 0.2, edge.width = 20)
+network = river_network(adjacency = adj, discharge = Q, layout = layout)
+
 ```
 
-## 3. State Variables
-
-The state variables are a matrix, one row per node in the river network, with each column representing an important
-variable for the model (e.g., resources, habitat, etc). The current state of the network can be accessed and updated
-with state(). For this example, we use a single state variable representing resources, which we name 'R'. We also use this starting state of the network as the boundary condition.
-
-The boundary condition for resources takes the same functional form as for the species pool, and represents input of resources from the terrestrial environment and from groundwater. The default is to set the resource boundary to zero if no initial state is provided with the network (as we have done here). Otherwise, the boundary condition will be set equal to the initial state.
-
-
-```{r}
-## it's a good idea to name your variables using dimnames
-network$boundary = function() matrix(seq(0, 1, length.out = nsites), ncol=1, dimnames = list(NULL, 'R'))
-state(network) = network$boundary()
-state(network)
-```
-
-Once the state has been set, plotting the network will by default show the state variable with a colour
-ramp.
+By default, plotting the network will show the edges weighted by discharge. Node ('vertex') colours
+can be set by `vertex.color`; I use a simple gradient following the order of sites, because this is
+also how I will set up my resource gradients (in **3. Setting up the model** below). Edge weight is
+proportional to the discharge between sites. 
 
 ```{r fig.height = 5, fig.width = 5}
-quartz(file="~/Desktop/network.png", w=8, h = 8, dpi=150, type='png')
-plot(network, layout = layout, edge.arrow.size = 1, edge.width = 20)
-legend("bottomleft", legend=c("1", rep("", 8), "0"), bty='n', title="", 
-	   fill=rev(scales::col_numeric("PuBu", range(state(network)))(state(network))))
-dev.off()
+plot(network, edge.arrow.size = 2, edge.width = 20)
 ```
 
+## 3. Setting up the model
 
+The model is initialised with the `flume()` function. Here, we should also specify initial values
+for the two state variables (site by resource concentration, and site by species).
 
+The state variables are a matrix, one row per node in the river network, with each column
+representing either resources or species. The resource state variable can be accessed with
+`state(network)`, and the species with `site_by_species(network)`.
 
+By default, the boundary condition for resources will use identical values as the initial state, and
+the boundary condition for species is set to zero. These can be changed using the `stb` and `spb`
+arguments.
 
+We use a scenario for the initial site by species matrix that places species at any site where they
+would be expected to be found at equilibrium in the absence of competition. This requires the
+initial state of the network to be specified in advance. Scenarios for resources
+are coming in a future version; for now we simply set an upstream to downstream gradient.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## BELOW IS OLD STUFF
-
-
-
-
-### 1a. Competition
-
-The `metacommunity()` function automatically handles creating a competition matrix for you. This section explains in more detail how this function is created.
-
-Competition in the model is defined as the degree of overlap between two species' absolute niches, which in turn are defined by the colonisation-extinction functions. This follows from the definition of the absolute niche as the environmental conditions where a species can persist long-term. In a metapopultion, this is predicted to be anywhere $\lambda > 0$, where $\lambda = c - m$. Moreover, the quantity $\lambda$ will be correlated to performance; where $\lambda$ is large, the species will recolonize more quickly after going extinct. We can visualise the niche using the `plot` function.
-
-The model simply computes the area of overlap under the species' niche curves to determine the pairwise competition coefficient, shown shaded in the figure below. This is done using the numerical integration. The more similar two species are, the more their niches overlap, and the larger this shaded area gets. Here, the model has chosen the two species such that they have identical performance (i.e., $\int \lambda_1 = \int \lambda_2$) and competition is minimised.
-
-```{r fig.height = 4, fig.width = 4}
-plot(sp_pool)
-
-
-xpo = seq(0,1,0.05)
-
-# compute the two curves, then choose whichever is smaller
-y1 = sp_pool$species[[1]]$col(xpo) - sp_pool$species[[1]]$ext(xpo)
-y2 = sp_pool$species[[2]]$col(xpo) - sp_pool$species[[2]]$ext(xpo)
-ypo = ifelse(y1 > y2, y2, y1)
-ypo = c(ypo, rep(-1, length(ypo)))
-xpo = c(xpo, rev(xpo))
-polygon(xpo, ypo, border = NA, col = "#d9d9d9")
+```{r fig.height = 5, fig.width = 8}
+st0 = matrix(seq(0, 1, length.out = length(Q)), ncol = 1)
+state(network) = st0
+sp0 = community_equilibrium(network, mc)
+model = flume(mc, network, sp0, st0)
 ```
 
-### 1b. Dispersal
-
-The model includes two dispersal parameters `alpha` and `beta`, representing active and passive dispersal, respectively. These are created by default to include no active dispersal and identical passive dispersal among all species. The dispersal parameters can be accessed using the `dispersal_params` function, or by the `alpha` and `beta` members of individual species.
-
-```{r}
-dispersal_params(sp_pool)
-sp_pool$species[[1]]$beta
-```
-
-### 1c. Boundary conditions
-
-Depending on the system and the species involved, there might be immigration of species to the river network from outside. This takes the form of an addition to the colonisation term, and should be implemented as a function that returns either a matrix with one column per species and either a single row (if immigration is constant throughout the river network) or with rows corresponding to the number of nodes in the network. By default the model assumes no immigration.
-
-```{r}
-sp_pool$boundary()
-```
-
-
-
-
-
-
-
-### 3a. Community composition
-
-The other aspect of the river network's state is the community site-by-species matrix. This matrix always has as many rows as there are sites (i.e. nodes) in the river network, and as many columns as there are species in the metacommunity. We can access this variable using the `site_by_species` function, and we can generate one at random using `random_community`. We begin with a two-species, ten-site community matrix, populated at random.
-
-```{r error=TRUE}
-
-## empty, we haven't set it up yet
-site_by_species(network)
-```
-
-```{r fig.height = 3, fig.width = 7}
-set.seed("5111605")
-site_by_species(network) = random_community(network, sp_pool, prevalence = c(0.35, 0.65))
-site_by_species(network)
-
-par(mar=rep(0.1, 4))
-plot(network, variable = 'site_by_species', layout = layout, edge.arrow.size = 0.2)
-```
-
-
-# Running the simulation
-
-`flume` has a number of functions for running a simulation over time. First, it is important to know how to compute the time derivatives for both resources and species. Because presence/absence is a discrete variable and colonisations and extinctions are discrete events, and because the model takes place in discrete time steps, it makes more sense to talk about the c/e probability over a specified time period, rather than the rate; `flume` does this by default. Rates can be recovered if desired using the `components=TRUE` option. For resources, the time derivative is directly returned, and can be integrated using a variety of methods.
-
-All of these functions require a species pool and a river network as input. Additionally, the c/e functions require the time interval, in the same units as all the rates in the model. Output is a site by species or resource matrix with the probabilities or fluxes.
-
-```{r}
-col_prob(sp_pool, network, dt = 1)
-ext_prob(sp_pool, network, dt = 1)
-dRdt(sp_pool, network)	
-```
-
-It is usually not necessary to call these functions directly. Rather, a simulation is started by creating a `flume` object and then running functions on that object. A quick plot of starting and ending resource and species distributions shows the changes.
-
-```{r fig.height = 3, fig.width = 7}
-sim = flume(sp_pool, network, dt = 1)
-sim = run_simulation(sim, nt = 10)
-par(mfrow = c(1,2), mar=rep(0.1, 4))
-plot(sim$networks[[1]], t = 1, zlim=c(0,1), layout=layout, edge.arrow.size = 0.2)
-plot(sim$networks[[1]], t = 11, zlim=c(0,1), layout=layout, edge.arrow.size = 0.2)
-
-plot(sim$networks[[1]], t = 1, variable = 'site_by_species', layout = layout, edge.arrow.size = 0.2)
-plot(sim$networks[[1]], t = 11, variable = 'site_by_species', layout = layout, edge.arrow.size = 0.2)
-
-```
-
-`flume` simulations are stochastic, so it's generally helpful to run a large number of simulations and look at average results over time. Here we create a model and run 64 replicates for 1000 time steps.
-
-```{r}
-sim = flume(sp_pool, network, dt = 1)
-sim = run_simulation(sim, nt = 1000, reps=64)
-plot(sim, variable = "occupancy", type="network")
-plot(sim, variable = "occupancy", type="reach")
-plot(sim, variable = "resources", type="reach")
-```
+## 4. Running the model
 

@@ -4,18 +4,39 @@
 \alias{flume}
 \title{Create a FLUvial Meta-Ecosystem model}
 \usage{
-flume(comm, network, dt)
+flume(comm, network, sp0, st0, spb, stb, dt = 1)
 }
 \arguments{
 \item{comm}{A \code{\link[=metacommunity]{metacommunity()}}}
 
 \item{network}{A \code{\link[=river_network]{river_network()}}}
 
+\item{sp0}{Initial site by species matrix}
+
+\item{st0}{Initial state of the model}
+
+\item{spb}{Boundary condition for species}
+
+\item{stb}{Boundary condition for resources}
+
 \item{dt}{The time step for the model, in the same time units as all fluxes}
 }
 \value{
-An S3 object of class 'flume'
+An S3 object of class "flume"
 }
 \description{
 Create a FLUvial Meta-Ecosystem model
+}
+\details{
+\code{sp0}, \code{st0}, \code{spb}, and \code{stb} are optional parameters that define the initial
+states (\verb{*0}) and boundary conditions (\verb{*b}) for the species (\verb{sp*}) and resources (\verb{st*}).
+Initial states must be a site-by-(species or resource) matrix. Boundary conditions should be
+as described in \code{\link[=river_network]{river_network()}}.
+
+If the species and resource state variables are not defined in the network, they must be
+specified here. If they are specified here, they will override any state set in the network.
+
+Boundary conditions, if not defined, will be set automatically; the boundary condition for
+resources will be equal to the initial state, and for species will be set to zero globally
+(i.e., no immigration from outside the network).
 }

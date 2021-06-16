@@ -2,18 +2,55 @@
 #'
 #' @param comm A [metacommunity()]
 #' @param network A [river_network()]
-#' @param species Initial site by species matrix
-#' @param state_i Initial state of the model
-#' @param boundary Boundary condition for the resources
+#' @param sp0 Initial site by species matrix
+#' @param st0 Initial state of the model
+#' @param spb Boundary condition for species
+#' @param stb Boundary condition for resources
 #' @param dt The time step for the model, in the same time units as all fluxes
+#' @details `sp0`, `st0`, `spb`, and `stb` are optional parameters that define the initial
+#' states (`*0`) and boundary conditions (`*b`) for the species (`sp*`) and resources (`st*`).
+#' Initial states must be a site-by-(species or resource) matrix. Boundary conditions should be
+#' as described in [river_network()].
+#' 
+#' If the species and resource state variables are not defined in the network, they must be
+#' specified here. If they are specified here, they will override any state set in the network.
 #'
+#' Boundary conditions, if not defined, will be set automatically; the boundary condition for
+#' resources will be equal to the initial state, and for species will be set to zero globally
+#' (i.e., no immigration from outside the network).
 #' @return An S3 object of class "flume"
+#' @examples
 #' @export
-flume = function(comm, network, species, state_i, boundary = state_i, dt = 1) {
-	x = structure(list(metacom = comm, networks = list(network), dt = dt), class = "flume")
+flume = function(comm, network, sp0, st0, spb, stb, dt = 1) {
 
-	## not sure if it makes more sense to do this here, or when defining the network
-	state(x$networks[[1]]) = state_i
+	## define initial states, and check dimensionality
+	if(is.null(state(network)) && missing(st0))
+		stop("Initial resource state not specified")
+
+	if(is.null(network[["si_by_sp"]]) && missing(sp0))
+		stop("Initial site by species matrix not specified")
+
+	if(missing(st0))
+		st0 = state(network)
+	if(ncol(st0) != attr(comm, "n_r"))
+		stop("Initial network state doesn't match number of resources in comm")
+	colnames(st0) = attr(comm, "r_names")
+	network = reset_state(network, st0)
+	if(missing(stb))
+		stb = state(network)
+	boundary(network) = stb
+	if(missing(sp0))
+		sp0 = site_by_species(network)
+	if(ncol(sp0) != attr(comm, "n_species"))
+		stop("Initial site by species doesn't match number of resources in comm")
+	colnames(sp0) = attr(comm, "sp_names")
+	network = reset_species(network, sp0)
+	if(missing(spb))
+		spb = matrix(0, nrow = attr(network, 'n_sites'), ncol = attr(comm, 'n_species'), 
+			dimnames = list(attr(network, "site_names"), attr(comm, "sp_names")))
+	boundary_species(network) = spb
+	x = structure(list(metacom = comm, networks = list(network), dt = dt), class = "flume")
+	x
 }
 
 #' Compute post simulation statistics

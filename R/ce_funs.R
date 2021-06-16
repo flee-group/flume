@@ -32,6 +32,7 @@ ce_constant = function(scale) {
 
 #' @rdname ce_funs
 ce_gaussian = function(location, breadth, scale) {
+
 	if(length(location) == 1) {
 		return(function(x) scale * exp(-((x - location)^2)/(2 * breadth^2)))
 	} else {

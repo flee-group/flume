@@ -10,7 +10,8 @@
 #' @param dt Time interval
 #' @param components Boolean, normally FALSE, see 'details'
 #'
-#' @return Normally, a site by species matrix of colonisation/extinction probabilities, but see 'details'
+#' @return Normally, a site by species matrix of colonisation/extinction probabilities, 
+#' 	but see 'details'
 #' @export
 col_prob = function(comm, network, dt, components = FALSE) {
 	R = state(network)
@@ -24,11 +25,16 @@ col_prob = function(comm, network, dt, components = FALSE) {
 
 	## here the dispersal portion
 	P = prevalence(network)
-	A = matrix(dispersal_params(comm)$alpha, nrow=nsites, ncol = nsp, byrow = TRUE) # repeat the alphas across all sites in a matrix
-	B = matrix(dispersal_params(comm)$beta, nrow=nsites, ncol = nsp, byrow = TRUE) # same for beta
-	Q = matrix(discharge(network), nrow=nsites, ncol = nsp) # repeat discharge by site across all species
-	immigration = matrix(as.vector(comm$boundary()), nrow = nsites, ncol = nsp, byrow = TRUE)
-	dispersal = P * (A + B*Q + immigration)
+
+	# repeat the alphas and betas across all sites in a matrix
+	A = matrix(dispersal_params(comm)$alpha, nrow=nsites, ncol = nsp, byrow = TRUE)
+	B = matrix(dispersal_params(comm)$beta, nrow=nsites, ncol = nsp, byrow = TRUE)
+
+	# repeat discharge by site across all species
+	Q = matrix(discharge(network), nrow=nsites, ncol = nsp)
+
+
+	dispersal = P * (A + B*Q + boundary_species(network))
 
 	dimnames(col) = dimnames(dispersal) = dimnames(site_by_species(network))
 	if(components) {
@@ -83,7 +89,7 @@ dRdt = function(comm, network, components = FALSE) {
 	A = cs_area(network)
 	l = reach_length(network)
 	lQ = lateral_discharge(network)
-	lR = network$boundary()
+	lR = boundary(network)
 
 	output = Q * R
 

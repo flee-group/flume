@@ -46,22 +46,23 @@ test_that("River network state manipulation", {
 
 	st = matrix(seq(0, 1, length.out = length(Q)), ncol = 1, dimnames = list(NULL, 'R'))
 	# construction with state
-	expect_error(river_network(adj, Q, st), regex=NA)
-
-	# try to add invalid states
-	expect_error(state(rn) <- st[1:3,,drop=FALSE], regex="nrow")
 
 	expect_error(state(rn) <- st, regex=NA)
-	expect_identical(state(rn), st)
+	expect_equal(state(rn), st, check.names = FALSE, check.attributes = FALSE)
+
+	# try to add invalid states
+	expect_error(state(rn) <- st[1:3, , drop=FALSE], regex = "one row per reach")
 
 	# try to change state dimensionality
-	expect_error(state(rn) <- cbind(st, st), regex="ncol")
+	expect_error(state(rn) <- cbind(st, st), regex = "one column per resource")
 
 	# update state and retrieve history
 	expect_error(state(rn) <- st + 1, regex=NA)
-	expect_identical(state(rn), st + 1)
-	expect_identical(state(rn, history = TRUE)[[1]], st)
-	expect_identical(state(rn, history = TRUE)[[2]], state(rn))
+	expect_equal(state(rn), st + 1, , check.names = FALSE, check.attributes = FALSE)
+	expect_equal(state(rn, history = TRUE)[[1]], st, , check.names = FALSE,
+		check.attributes = FALSE)
+	expect_equal(state(rn, history = TRUE)[[2]], state(rn), , check.names = FALSE,
+		check.attributes = FALSE)
 
 	# reset state
 	expect_error(rn <- reset_state(rn, 1:nrow(adj)), regex=NA)
@@ -73,9 +74,5 @@ test_that("River network community matrix", {
 	rn = river_network(adj, Q)
 	comm <- metacommunity()
 	expect_error(site_by_species(rn), regex = "missing")
-	expect_error(site_by_species(rn) <- random_community(rn, comm), regex = NA)
-
-	# make sure all sites have species in a bunch of random communities
-	expect_warning(rcomm <- random_community(rn, comm, prevalence = 0), regex = "low prevalence")
-	expect_true(all(rowSums(rcomm) > 0))
+	expect_error(site_by_species(rn) <- community_random(rn, comm), regex = NA)
 })
