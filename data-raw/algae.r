@@ -40,14 +40,19 @@ site_by_species(network) = site_by_species
 
 # niche_loc is the "optimal" N:P ratio for a species; mean of N:P at all sites where sp is found
 niche_loc = (t(site_by_species) %*% site_by_env) / colSums(site_by_species)
-colnames(niche_loc) = "N:P"
+colnames(niche_loc) = "N_to_P"
 
 # niche_breadth is the breadth of the niche; we use sd, could also use the range, CV etc
 niche_breadth = sweep(site_by_species, 1, site_by_env, FUN = `*`)
 niche_breadth[niche_breadth == 0] = NA
 niche_breadth = apply(niche_breadth, 2, sd, na.rm = TRUE)
 
-mc = metacommunity(niche_loc, niche_breadth, niche_lim = c(0, 650))
+niches = data.frame(species = rownames(niche_loc), location = niche_loc[,1], 
+	breadth = niche_breadth)
 
-alg_flume = flume(mc, network, dt = 1)
+algae = list(niches = niches)
 usethis::use_data(algae, overwrite = TRUE)
+
+# mc = metacommunity(niche_loc, niche_breadth, niche_lim = c(0, 650))
+
+# alg_flume = flume(mc, network, dt = 1)

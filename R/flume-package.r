@@ -15,10 +15,9 @@ NULL
 
 #' Algal metacommunity N:P example dataset
 #'
-#' @format A [flume()]
+#' @format A list
 #' \describe{
-#'   \item{species}{Five algal ASVs}
-#'   \item{sites}{Sampled locations in the Bodingbach catchment}
+#'	\item{niches}{A table giving the niche location and breadth (in terms of N:P) for five species}
 #' }
 "algae"
 

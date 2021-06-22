@@ -5,10 +5,9 @@
 \alias{algae}
 \title{Algal metacommunity N:P example dataset}
 \format{
-A \code{\link[=flume]{flume()}}
+A list
 \describe{
-\item{species}{Five algal ASVs}
-\item{sites}{Sampled locations in the Bodingbach catchment}
+\item{niches}{A table giving the niche location and breadth (in terms of N:P) for five species}
 }
 }
 \usage{

@@ -10,22 +10,35 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  error = TRUE
 )
 ```
 
 ```{r setup}
-# library(flume)
-devtools::load_all()  # for dev, remove when stable version done
+library(flume)
+# devtools::load_all()  # for dev, remove when stable version done
 ```
 
 The metacommunity is one of the two main components for creating a `flume` model. It describes the 
 collection of species that can occur in the model, including all of their traits related to the 
 niche, species interactions, and dispersal.
 
-For all pieces of information that are required, there is also default behaviour. In this way, a 
-metacommunity can be generated with real species in mind, or completely randomly, or something in 
-between. It is useful to check out the help file to understand the defaults for the various options.
+The easiest way to generate these components is by using `scenarios`, which you pass to the
+function `metacommunity()`. There are scenarios around resources and niches, and scenarios for
+dispersal. For example, the default behaviour when you call the `metacommunity()` function with no
+arguments is to create a metacommunity with 2 species and one resource using the `niches_uniform()`
+scenario for resources/niches and the `dispersal_custom()` dispersal scenario (using default
+parameters in this case that do not vary by species). The equivalent call specifying all parameters
+would be: `metacommunity(nsp = 2, nr = 1, niches = niches_uniform, dispersal = dispersal_custom)`.
+The niche scenario here will create niches that are uniformly spaced across the possible resource
+values, with a standard deviation chosen automatically to cover a moderate breadth.
+
+The focus of this vignette will be explaining the options that can be invoked, primarily using the
+custom scenarios. In these scenarios, or all pieces of information that can be provided required,
+there are also defaultsr. In this way, a  metacommunity can be generated with real species in mind,
+or completely randomly, or something in between. It is useful to check out the help file to
+understand the defaults for the various options.
 
 ## Niche shape
 
@@ -36,13 +49,22 @@ of them has parameters:
 ### Gaussian
   * scale: the maximum value of the curve
   * location: where on the resource axis the peak of the curve is
-  * width: How broad (i.e., the standard deviation of the gaussian function)
+  * breadth: How broad (i.e., the standard deviation of the gaussian function)
   
 ### Constant
   * scale: the height of the function
 
 These parameters can be specified to vary by species, vary by resource axis, or both, and to have 
-orthogonal or covarying resource axes. The help file explains how to provide each of these cases.
+orthogonal or covarying resource axes. To change them individually, use the `niches_custom`
+scenario. Here, we change the location and breadth of the gaussian colonisation function to make
+three species, including two low-resource specialists that compete strongly and one generalist with
+a slight preference for high resource conditions, but a lower peak performance.
+
+```{r niche, fig.width = 9, fig.height = 3.5}
+nopts = list(location = c(0.1, 0.12, 0.7), breadth = c(0.1, 0.1, 2), scale_c = c(0.5, 0.5, 0.25))
+mcom = metacommunity(nsp = 3, nr = 1, niches = niches_custom, niche_args = nopts)
+plot(mcom)
+```
 
 
 ## Dispersal parameters
@@ -53,37 +75,31 @@ occurs along the stream, in both up- and down-stream directions. Passive dispers
 when one species is transported by another species should also be included in `alpha`. **Passive
 dispersal** is dispersal with the flow of water, and only occurs downstream. It is specified with a
 parameter `beta`. Both `alpha` and  `beta` can be a scalar (all species have the same disperal
-ability) or a vector with one entry per species.
+ability) or a vector with one entry per species. We can change these parameters using the
+`dispersal_custom` scenario, in a similar manner as to the niches. Here we edit the previous
+community to make the specialists primarily passive dispersers, while the generalist is a strong
+disperser both up- and downstream.
+
+```{r dispersal, fig.width = 9, fig.height = 3.5}
+dopts = list(alpha = c(0.05, 0.05, 0.5), beta = 0.5)
+mcom = metacommunity(nsp = 3, nr = 1, niches = niches_custom, dispersal = dispersal_custom,
+  niche_args = nopts, dispersal_args = dopts)
+```
 
 
-## Resource use
+### Complex resources
 
-A single parameter, `r_scale`, controls the resource use of species. Generally speaking, species 
-consume resources faster closer to their niche optimum, scaled by this parameter. Like the niche
-parameters, resource use can vary by species, resource, or both.
-
-
-## Generating metacommunities
-
-### Creating metacommunities by hand
-
-Here we generate by hand a metacommunity for algae using N:P ratio. We know little about dispersal,
-nor about resource use, so for the moment we use the defaults and focus on defining the niche shape.
-
-If we add names to the location vector, these will be used in the resulting metacommunity for 
-plotting and other output.
+It isn't always the case that resources map directly to niche axes. Here we load the `algae` dataset
+included with `flume`. The `niches` object gives average and standard deviation of N:P ratios for 5
+aquatic algal taxa. We can create a metacommunity that tracks two resources, but computes the niche
+based on the ratio of these two resources.
 
 ```{r algae, fig.width = 9, fig.height = 3.5}
-# niche locations
-niche_loc = matrix(c(200.51879,  200.51879, 139.15023, 18.47656, 414.07093), ncol = 1,
-	dimnames = list(c("ASV_4", "ASV_5", "ASV_17", "ASV_63", "ASV_67"), "N:P"))
+data(algae)
 
-# niche widths
-niche_wid = c(164.629301, 164.629301, 102.373506, 3.765155, 160.079609)
-names(niche_wid) = rownames(niche_loc) ## optional
-
-mc = metacommunity(niche_loc, niche_wid, niche_lim = c(0, 650))
+nopts = list(location = algae$niches$location, breadth = algae$niches$breadth, ratio = c(1, 2))
+mcom = metacommunity(nsp = nrow(algae$niches), nr = 2, niches = niches_custom, niche_args = nopts,
+  sp_names = algae$niches$species, r_names = c("N", "P"))
 plot(mc, res = 2000)
 ```
 
-### Creating metacommunities using scenarios
