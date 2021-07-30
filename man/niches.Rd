@@ -16,8 +16,8 @@ niches_custom(
   scale_e = 0.2,
   r_use = 0.05,
   r_lim = matrix(rep(c(0, 1), each = nr), ncol = 2),
-  static = NA,
-  ratio = NA
+  static,
+  ratio
 )
 
 niches_uniform(nsp = 2, nr = 1, r_lim = c(0, 1), ...)
@@ -39,14 +39,14 @@ niches_random(nsp = 2, nr = 1, r_lim = c(0, 1), ...)
 
 \item{r_use}{Resource use scaling parameter, see 'details}
 
-\item{r_lim}{Minimum and maximum possible values for each niche dimension; can be a vector
+\item{r_lim}{Minimum and maximum possible values for each resource dimension; can be a vector
 in the case of a single resource, otherwise a matrix with 2 columns and nr rows.}
 
 \item{static}{Vector, the indices of resources that are static, \code{NA} if none. Any resources
 that are not static are by definition dynamic}
 
 \item{ratio}{A 2-column matrix; each row is the indices of a pair of resources. The ratio of
-the first to the second will define a single niche dimension. \code{NA} if none.}
+the first to the second will define a single niche dimension. If missing, no ratios used.}
 
 \item{...}{Additional named niche parameters to override the defaults in \code{niches_custom()}.}
 }
@@ -84,6 +84,15 @@ cannot depend on the concentration of any other resource.
 to the matrix above, but a full variance-covariance matrix is supplied for each species,
 describing the breadth of the niche along each axis but also how the axes covary.
 }
+
+For ratio niche dimensions, note that \code{nr} will be larger than the number of niche dimensions
+specified in \code{location} and \code{breadth}.  Ratio dimensions will always be inserted at the end
+of the resource matrix, regardless of the position of the original resources, and it is necessary
+that the \code{location} and \code{breadth} parameters reflect this. For example, if the niche dimensions
+for three resources are the r1:r2 ratio and r3, the \code{location} parameter should be of length 2,
+with the first entry being the location for r3, and the second for r1:r2. To avoid confusion,
+it is recommended (but not required) that users only construct ratio niches from resources that
+are specified at the end.
 
 \code{scale_c}, \code{scale_e}: The (relative) height of the Gaussian colonisation function or
 the constant extinction function, must be a positive real number.

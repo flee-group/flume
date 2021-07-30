@@ -104,9 +104,12 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 #' Plot species independent stable envelopes
 #' @param x A [metacommunity()]
 #' @param R an optional resource state matrix
-#' @param axis Which resource axis (i.e., column in R) to plot along
+#' @param axis Which resource axis (i.e., column in R) to plot along; see 'details'
 #' @param res Plotting resolution, how many points along the x-axis to plot; more produces smoother
 #'		lines.
+#'
+#' @details In the case where `axis` specifies a resourec that is part of a ratio niche, then
+#' plotting will occur along the ratio axis, not the untransformed axis
 #' @export
 plot.metacommunity = function(x, R, axis = 1, res = 100, ...) {
 	if(missing(R)) {

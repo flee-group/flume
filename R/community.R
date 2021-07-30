@@ -63,7 +63,8 @@ metacommunity = function(nsp = 2, nr = 1, niches = niches_uniform, dispersal = d
 	attr(comm, "r_lim") = n_params$r_lim
 	attr(comm, "n_species") = nsp
 	attr(comm, "n_resources") = nr
-#	attr(comm, "n_niche") = nn ##TODO
+	if("ratio" %in% names(niche_args))
+		attr(comm, "ratio") = niche_args$ratio
 	comm[["competition"]] = .compute_comp_matrix(comm)
 
 	## for now no immigration from outside the metacommunity
@@ -104,6 +105,7 @@ dispersal_params = function(x) {
 #' @param alpha Active dispersal ability
 #' @param beta Passive dispersal ability
 #' @param r_use Resource use scaling parameter, one per niche axis
+#' @param r_trans A transformation function for converting resources into niche dimensions
 #' @return An S3 object of class 'species', which contains the following named elements:
 #'   * `col`: The colonisation function, takes a state matrix R and returns a vector of
 #'		colonisation rates
@@ -113,12 +115,13 @@ dispersal_params = function(x) {
 #'   * `alpha`: Active dispersal ability
 #'   * `beta`: Passive dispersal ability
 #'   * `r_use`: Resource use rate per niche axis
+#'	 * `r_trans`: Resource-to-niche transformation function
 #'
 #' Additionally, the following attributes:
 #'    * `niche_max`: the maximum possible value of the fundamental niche
 #' @examples NULL
 #' @export
-species = function(location, breadth, scale_c, scale_e, alpha, beta, r_use) {
+species = function(location, breadth, scale_c, scale_e, alpha, beta, r_use, r_trans = identity) {
 	x = structure(list(), class = "species")
 	x$par_c = list(location = location, breadth = breadth, scale = scale_c)
 	x$par_e = list(scale = scale_e)
@@ -128,7 +131,8 @@ species = function(location, breadth, scale_c, scale_e, alpha, beta, r_use) {
 		r_use = rep(r_use, length(location))
 	x$r_use = r_use
 	.check_species_params(x)
-	x$col = ce_gaussian(location, breadth, scale_c)
+	x$r_trans = r_trans
+	x$col = ce_gaussian(location, breadth, scale_c, r_trans)
 	x$ext = ce_constant(scale_e)
 
 	attr(x, "niche_max") = f_niche(x, location)

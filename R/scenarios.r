@@ -8,12 +8,12 @@
 #' @param scale_c Niche height for colonisation, see 'details'.
 #' @param scale_e Niche height for extinction, see 'details'.
 #' @param r_use Resource use scaling parameter, see 'details
-#' @param r_lim Minimum and maximum possible values for each niche dimension; can be a vector
+#' @param r_lim Minimum and maximum possible values for each resource dimension; can be a vector
 #'		in the case of a single resource, otherwise a matrix with 2 columns and nr rows.
 #' @param static Vector, the indices of resources that are static, `NA` if none. Any resources
 #'		that are not static are by definition dynamic
 #' @param ratio A 2-column matrix; each row is the indices of a pair of resources. The ratio of
-#'		the first to the second will define a single niche dimension. `NA` if none.
+#'		the first to the second will define a single niche dimension. If missing, no ratios used.
 #' @param ... Additional named niche parameters to override the defaults in `niches_custom()`.
 #' @details
 #' Scenarios handle the complexity of generating niches for you. For custom niches, there is some
@@ -43,6 +43,15 @@
 #'   	to the matrix above, but a full variance-covariance matrix is supplied for each species,
 #'   	describing the breadth of the niche along each axis but also how the axes covary.
 #'
+#' For ratio niche dimensions, note that `nr` will be larger than the number of niche dimensions
+#' specified in `location` and `breadth`.  Ratio dimensions will always be inserted at the end
+#' of the resource matrix, regardless of the position of the original resources, and it is necessary
+#' that the `location` and `breadth` parameters reflect this. For example, if the niche dimensions
+#' for three resources are the r1:r2 ratio and r3, the `location` parameter should be of length 2,
+#' with the first entry being the location for r3, and the second for r1:r2. To avoid confusion,
+#' it is recommended (but not required) that users only construct ratio niches from resources that
+#' are specified at the end.
+#'
 #' `scale_c`, `scale_e`: The (relative) height of the Gaussian colonisation function or
 #' the constant extinction function, must be a positive real number.
 #' Can be supplied as a scalar (all species have the same scale) or a vector of length `nsp`.
@@ -61,22 +70,37 @@
 #' niches_custom(nsp = 2, nr = 2, location = matrix(c(1,2,3,4), nrow=2))
 #' @export
 niches_custom = function(nsp, nr, location, breadth = 1, scale_c = 0.5, scale_e = 0.2,
-		r_use = 0.05, r_lim = matrix(rep(c(0, 1), each = nr), ncol = 2), static = NA, ratio = NA) {
+		r_use = 0.05, r_lim = matrix(rep(c(0, 1), each = nr), ncol = 2), static, ratio) {
 
 	# TODO
-	# handle static and ratio
+	# handle static (see below, r_use)
+	# but also need to ensure that this is saved in a property somewhere
+	# because when setting up the model, need to ensure that static variables do not undergo
+	# transport and have no lateral input
+	# also when running the model, they should be excluded from the differential equations
+	# still need to handle plotting/printing/naming for both static and ratio as well
+
+	if(missing(ratio)) {
+		nn = nr # number of niche dimensions
+		r_trans = identity # transform resources into niche dimensions
+	}
+	else {
+		ratio = .check_ratio(ratio, nr)
+		nn = nr - nrow(ratio)
+		r_trans = ratio_transform(ratio)
+	}
 
 	if(!is.matrix(location)) {
-		if(nr != 1)
+		if(nn != 1)
 			stop("If nr > 1, location must be a matrix")
 		location = matrix(location, ncol = 1)
 	}
 
 	location = lapply(1:nsp, function(i) location[i, ])
-	breadth = .check_breadth(breadth, nsp, nr)
+	breadth = .check_breadth(breadth, nsp, nn)
 	scale_c = .check_scale(scale_c, nsp)
 	scale_e = .check_scale(scale_e, nsp)
-	r_use = .check_r_use(r_use, nsp, nr)
+	r_use = .check_r_use(r_use, nsp, nr) ## pass static along here, gets set to zero if static
 
 	if(!is.matrix(r_lim))
 		r_lim = matrix(r_lim, ncol = 2)
@@ -85,7 +109,7 @@ niches_custom = function(nsp, nr, location, breadth = 1, scale_c = 0.5, scale_e 
 		stop("r_lim must be a matrix with 1 row per resource and 2 columns")
 
 	list(location = location, breadth = breadth, scale_c = scale_c, scale_e = scale_e,
-		r_use = r_use, r_lim = r_lim)
+		r_use = r_use, r_lim = r_lim, r_trans = r_trans)
 }
 
 #' @rdname niches
@@ -214,3 +238,16 @@ community_equilibrium = function(rn, mc) {
 	(f_niche(mc, state(rn)) > 0) * 1
 }
 
+
+#' @rdname r_transform
+#' @name r_transform
+#' @title Transform resources into niche dimensions
+#'
+#' @keywords internal
+ratio_transform = function(ratio) {
+	# take the ratio of the designated columns, and append them to the end, dropping the originals
+	return(function(x) {
+		cbind(x[,-as.vector(ratio)], 
+			apply(ratio, 1, function(i) x[,i[1]] / x[, i[2]]))
+	})
+}

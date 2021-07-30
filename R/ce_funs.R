@@ -8,6 +8,7 @@
 #' @param location Location optimum for functions with an optimum
 #' @param breadth Breadth of the function (e.g., standard deviation or vcv matrix for gaussian)
 #' @param scale Height of the col/ext function
+#' @param r_trans A transformation function for converting resources into niche dimensions
 #'
 #' @return For c/e functions, a vector of colonisation/extinction rates with length == `nrow(x)`
 #' For all others, a c/e function of the desired form
@@ -31,17 +32,19 @@ ce_constant = function(scale) {
 }
 
 #' @rdname ce_funs
-ce_gaussian = function(location, breadth, scale) {
+ce_gaussian = function(location, breadth, scale, r_trans) {
 
 	if(length(location) == 1) {
-		return(function(x) scale * exp(-((x - location)^2)/(2 * breadth^2)))
+		f = function(x) scale * exp(-((r_trans(x) - location)^2)/(2 * breadth^2))
 	} else {
 		if(!requireNamespace("mvtnorm", quietly = TRUE))
 			stop("Multidimensional niches require the 'mvtnorm' and 'cubature' packages")
-		return(function(x) scale * mvtnorm::dmvnorm(x, location, breadth) /
-			   	mvtnorm::dmvnorm(location, location, breadth))
+		f = function(x) {
+			scale * mvtnorm::dmvnorm(r_trans(x), location, breadth) /
+					mvtnorm::dmvnorm(location, location, breadth)
+		}
 	}
-
+	return(f)
 }
 
 
