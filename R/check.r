@@ -12,6 +12,20 @@
 
 #' @rdname check_par
 #' @keywords internal
+.check_ratio = function(r, nr) {
+	if(!is.matrix(r))
+		r = matrix(r, nrow=1)
+	if(any(r %% 1 != 0) )
+		stop("ratio niches must be indicated by a matrix of integer indices")
+	if(any(r > nr))
+		stop("All entries in ratio must be <= nr")
+	if(ncol(r) != 2)
+		stop("ratio must be a 2-column matrix")
+	r
+}
+
+#' @rdname check_par
+#' @keywords internal
 .check_breadth = function(p, nsp, nrx) {
 	if(length(p) == 1)
 		p = rep(p, nsp)
@@ -105,6 +119,4 @@
 	if(length(loc) > 1 & (!is.matrix(bre) | !identical(dim(bre), rep(length(loc), 2))))
 		stop("dimension mismatch: breadth must be a square matrix with one row/column per ",
 			"niche dimension")
-	if(length(rsc) != length(loc))
-		stop("dimension mismatch: r_scale must have the same length as location")
 }

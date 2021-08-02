@@ -4,14 +4,19 @@
 \alias{plot.species}
 \title{Plot species niches}
 \usage{
-\method{plot}{species}(x, R, axis = 1, ...)
+\method{plot}{species}(x, R, axis = 1, res = 100, lwd = 1)
 }
 \arguments{
 \item{x}{A species}
 
-\item{R}{a resource state matrix}
+\item{axis}{Which niche axis (i.e., column in R) to plot along}
 
-\item{axis}{Which resource axis (i.e., column in R) to plot along}
+\item{res}{Plotting resolution, how many points along the x-axis to plot; more produces smoother
+lines.}
+}
+\value{
+A ggplot2 object; additional modifications to the plot can be made using usual ggplot2
+syntax.
 }
 \description{
 Plot species niches

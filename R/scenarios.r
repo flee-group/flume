@@ -79,15 +79,16 @@ niches_custom = function(nsp, nr, location, breadth = 1, scale_c = 0.5, scale_e 
 	# transport and have no lateral input
 	# also when running the model, they should be excluded from the differential equations
 	# still need to handle plotting/printing/naming for both static and ratio as well
-
+	val = list()
 	if(missing(ratio)) {
 		nn = nr # number of niche dimensions
-		r_trans = identity # transform resources into niche dimensions
+		val$r_trans = identity # transform resources into niche dimensions
 	}
 	else {
 		ratio = .check_ratio(ratio, nr)
 		nn = nr - nrow(ratio)
-		r_trans = ratio_transform(ratio)
+		val$r_trans = ratio_transform(ratio)
+		val$ratio = ratio
 	}
 
 	if(!is.matrix(location)) {
@@ -96,20 +97,19 @@ niches_custom = function(nsp, nr, location, breadth = 1, scale_c = 0.5, scale_e 
 		location = matrix(location, ncol = 1)
 	}
 
-	location = lapply(1:nsp, function(i) location[i, ])
-	breadth = .check_breadth(breadth, nsp, nn)
-	scale_c = .check_scale(scale_c, nsp)
-	scale_e = .check_scale(scale_e, nsp)
-	r_use = .check_r_use(r_use, nsp, nr) ## pass static along here, gets set to zero if static
+	val$location = lapply(1:nsp, function(i) location[i, ])
+	val$breadth = .check_breadth(breadth, nsp, nn)
+	val$scale_c = .check_scale(scale_c, nsp)
+	val$scale_e = .check_scale(scale_e, nsp)
+	val$r_use = .check_r_use(r_use, nsp, nr) ## pass static along here, gets set to zero if static
 
 	if(!is.matrix(r_lim))
 		r_lim = matrix(r_lim, ncol = 2)
 
 	if(nrow(r_lim) != nr)
 		stop("r_lim must be a matrix with 1 row per resource and 2 columns")
-
-	list(location = location, breadth = breadth, scale_c = scale_c, scale_e = scale_e,
-		r_use = r_use, r_lim = r_lim, r_trans = r_trans)
+	val$r_lim = r_lim
+	val
 }
 
 #' @rdname niches
@@ -139,12 +139,22 @@ niches_uniform = function(nsp = 2, nr = 1, r_lim = c(0, 1), ...) {
 #' @rdname niches
 #' @name niches
 #' @export
-niches_random = function(nsp = 2, nr = 1, r_lim = c(0, 1), ...) {
+niches_random = function(nsp = 2, nr = 1, r_lim = c(0, 1), ratio, ...) {
 	if(!is.matrix(r_lim) && length(r_lim == 2))
 		r_lim = cbind(rep(r_lim[1], nr), rep(r_lim[2], nr))
 
-	location = do.call(rbind, lapply(1:nsp, function(i) runif(nr, r_lim[, 1], r_lim[, 2])))
 	pars = list(...)
+	if(missing(ratio)) {
+		nn = nr # number of niche dimensions
+	}
+	else {
+		ratio = .check_ratio(ratio, nr)
+		nn = nr - nrow(ratio)
+		pars$ratio = ratio
+	}
+
+
+	location = do.call(rbind, lapply(1:nsp, function(i) runif(nn, r_lim[, 1], r_lim[, 2])))
 	pars$location = location
 	pars$r_lim = r_lim
 	pars$nsp = nsp
@@ -152,12 +162,12 @@ niches_random = function(nsp = 2, nr = 1, r_lim = c(0, 1), ...) {
 	if(! "breadth" %in% names(pars)) {
 		sd_avg = (r_lim[, 2] - r_lim[, 1]) / nsp
 		sd_sd = sd_avg / 4
-		if(nr == 1) {
+		if(nn == 1) {
 			pars$breadth = rnorm(nsp, sd_avg, sd_sd)
 		} else {
 			pars$breadth = lapply(1:nsp, function(i) {
-				y = matrix(0, nrow = nr, ncol = nr)
-				diag(y) = rnorm(nr, sd_avg, sd_sd)
+				y = matrix(0, nrow = nn, ncol = nn)
+				diag(y) = rnorm(nn, sd_avg, sd_sd)
 				y
 			})
 		}

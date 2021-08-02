@@ -4,11 +4,14 @@
 #' @details Colonisation/extinction functions take a number of forms. Each form has its own
 #' set of parameters that are provided when the function is created (e.g., when creating a species).
 #' These functions represent the niche of a species, so the parameters are fixed.
-#' @param x state variable matrix; input for c/e functions; one row per site, one column per variable.
+#' 
+#' Note that these functions expect an input matrix in terms of niche axes not resources. If
+#' (e.g. for ratio niches) transformations are used, they must be applied before calling these
+#' functions. For a higher-level function that accepts resource state as input, see [f_niche()].
+#' @param x Niche axis matrix; input for c/e functions; one row per site, one column per axis
 #' @param location Location optimum for functions with an optimum
 #' @param breadth Breadth of the function (e.g., standard deviation or vcv matrix for gaussian)
 #' @param scale Height of the col/ext function
-#' @param r_trans A transformation function for converting resources into niche dimensions
 #'
 #' @return For c/e functions, a vector of colonisation/extinction rates with length == `nrow(x)`
 #' For all others, a c/e function of the desired form
@@ -25,6 +28,8 @@ ce_linear = function(parm) {
 #' @rdname ce_funs
 ce_constant = function(scale) {
 	function(x) {
+		if(is.data.frame(x))
+			x = as.matrix(x)
 		if(!is.matrix(x))
 		   x = matrix(x, ncol = 1)
 		return(rep(scale, nrow(x)))
@@ -32,15 +37,15 @@ ce_constant = function(scale) {
 }
 
 #' @rdname ce_funs
-ce_gaussian = function(location, breadth, scale, r_trans) {
+ce_gaussian = function(location, breadth, scale) {
 
 	if(length(location) == 1) {
-		f = function(x) scale * exp(-((r_trans(x) - location)^2)/(2 * breadth^2))
+		f = function(x) scale * exp(-(x - location)^2/(2 * breadth^2))
 	} else {
 		if(!requireNamespace("mvtnorm", quietly = TRUE))
 			stop("Multidimensional niches require the 'mvtnorm' and 'cubature' packages")
 		f = function(x) {
-			scale * mvtnorm::dmvnorm(r_trans(x), location, breadth) /
+			scale * mvtnorm::dmvnorm(x, location, breadth) /
 					mvtnorm::dmvnorm(location, location, breadth)
 		}
 	}

@@ -22,7 +22,7 @@ niches_custom(
 
 niches_uniform(nsp = 2, nr = 1, r_lim = c(0, 1), ...)
 
-niches_random(nsp = 2, nr = 1, r_lim = c(0, 1), ...)
+niches_random(nsp = 2, nr = 1, r_lim = c(0, 1), ratio, ...)
 }
 \arguments{
 \item{nsp}{Number of species}

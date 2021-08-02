@@ -3,6 +3,7 @@
 \name{check_par}
 \alias{check_par}
 \alias{.check_scale}
+\alias{.check_ratio}
 \alias{.check_breadth}
 \alias{.check_breadth_multi}
 \alias{.check_r_use}
@@ -10,6 +11,8 @@
 \title{Check parameter dimensions}
 \usage{
 .check_scale(p, nsp)
+
+.check_ratio(r, nr)
 
 .check_breadth(p, nsp, nrx)
 

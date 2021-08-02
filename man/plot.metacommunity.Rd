@@ -4,22 +4,19 @@
 \alias{plot.metacommunity}
 \title{Plot species independent stable envelopes}
 \usage{
-\method{plot}{metacommunity}(x, R, axis = 1, res = 100, ...)
+\method{plot}{metacommunity}(x, axis = 1, res = 100, default_r, lwd = 1.1)
 }
 \arguments{
 \item{x}{A \code{\link[=metacommunity]{metacommunity()}}}
 
-\item{R}{an optional resource state matrix}
-
-\item{axis}{Which resource axis (i.e., column in R) to plot along; see 'details'}
+\item{axis}{Which niche axis to plot along}
 
 \item{res}{Plotting resolution, how many points along the x-axis to plot; more produces smoother
 lines.}
+
+\item{default_r}{Default values for niche dimensions not being plotted along. If not specified
+the default is to use the midpoint of possible values for each niche axis.}
 }
 \description{
 Plot species independent stable envelopes
-}
-\details{
-In the case where \code{axis} specifies a resourec that is part of a ratio niche, then
-plotting will occur along the ratio axis, not the untransformed axis
 }

@@ -28,7 +28,7 @@ species(
 
 \item{beta}{Passive dispersal ability}
 
-\item{r_use}{Resource use scaling parameter, one per niche axis}
+\item{r_use}{Resource use scaling parameter, one per resource axis}
 
 \item{r_trans}{A transformation function for converting resources into niche dimensions}
 }

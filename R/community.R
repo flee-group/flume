@@ -57,20 +57,48 @@ metacommunity = function(nsp = 2, nr = 1, niches = niches_uniform, dispersal = d
 	## create a list of species
 	comm[["species"]] = mapply(species, location = n_params$location, breadth = n_params$breadth,
 		scale_c = n_params$scale_c, scale_e = n_params$scale_e, r_use = n_params$r_use,
-		alpha = d_params$alpha, beta = d_params$beta, SIMPLIFY = FALSE)
+		alpha = d_params$alpha, beta = d_params$beta, MoreArgs = list(r_trans = n_params$r_trans), 
+		SIMPLIFY = FALSE)
 	attr(comm, "sp_names") = sp_names
 	attr(comm, "r_names") = r_names
 	attr(comm, "r_lim") = n_params$r_lim
 	attr(comm, "n_species") = nsp
 	attr(comm, "n_resources") = nr
-	if("ratio" %in% names(niche_args))
-		attr(comm, "ratio") = niche_args$ratio
+	if("ratio" %in% names(n_params)) {
+		attr(comm, "ratio") = n_params$ratio
+		nn = nr - nrow(n_params$ratio)
+		i_r = (nn - nrow(n_params$ratio) + 1):nn  # ratio indices
+		n_names_ratio = apply(matrix(r_names[n_params$ratio], ncol=2), 1, 
+			function(x) paste(x, collapse=":"))
+		if(length(i_r) < nn) {
+			i_nr = 1:(nn - nrow(n_params$ratio)) # non-ratio incides
+			attr(comm, "niche_names") = c(r_names[i_nr], n_names_ratio)
+		} else
+			attr(comm, "niche_names") = n_names_ratio
+	} else {
+		attr(comm, "niche_names") = r_names
+	}
+
+	## compute reasonable niche limits for plotting and integration
+	## this is done rather simply by looking for +/- 3 sds beyond any niche location
+	nlocs = niche_par(comm, "location")
+	nsds = niche_par(comm, "sd")
+	nmins = nlocs - 3 * nsds
+	nmaxes = nlocs + 3 * nsds
+
+	# ratios have a natural minmum of zero
+	if("ratio" %in% names(n_params))
+		nmins[nmins[, i_r] < 0, i_r] = 0
+	attr(comm, "niche_lim") = cbind(apply(nmins, 2, min), apply(nmaxes, 2, max))
+
 	comm[["competition"]] = .compute_comp_matrix(comm)
 
 	## for now no immigration from outside the metacommunity
 	comm[["boundary"]] = function(n=1) matrix(0, nrow = n, ncol = nsp)
 	comm
 }
+
+
 
 #' Returns dispersal parameters for a metacommunity
 #' @param x A [metacommunity()]
@@ -104,7 +132,7 @@ dispersal_params = function(x) {
 #' @param scale_e Scale of the extinction portion of the niche
 #' @param alpha Active dispersal ability
 #' @param beta Passive dispersal ability
-#' @param r_use Resource use scaling parameter, one per niche axis
+#' @param r_use Resource use scaling parameter, one per resource axis
 #' @param r_trans A transformation function for converting resources into niche dimensions
 #' @return An S3 object of class 'species', which contains the following named elements:
 #'   * `col`: The colonisation function, takes a state matrix R and returns a vector of
@@ -132,10 +160,10 @@ species = function(location, breadth, scale_c, scale_e, alpha, beta, r_use, r_tr
 	x$r_use = r_use
 	.check_species_params(x)
 	x$r_trans = r_trans
-	x$col = ce_gaussian(location, breadth, scale_c, r_trans)
+	x$col = ce_gaussian(location, breadth, scale_c)
 	x$ext = ce_constant(scale_e)
 
-	attr(x, "niche_max") = f_niche(x, location)
+	attr(x, "niche_max") = f_niche(x, N = location)
 	return(x)
 }
 
@@ -145,8 +173,8 @@ species = function(location, breadth, scale_c, scale_e, alpha, beta, r_use, r_tr
 #' @return a matrix giving pairwise competition coefficients
 .compute_comp_matrix = function(x) {
 	sp = x[["species"]]
-	xmin = attr(x, "r_lim")[, 1]
-	xmax = attr(x, "r_lim")[, 2]
+	xmin = attr(x, "niche_lim")[, 1]
+	xmax = attr(x, "niche_lim")[, 2]
 	if(length(xmin) == 1) {
 		integration_fun = integrate
 		integral_name = "value"
@@ -189,8 +217,8 @@ species = function(location, breadth, scale_c, scale_e, alpha, beta, r_use, r_tr
 #' @keywords internal
 .pairwise_comp = function(s1, s2) {
 	function(x) {
-		l1 = f_niche(s1, x)
-		l2 = f_niche(s2, x)
+		l1 = f_niche(s1, N = x)
+		l2 = f_niche(s2, N = x)
 		l1[l1 < 0] = 0
 		l2[l2 < 0] = 0
 		ifelse(l1 > l2, l2, l1)
@@ -206,7 +234,8 @@ f_niche = function(x, ...)
 #' Functions for determining the niche of species
 #' @name niche
 #' @param x A [species()] or [metacommunity()]
-#' @param R A site by resource matrix
+#' @param R A site by resource matrix, not needed if `N` is supplied
+#' @param N A niche axis matrix; if not supplied, will be computed by transforming `R`
 #' @examples
 #' comm = metacommunity()
 #' st = matrix(seq(0, 1, length.out = 4), ncol = 1, dimnames = list(NULL, 'R'))
@@ -219,12 +248,49 @@ f_niche = function(x, ...)
 #' @return A vector (for a single species) or matrix (for a metacommunity) giving the value(s)
 #' of the niche at each site
 #' @export
-f_niche.species = function(x, R) {
-	x$col(R) - x$ext(R)
+f_niche.species = function(x, R, N) {
+	if(missing(N))
+		N = x$r_trans(R)
+	x$col(N) - x$ext(N)
 }
 
 #' @rdname niche
 #' @export
-f_niche.metacommunity = function(x, R) {
-	do.call(cbind, lapply(x$species, f_niche, R = R))
+f_niche.metacommunity = function(x, R, N) {
+	do.call(cbind, lapply(x$species, f_niche, R = R, N = N))
+}
+
+
+#' @export
+niche_par = function(x, ...)
+	UseMethod("niche_par", x)
+
+#' Functions for accessing species niche parameters
+#' @name nparams
+#' @param x A species or metacommunity
+#' @export
+niche_par.species = function(x, par = c("location", "breadth", "sd")) {
+	par = match.arg(par)
+	
+	if(par == "sd") {
+		val = x$par_c[["breadth"]]
+		if(is.matrix(val))
+			val = diag(val)
+	} else {
+		val = x$par_c[[par]]
+	}
+	val
+}
+
+#' @name nparams
+#' @export
+niche_par.metacommunity = function(x, par = c("location", "breadth", "sd")) {
+	par = match.arg(par)
+	val = lapply(x$species, niche_par.species, par)
+	if(par != "breadth") {
+		val = do.call(rbind, val)
+		rownames(val) = attr(x, "sp_names")
+		colnames(val) = attr(x, "niche_names")
+	}
+	val
 }

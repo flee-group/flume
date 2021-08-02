@@ -1,4 +1,4 @@
-#' Algae NLP use, thanks to Thomas Fuß
+#' Algae N:P use, thanks to Thomas Fuß
 site_by_species = read.csv(file.path("data-raw", "algae", "spec_cs.csv"), row.names = 1)
 site_by_env = read.csv(file.path("data-raw", "algae", "env_cs.csv"), row.names = 1)
 catch_area = site_by_env$catch
@@ -7,7 +7,7 @@ site_by_env = as.matrix(site_by_env$NP_mean)
 adj = read.csv(file.path("data-raw", "algae", "bodingbach.csv"), sep = ";", row.names = 1)
 colnames(adj) = rownames(adj)
 adj = as.matrix(adj)
-nsites = nrow(env)
+nsites = nrow(site_by_env)
 
 # we also define a layout to make plotting nice
 layout = matrix(c(0, 0,   2, 3,   1, 3,   -5, 1.5,   -5, 2.5,   -6, 2.5,   -5, 3,   -4, 2,
@@ -17,14 +17,24 @@ layout = matrix(c(0, 0,   2, 3,   1, 3,   -5, 1.5,   -5, 2.5,   -6, 2.5,   -5, 3
 
 ## we need the discharge at every node
 #for now I choose catchment area, scaled from Raymond paper (see watershed package)
+library(units)
 # in cubic kilometers per day
 Q = exp(-11.9749609 + 0.78 * log(catch_area / (1000^2)))
+units(Q) = "km^3 / day"
 # convert to m^3/s
-Q = Q * (1000^3) # m^3
-Q = Q * 1 / (24 * 60 * 60)
+Q = set_units(Q, "m^3/s")
+
+z = set_units(exp(-0.895 +  0.294 * log(drop_units(Q))), "m")
+w = set_units(exp(2.56 + 0.423 * log(drop_units(Q))), "m")
+cs_area = z * w
+
+
+rn = river_network(adjacency = adj, discharge = drop_units(Q)*5, area = drop_units(cs_area),
+	layout = layout)
 
 # and we need starting resource concentrations and species distributions
-R = matrix(env$NP_mean, ncol = 1, dimnames = list(rownames(env), "N:P"))
+R = matrix(site_by_env$NP_mean, ncol = 1, dimnames = list(rownames(site_by_env), "N:P"))
+
 
 network = river_network(adjacency = adj, discharge = Q, state = R, layout = layout)
 site_by_species(network) = site_by_species
@@ -50,7 +60,7 @@ niche_breadth = apply(niche_breadth, 2, sd, na.rm = TRUE)
 niches = data.frame(species = rownames(niche_loc), location = niche_loc[,1], 
 	breadth = niche_breadth)
 
-algae = list(niches = niches)
+algae = list(niches = niches, adjacency = adj, discharge = Q, )
 usethis::use_data(algae, overwrite = TRUE)
 
 # mc = metacommunity(niche_loc, niche_breadth, niche_lim = c(0, 650))

@@ -11,7 +11,7 @@ ce_linear(parm)
 
 ce_constant(scale)
 
-ce_gaussian(location, breadth, scale, r_trans)
+ce_gaussian(location, breadth, scale)
 }
 \arguments{
 \item{scale}{Height of the col/ext function}
@@ -20,9 +20,7 @@ ce_gaussian(location, breadth, scale, r_trans)
 
 \item{breadth}{Breadth of the function (e.g., standard deviation or vcv matrix for gaussian)}
 
-\item{r_trans}{A transformation function for converting resources into niche dimensions}
-
-\item{x}{state variable matrix; input for c/e functions; one row per site, one column per variable.}
+\item{x}{Niche axis matrix; input for c/e functions; one row per site, one column per axis}
 }
 \value{
 For c/e functions, a vector of colonisation/extinction rates with length == \code{nrow(x)}
@@ -35,6 +33,10 @@ Colonisation and extinction functions
 Colonisation/extinction functions take a number of forms. Each form has its own
 set of parameters that are provided when the function is created (e.g., when creating a species).
 These functions represent the niche of a species, so the parameters are fixed.
+
+Note that these functions expect an input matrix in terms of niche axes not resources. If
+(e.g. for ratio niches) transformations are used, they must be applied before calling these
+functions. For a higher-level function that accepts resource state as input, see \code{\link[=f_niche]{f_niche()}}.
 }
 \examples{
 fun = ce_linear(parm=list(a=0, b = 1))

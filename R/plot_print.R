@@ -53,10 +53,16 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 	}
 
 	args = .default_river_plot_options(...)
-	args$x = igraph::graph_from_adjacency_matrix(adjacency(x), mode = "directed")
+		args$x = igraph::graph_from_adjacency_matrix(adjacency(x), mode = "directed")
 
 	## weight the plot by discharge for the UPSTREAM node
-	up_nodes = as.integer(igraph::ends(args$x, igraph::E(args$x))[,1])
+	if(is.null(rownames(adjacency(x)))) {
+		node_names = as.character(1:nrow(adjacency(x)))
+	} else {
+		node_names = rownames(adjacency(x))
+	}
+	up_nodes = igraph::ends(args$x, igraph::E(args$x))[,1]
+	up_nodes = match(up_nodes, node_names)
 	wt = discharge(x)[up_nodes]
 
 	args$edge.width = (wt / max(wt)) * args$edge.width
@@ -94,7 +100,8 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 			args$vertex.color = scales::col_numeric("PuBu", zlim)(R)
 			args$vertex.label.color = rev(scales::col_numeric("YlOrBr", zlim)(R))
 		} else {
-			message("Install the scales package for plotting the state variable with a colour scale")
+			if(!requireNamespace("scales", quietly = TRUE))
+				message("Install the scales package for plotting the state variable with a colour scale")
 			args$vertex.color = "#7BA08C"
 		}
 		do.call(plot, args)
@@ -103,29 +110,34 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 
 #' Plot species independent stable envelopes
 #' @param x A [metacommunity()]
-#' @param R an optional resource state matrix
-#' @param axis Which resource axis (i.e., column in R) to plot along; see 'details'
+#' @param axis Which niche axis to plot along
 #' @param res Plotting resolution, how many points along the x-axis to plot; more produces smoother
 #'		lines.
-#'
-#' @details In the case where `axis` specifies a resourec that is part of a ratio niche, then
-#' plotting will occur along the ratio axis, not the untransformed axis
+#' @param default_r Default values for niche dimensions not being plotted along. If not specified
+#'		the default is to use the midpoint of possible values for each niche axis.
 #' @export
-plot.metacommunity = function(x, R, axis = 1, res = 100, ...) {
-	if(missing(R)) {
-		R = matrix(0, nrow = res, ncol = attr(x, "n_r"))
-		R[, axis] = seq(attr(x, "r_lim")[axis, 1], attr(x, "r_lim")[axis, 2],
-			length.out = res)
-	}
-	pdat = lapply(x$species, function(sp)
-		data.table::data.table(R = R[, axis], lam = f_niche(sp, R)))
-	names(pdat) = attr(x, "spnames")
-	pdat = data.table::rbindlist(pdat, idcol = "species")
+plot.metacommunity = function(x, axis = 1, res = 100, default_r, lwd = 1.1) {
+	# loc = niche_par(x, "location")
+	# sc = niche_par(x, "sd")
+	xlim = attr(x, "niche_lim")[axis, ]
 
-	p1 = ggplot2::ggplot(pdat, ggplot2::aes(x = R, y = lam.V1, colour = factor(species))) +
-		ggplot2::geom_line() + ggplot2::scale_colour_brewer(type = "qual", palette = "Set2") +
-		ggplot2::theme_minimal() + ggplot2::xlab(attr(x, "rnames")[axis]) +
-		ggplot2::labs(colour = "Species") + 
+	if(missing(default_r))
+		default_r = rowMeans(attr(x, "niche_lim"))
+
+	R = matrix(rep(default_r, each = res), nrow = res, ncol = length(default_r))
+	R[,axis] = seq(xlim[1], xlim[2], length.out = res)
+
+	niches = f_niche(x, N = R)
+	colnames(niches) = attr(x, "sp_names")
+	pldat = as.data.frame(niches)
+	pldat$r = R[,axis]
+	pldat = reshape2::melt(pldat, id.vars = "r", variable.name = "species")
+
+	p1 = ggplot2::ggplot(pldat) + 
+		ggplot2::geom_line(ggplot2::aes(x = r, y = value, colour = species), size = lwd) +
+		ggplot2::scale_colour_brewer(type = "qual", palette = "Set2") +
+		ggplot2::theme_minimal() + ggplot2::xlab(attr(x, "niche_names")[axis]) + 
+		ggplot2::labs(colour = "Species") +
 		ggplot2::ylab("Dominant Eigenvalue") + ggplot2::geom_hline(ggplot2::aes(yintercept = 0))
 
 	comp = x$competition
@@ -133,6 +145,8 @@ plot.metacommunity = function(x, R, axis = 1, res = 100, ...) {
 	comp = reshape2::melt(comp)
 	comp = comp[complete.cases(comp), ]
 	colnames(comp) = c("sp1", "sp2", "competition")
+	comp$sp1 = factor(attr(x, "sp_names")[comp$sp1], levels = attr(x, "sp_names"))
+	comp$sp2 = factor(attr(x, "sp_names")[comp$sp2], levels = attr(x, "sp_names"))
 
 	p2 = ggplot2::ggplot(comp) +
 		ggplot2::geom_tile(ggplot2::aes(x = sp1, y = sp2, fill = competition)) +
@@ -146,33 +160,29 @@ plot.metacommunity = function(x, R, axis = 1, res = 100, ...) {
 
 #' Plot species niches
 #' @param x A species
-#' @param R a resource state matrix
-#' @param axis Which resource axis (i.e., column in R) to plot along
+#' @param axis Which niche axis (i.e., column in R) to plot along
+#' @param res Plotting resolution, how many points along the x-axis to plot; more produces smoother
+#'		lines.
+#' @return A ggplot2 object; additional modifications to the plot can be made using usual ggplot2
+#' 		syntax.
 #' @export
-plot.species = function(x, R, axis = 1, ...) {
-	if(missing(R)) R = matrix(seq(0, 1, length.out=50), ncol=1)
-	yc = x$col(R)
-	ye = x$ext(R)
-	yl = range(c(yc, ye))
+plot.species = function(x, R, axis = 1, res = 100, lwd = 1) {
+	loc = niche_par(x, "location")
+	sc = niche_par(x, "sd")
 
-	args = .default_plot_species_options(...)
-	cols = args$col
-	args$x = R[,axis]
-	args$y = yc
-	if(!"ylim" %in% names(args)) args$ylim = yl
-	args$col = cols[1]
-	par(mar = c(5,4,4,6))
-	do.call(plot.default, args)
+	xlim = c(-2, 2) * sc[axis] + loc[axis]
+	R = sapply(loc, function(X) rep(X, res))
+	R[, axis] = seq(xlim[1], xlim[2], length.out = res)
 
-	args$y = ye
-	args$col = cols[2]
-	do.call(lines, args)
+	pl = data.frame(R = rep(R[,axis], 2), ce_rate = c(x$col(R), x$ext(R)), 
+		type = rep(c("colonisation", "extinction"), each = nrow(R)))
 
-	xpd = par()$xpd
-	par(xpd = TRUE)
-	legend("topright", legend = c("colonisation", "extinction"), col = cols,
-		   lty = args$lty, lwd = args$lwd, bty = "n", inset=c(-0.15,0), cex=0.7)
-	par(xpd = xpd)
+	ggplot2::ggplot(pl) + 
+		ggplot2::geom_line(ggplot2::aes(x = R, y = ce_rate, colour = type), size = lwd) +
+		ggplot2::scale_colour_discrete(c("#386cb0", "#bf5b17")) + ggplot2::xlim(xlim[1], xlim[2]) +
+		ggplot2::xlab("Resource concentration") + ggplot2::theme_minimal() + 
+		ggplot2::ylab("Colonisation/extinction rate") +
+		ggplot2::theme(legend.title = ggplot2::element_blank())
 }
 
 
@@ -184,40 +194,6 @@ plot.species = function(x, R, axis = 1, ...) {
 	if(!"edge.width" %in% nms) dots$edge.width = 10
 	if(!"edge.color" %in% nms) dots$edge.color = "#a6bddb"
 	if(!"edge.arrow.size" %in% nms) dots$edge.arrow.size = 0.1 * dots$edge.width
-	return(dots)
-}
-
-
-# #' Set default plot options when not user-specified
-# #' @keywords internal
-# .default_plot_pool_options = function(...) {
-# 	dots_orig = list(...)
-# 	nms = names(dots_orig)
-# 	dots = 	.default_plot_species_options(...)
-# 	if(!"ylab" %in% nms) dots$ylab = "Dominant eigenvalue"
-# 	if(!"type" %in% nms) dots$type = "n"
-# 	dots$col = NULL
-# 	# print(dots_orig)
-# 	# print(dots)
-# 	return(dots)
-# }
-
-#' Set default plot options when not user-specified
-#' @keywords internal
-.default_plot_species_options = function(...) {
-	dots = list(...)
-	nms = names(dots)
-	if(!"xlab" %in% nms) dots$xlab = "Resource concentration"
-	if(!"ylab" %in% nms) dots$ylab = "Colonisation/extinction rate"
-	if(!"type" %in% nms) dots$type = "l"
-	if(!"bty" %in% nms) dots$bty = "n"
-	if(!"lwd" %in% nms) dots$lwd = 1.5
-	if(!"col" %in% nms) {
-		dots$col = c("#1f78b4", "#e31a1c")
-	} else {
-		if(length(dots$col) == 1)
-			dots$col = rep(dots$col, 2)
-	}
 	return(dots)
 }
 
