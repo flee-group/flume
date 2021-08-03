@@ -6,9 +6,6 @@
 #' @return A ggplot2 object
 #' @export
 plot.flume = function(x, variable = c("occupancy", "resources"), type = c("network", "reach")) {
-	if(!requireNamespace("ggplot2", quietly=TRUE))
-		stop("Package ggplot2 is required for this functionality")
-
 	variable = match.arg(variable)
 	type = match.arg(type)
 
@@ -115,11 +112,14 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 #'		lines.
 #' @param default_r Default values for niche dimensions not being plotted along. If not specified
 #'		the default is to use the midpoint of possible values for each niche axis.
+#' @param xlim A vector of two, optional axis limits for plotting
+#' @param ylim A vector of two, optional axis limits for plotting
 #' @export
-plot.metacommunity = function(x, axis = 1, res = 100, default_r, lwd = 1.1) {
+plot.metacommunity = function(x, axis = 1, res = 100, default_r, lwd = 1, xlim, ylim) {
 	# loc = niche_par(x, "location")
 	# sc = niche_par(x, "sd")
-	xlim = attr(x, "niche_lim")[axis, ]
+	if(missing(xlim))
+		xlim = attr(x, "niche_lim")[axis, ]
 
 	if(missing(default_r))
 		default_r = rowMeans(attr(x, "niche_lim"))
@@ -133,12 +133,21 @@ plot.metacommunity = function(x, axis = 1, res = 100, default_r, lwd = 1.1) {
 	pldat$r = R[,axis]
 	pldat = reshape2::melt(pldat, id.vars = "r", variable.name = "species")
 
+	if(missing(ylim)) {
+		ylim = c(-0.3*max(pldat$value), max(pldat$value))
+	}
+
+	i = which(pldat$value < ylim[1] | pldat$value > ylim[2])
+	if(length(i) > 0)
+		pldat = pldat[-i,]
+
 	p1 = ggplot2::ggplot(pldat) + 
 		ggplot2::geom_line(ggplot2::aes(x = r, y = value, colour = species), size = lwd) +
 		ggplot2::scale_colour_brewer(type = "qual", palette = "Set2") +
 		ggplot2::theme_minimal() + ggplot2::xlab(attr(x, "niche_names")[axis]) + 
-		ggplot2::labs(colour = "Species") +
-		ggplot2::ylab("Dominant Eigenvalue") + ggplot2::geom_hline(ggplot2::aes(yintercept = 0))
+		ggplot2::labs(colour = "Species") + ggplot2::ylim(ylim[1], ylim[2]) +
+		ggplot2::ylab("Dominant Eigenvalue") + 
+		ggplot2::geom_hline(ggplot2::aes(yintercept = 0), size = 1.2)
 
 	comp = x$competition
 	comp[upper.tri(comp)] = NA

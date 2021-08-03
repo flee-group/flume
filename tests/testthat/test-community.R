@@ -36,8 +36,6 @@ test_that("Species creation", {
 		beta = 1, r_use = rsc), regex = "dimension mismatch")
 	expect_error(species(location = 1, breadth = bre, scale_c = 1, scale_e = 1, alpha = 1,
 		beta = 1, r_use = rsc), regex = "dimension mismatch")
-	expect_error(species(location = loc, breadth = bre, scale_c = 1, scale_e = 1, alpha = 1,
-		beta = 1, r_use = rsc_wrong), regex = "dimension mismatch")
 	expect_error(species(location = loc, breadth = bre[1, ], scale_c = 1, scale_e = 1, alpha = 1,
 		beta = 1, r_use = rsc_wrong), regex = "dimension mismatch")
 
@@ -140,4 +138,24 @@ test_that("Niches estimated correctly", {
 	expect_true(is(c_niche, "matrix"))
 	expect_equal(dim(c_niche), c(nrow(st), length(comm$species)))
 	expect_identical(c_niche[, 1, drop = FALSE], sp_niche)
+})
+
+test_that("Ratio niches", {
+	data(algae)
+
+	nopts = list(location = algae$niches$location, breadth = algae$niches$breadth, ratio = c(1, 2))
+	expect_error(
+		metacommunity(nsp = nrow(algae$niches), nr = 2, niches = niches_custom, niche_args = nopts),
+		regex = NA)
+
+	# various dimension errors
+	expect_error(
+		metacommunity(nsp = nrow(algae$niches), nr = 1, niches = niches_custom, 
+			niche_args = nopts), regex = "<= nr")
+
+	nopts2 = nopts
+	nopts2$breadth = rep(nopts2$breadth, 2)
+	expect_error(
+		metacommunity(nsp = nrow(algae$niches), nr = 2, niches = niches_custom, 
+			niche_args = nopts2), regex = "Invalid niche breadth")
 })

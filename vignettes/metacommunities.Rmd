@@ -60,10 +60,11 @@ scenario. Here, we change the location and breadth of the gaussian colonisation 
 three species, including two low-resource specialists that compete strongly and one generalist with
 a slight preference for high resource conditions, but a lower peak performance.
 
-```{r niche, fig.width = 9, fig.height = 3.5}
+```{r niche, fig.width = 9, fig.height = 3.5, warning = FALSE}
+library(ggplot2)
 nopts = list(location = c(0.1, 0.12, 0.7), breadth = c(0.1, 0.1, 2), scale_c = c(0.5, 0.5, 0.25))
 mcom = metacommunity(nsp = 3, nr = 1, niches = niches_custom, niche_args = nopts)
-plot(mcom)
+plot(mcom, lwd = 0.8, res = 500, xlim = c(0,1))
 ```
 
 
@@ -75,12 +76,13 @@ occurs along the stream, in both up- and down-stream directions. Passive dispers
 when one species is transported by another species should also be included in `alpha`. **Passive
 dispersal** is dispersal with the flow of water, and only occurs downstream. It is specified with a
 parameter `beta`. Both `alpha` and  `beta` can be a scalar (all species have the same disperal
-ability) or a vector with one entry per species. We can change these parameters using the
+ability) or a vector with one entry
+ per species. We can change these parameters using the
 `dispersal_custom` scenario, in a similar manner as to the niches. Here we edit the previous
 community to make the specialists primarily passive dispersers, while the generalist is a strong
 disperser both up- and downstream.
 
-```{r dispersal, fig.width = 9, fig.height = 3.5}
+```{r dispersal, fig.width = 9, fig.height = 3.5, warning = FALSE}
 dopts = list(alpha = c(0.05, 0.05, 0.5), beta = 0.5)
 mcom = metacommunity(nsp = 3, nr = 1, niches = niches_custom, dispersal = dispersal_custom,
   niche_args = nopts, dispersal_args = dopts)
@@ -94,11 +96,11 @@ included with `flume`. The `niches` object gives average and standard deviation 
 aquatic algal taxa. We can create a metacommunity that tracks two resources, but computes the niche
 based on the ratio of these two resources.
 
-```{r algae, fig.width = 9, fig.height = 3.5}
+```{r algae, fig.width = 9, fig.height = 3.5, warning = FALSE}
 data(algae)
 nopts = list(location = algae$niches$location, breadth = algae$niches$breadth, ratio = c(1, 2))
 mcom = metacommunity(nsp = nrow(algae$niches), nr = 2, niches = niches_custom, niche_args = nopts,
   sp_names = algae$niches$species, r_names = c("N", "P"))
-plot(mcom, res = 200)
+plot(mcom, res = 500, lwd = 0.8)
 ```
 

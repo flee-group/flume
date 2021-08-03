@@ -25,8 +25,7 @@ test_that("Model creation", {
 	expect_error(flume(comm, nt2), regex="Initial resource state")
 	nt2 = network
 	nt2[['si_by_sp']] = NULL
-	expect_error(flume(comm, nt2), regex="Site by species")
-
+	expect_error(flume(comm, nt2), regex="site by species")
 
 	expect_error(sim <- run_simulation(sim, 1), regex=NA)
 
