@@ -236,6 +236,8 @@ f_niche = function(x, ...)
 #' @param x A [species()] or [metacommunity()]
 #' @param R A site by resource matrix, not needed if `N` is supplied
 #' @param N A niche axis matrix; if not supplied, will be computed by transforming `R`
+#' @param component One of "lambda", "col", or "ext" specifying whether the total niche (C - E),
+#' 		only C, or only E should be returned
 #' @examples
 #' comm = metacommunity()
 #' st = matrix(seq(0, 1, length.out = 4), ncol = 1, dimnames = list(NULL, 'R'))
@@ -248,16 +250,25 @@ f_niche = function(x, ...)
 #' @return A vector (for a single species) or matrix (for a metacommunity) giving the value(s)
 #' of the niche at each site
 #' @export
-f_niche.species = function(x, R, N) {
+f_niche.species = function(x, R, N, component = c("lambda", "col", "ext")) {
+	component = match.arg(component)
 	if(missing(N))
 		N = x$r_trans(R)
-	x$col(N) - x$ext(N)
+	if(component == "lambda") {
+		val = x$col(N) - x$ext(N)
+	} else if(component == "col") {
+		val = x$col(N)
+	} else {
+		val = x$ext(N)
+	}
+	val
 }
 
 #' @rdname niche
 #' @export
-f_niche.metacommunity = function(x, R, N) {
-	do.call(cbind, lapply(x$species, f_niche, R = R, N = N))
+f_niche.metacommunity = function(x, R, N, component = c("lambda", "col", "ext")) {
+	component = match.arg(component)
+	do.call(cbind, lapply(x$species, f_niche, R = R, N = N, component = component))
 }
 
 

@@ -3,7 +3,6 @@ site_by_species = read.csv(file.path("data-raw", "algae", "spec_cs.csv"), row.na
 site_by_env = read.csv(file.path("data-raw", "algae", "env_cs.csv"), row.names = 1)
 catch_area = site_by_env$catch
 site_by_species = as.matrix(site_by_species)
-site_by_env = as.matrix(site_by_env$NP_mean)
 adj = read.csv(file.path("data-raw", "algae", "bodingbach.csv"), sep = ";", row.names = 1)
 colnames(adj) = rownames(adj)
 adj = as.matrix(adj)
@@ -29,17 +28,44 @@ w = set_units(exp(2.56 + 0.423 * log(drop_units(Q))), "m")
 cs_area = z * w
 
 
-rn = river_network(adjacency = adj, discharge = drop_units(Q)*5, area = drop_units(cs_area),
+rn = river_network(adjacency = adj, discharge = drop_units(Q), area = drop_units(cs_area),
 	layout = layout)
 
 # and we need starting resource concentrations and species distributions
-R = matrix(site_by_env$NP_mean, ncol = 1, dimnames = list(rownames(site_by_env), "N:P"))
+r0 = as.matrix(site_by_env[, c("N_mean", "P_mean")])
 
 
-network = river_network(adjacency = adj, discharge = Q, state = R, layout = layout)
-site_by_species(network) = site_by_species
+# niche_loc is the "optimal" N:P ratio for a species; mean of N:P at all sites where sp is found
+ntop = matrix((r0[,1]/r0[,2]), ncol=1)
+niche_loc = (t(site_by_species) %*% ntop) / colSums(site_by_species)
+colnames(niche_loc) = "N:P"
 
-# TODO: decide on boundary conditions; default is same as starting state
+# niche_breadth is the breadth of the niche; we use sd, could also use the range, CV etc
+niche_breadth = sweep(site_by_species, 1, ntop, FUN = `*`)
+niche_breadth[niche_breadth == 0] = NA
+niche_breadth = apply(niche_breadth, 2, sd, na.rm = TRUE)
+
+niches = data.frame(species = rownames(niche_loc), location = niche_loc[,1], 
+	breadth = niche_breadth)
+
+
+nopts = list(location = niches$location, breadth = niches$breadth, ratio = c(1, 2))
+mc = metacommunity(nsp = nrow(niches), nr = 2, niches = niches_custom, niche_args = nopts,
+  sp_names = niches$species, r_names = c("N", "P"))
+
+alg_flume = flume(mc, rn, sp0 = site_by_species, st0 = r0)
+
+
+algae = list(niches = niches, adjacency = adj, discharge = Q, cs_area = cs_area, layout = layout,
+	network = rn, r0 = r0, sp0 = site_by_species, metacommunity = mc)
+
+
+
+
+usethis::use_data(algae, overwrite = TRUE)
+
+
+
 
 
 # TODO: add something like this legend to my own plot functions
@@ -48,21 +74,8 @@ site_by_species(network) = site_by_species
 # legend("bottomleft", legend=seq(14, 660, 70), fill=col, bty='n', cex=0.7, title="N:P")
 
 
-# niche_loc is the "optimal" N:P ratio for a species; mean of N:P at all sites where sp is found
-niche_loc = (t(site_by_species) %*% site_by_env) / colSums(site_by_species)
-colnames(niche_loc) = "N_to_P"
 
-# niche_breadth is the breadth of the niche; we use sd, could also use the range, CV etc
-niche_breadth = sweep(site_by_species, 1, site_by_env, FUN = `*`)
-niche_breadth[niche_breadth == 0] = NA
-niche_breadth = apply(niche_breadth, 2, sd, na.rm = TRUE)
 
-niches = data.frame(species = rownames(niche_loc), location = niche_loc[,1], 
-	breadth = niche_breadth)
 
-algae = list(niches = niches, adjacency = adj, discharge = Q, )
-usethis::use_data(algae, overwrite = TRUE)
 
-# mc = metacommunity(niche_loc, niche_breadth, niche_lim = c(0, 650))
 
-# alg_flume = flume(mc, network, dt = 1)

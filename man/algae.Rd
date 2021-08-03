@@ -8,6 +8,14 @@
 A list
 \describe{
 \item{niches}{A table giving the niche location and breadth (in terms of N:P) for five species}
+\item{adjacency}{Adjacency matrix for the river network}
+\item{discharge}{Discharge at each node in the river network}
+\item{cs_area}{Cross-sectional area for each node in the network}
+\item{layout}{Plotting layout for the river network}
+\item{network}{River network object constructed from the algae data}
+\item{r0}{Starting resource state for N and P}
+\item{sp0}{Starting locations for all species}
+\item{metacommunity}{A metacommunity object constructed from all the data}
 }
 }
 \usage{

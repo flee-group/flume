@@ -40,3 +40,7 @@ Boundary conditions, if not defined, will be set automatically; the boundary con
 resources will be equal to the initial state, and for species will be set to zero globally
 (i.e., no immigration from outside the network).
 }
+\examples{
+data(algae)
+model = flume(algae$metacommunity, algae$network, algae$sp0, algae$r0)
+}

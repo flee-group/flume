@@ -20,8 +20,7 @@ col_prob = function(comm, network, dt, components = FALSE) {
 
 	## colonisation rate has two terms, the niche portion and the dispersal portion
 	## first the niche portion
-	col = do.call(cbind, lapply(comm$species, function(sp) sp$col(R)))
-
+	col = f_niche(comm, R = R, component = "col")
 
 	## here the dispersal portion
 	P = prevalence(network)
@@ -54,7 +53,7 @@ ext_prob = function(comm, network, dt, components = FALSE) {
 
 	# extinction rate has two components, the stochastic extinction rate and the competition portion
 	# stochastic first
-	m_i = do.call(cbind, lapply(comm$species, function(sp) sp$ext(R)))
+	m_i = f_niche(comm, R = R, component = "ext")
 
 	# competition, which is the sum of the competitive effects of species present in each site
 	m_ij = comm$competition ## species by species competition matrix

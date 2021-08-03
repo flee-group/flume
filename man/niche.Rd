@@ -6,9 +6,9 @@
 \alias{f_niche.metacommunity}
 \title{Functions for determining the niche of species}
 \usage{
-\method{f_niche}{species}(x, R, N)
+\method{f_niche}{species}(x, R, N, component = c("lambda", "col", "ext"))
 
-\method{f_niche}{metacommunity}(x, R, N)
+\method{f_niche}{metacommunity}(x, R, N, component = c("lambda", "col", "ext"))
 }
 \arguments{
 \item{x}{A \code{\link[=species]{species()}} or \code{\link[=metacommunity]{metacommunity()}}}
@@ -16,6 +16,9 @@
 \item{R}{A site by resource matrix, not needed if \code{N} is supplied}
 
 \item{N}{A niche axis matrix; if not supplied, will be computed by transforming \code{R}}
+
+\item{component}{One of "lambda", "col", or "ext" specifying whether the total niche (C - E),
+only C, or only E should be returned}
 }
 \value{
 A vector (for a single species) or matrix (for a metacommunity) giving the value(s)

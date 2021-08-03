@@ -20,6 +20,8 @@
 #' (i.e., no immigration from outside the network).
 #' @return An S3 object of class "flume"
 #' @examples
+#' data(algae)
+#' model = flume(algae$metacommunity, algae$network, algae$sp0, algae$r0)
 #' @export
 flume = function(comm, network, sp0, st0, spb, stb, dt = 1) {
 
@@ -134,15 +136,16 @@ run_simulation = function(x, nt, reps, parallel = TRUE, cores = parallel::detect
 		x[["networks"]] = lapply(1:reps, function(i) x[["networks"]][[1]])
 
 	if(reps != length(x[["networks"]]))
-		warning("'reps' was specified, but it is not equal to the number of existing sims in 'x'\n",
-				"'reps' will be ignored and the number of simulations will be equal to length(x$networks) (",
-				length(x$networks), ")")
+		warning("'reps' was specified, but it is not equal to the number of existing sims ",
+			"in 'x'\n'reps' will be ignored and the number of simulations will be equal to ",
+			"length(x$networks) (",length(x$networks), ")")
 
 	if(parallel && reps > 1 && cores > 1) {
-		x[["networks"]] = parallel::mclapply(x[["networks"]], .do_sim, comm = x[["metacom"]], dt = x[["dt"]],
-				nt = nt, mc.cores = cores)
+		x[["networks"]] = parallel::mclapply(x[["networks"]], .do_sim, comm = x[["metacom"]], 
+			dt = x[["dt"]], nt = nt, mc.cores = cores)
 	} else {
-		x[["networks"]] = lapply(x[["networks"]], .do_sim, comm = x[["metacom"]], dt = x[["dt"]], nt = nt)
+		x[["networks"]] = lapply(x[["networks"]], .do_sim, comm = x[["metacom"]], dt = x[["dt"]], 
+			nt = nt)
 	}
 
 	return(x)
