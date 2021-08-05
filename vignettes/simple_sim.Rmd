@@ -7,11 +7,20 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  error = TRUE
+)
+```
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(fig.width = 5.5, fig.height = 5.5, collapse = TRUE, comment = "##")
 
 library(flume)
 ```
+
 
 
 Here we demonstrate the model using a simple simulation with generated data. There are several 
@@ -45,6 +54,19 @@ mc = metacommunity(nsp = 3, nr = 1, niches = niches_uniform)
 plot(mc)
 ```
 
+The `niches_uniform` scenario spreads the resources out along a gradient, with species' optima 
+uniformly spread along this gradient. We can see the niche parameters used with the `niche_par`
+function:
+
+```{r}
+cbind(
+  niche_par(mc, "location"),
+  niche_par(mc, "sd")
+)
+```
+
+
+
 
 ## 2. The river network
 
@@ -56,10 +78,12 @@ is using an attribute list and a weighted adjacency matrix.
 Discharge and cross-sectional area are required attributes (although area can be estimated from Q
 if omitted). Here, Q grows by 1 each time we move downstream (i.e., when we traverse an edge,
 representing lateral input), and we add reaches together at confluences. We define node 1 to be the
-most downstream node (this is purely an arbitrary choice).
+most downstream node (this is purely an arbitrary choice). We define a river network with two
+equal subcatchments and a mainstem.
 
 ```{r}
-Q = c(13,12,8,7,1,4,1,1,2,1)
+Q1 = Q2 = c(13,12,8,7,1,4,1,1,2,1)
+Q3 = c(31,30,29,28,27)
 ```
 
 The adjacency matrix describes the spatial relationships among nodes. The matrix must be square,
@@ -67,14 +91,49 @@ with one row and column per node. For two sites `i` and `j`, `adj[i,j]` will be 
 upstream of `j`. The layout matrix shows where to plot each vertex; this is optional but can be
 useful for nicer plots.
 
+It should be clear that creating a non-trivial network by hand is cumbersome! Fortunately there is
+a way to do this for a real river using a digital elevation model; see the `network_import` vignette
+for more details.
+
+
+
 ```{r}
-nsites = length(Q)
+## matrix for the two subcatchments
+nsites = length(Q1)
 adj = matrix(0, nrow=nsites, ncol=nsites)
 adj[2,1] = adj[3,2] = adj[9,2] = adj[4,3] = adj[5,4] = adj[6,4] = adj[7,6] = adj[8,6] = 
   adj[10,9] = 1
-layout = matrix(c(0,0,0,1,-0.5,2,-0.5,3,-1,4,0,4,-0.5,5,0.5,5,0.5,2,1,3), byrow=TRUE, nrow=nsites)
-network = river_network(adjacency = adj, discharge = Q, layout = layout)
+adj2 = adj
 
+# layout is optional, and controls where to place the nodes
+# here we just use values to make the network look somewhat nice
+# For a real river, x-y spatial coordinates for each reach chould be used
+layout1 = matrix(c(0,0,0,1,-0.5,2,-0.5,3,-1,4,0,4,-0.5,5,0.5,5,0.5,2,1,3), byrow=TRUE, nrow=nsites)
+layout2 = layout1
+layout2[,1] = layout2[,1] + 3
+
+rownames(adj) = colnames(adj) = paste("c1", 1:nrow(adj), sep="_")
+rownames(adj2) = colnames(adj2) = paste("c2", 1:nrow(adj2), sep="_")
+nsites3 = length(Q3)
+adj3 = matrix(0, nrow=nsites3, ncol=nsites3)
+adj3[2,1] = adj3[3,2] = adj3[4,3] = adj3[5,4] = 1
+rownames(adj3) = colnames(adj3) = paste("c3", 1:nrow(adj3), sep="_")
+layout3 = matrix(c(rep(1.5, nsites3), (-nsites3):(-1)), ncol=2)
+
+# now create an adjacency matrix for all subcatchments together
+adj_all = matrix(0, nrow = nsites+nsites+nsites3, ncol = nsites+nsites+nsites3)
+rownames(adj_all) = colnames(adj_all) = c(rownames(adj), rownames(adj2), rownames(adj3))
+
+# add the links from the other matrices
+adj_all[rownames(adj), colnames(adj)] = adj
+adj_all[rownames(adj2), colnames(adj2)] = adj2
+adj_all[rownames(adj3), colnames(adj3)] = adj3
+
+# link catchments 1 and 2 to catchment 3
+adj_all['c1_1', 'c3_5'] = adj_all['c2_1', 'c3_5'] = 1
+
+network = river_network(adjacency = adj_all, discharge = c(Q1, Q2, Q3), 
+  layout = rbind(layout1, layout2, layout3))
 ```
 
 By default, plotting the network will show the edges weighted by discharge. Node ('vertex') colours
@@ -82,9 +141,44 @@ can be set by `vertex.color`; I use a simple gradient following the order of sit
 also how I will set up my resource gradients (in **3. Setting up the model** below). Edge weight is
 proportional to the discharge between sites. 
 
-```{r fig.height = 5, fig.width = 5}
-plot(network, edge.arrow.size = 2, edge.width = 20)
+```{r fig.height = 7, fig.width = 7}
+plot(network, edge.arrow.size = 0.5, edge.width = 20, vertex.label.cex = 0.7)
 ```
+
+
+## 3. Starting conditions
+
+We will now set the starting resource conditions and species distributions. For this example,
+we have 3 species along a resource gradient (where the resource values are between 0 and 1). We set
+up the network here so that there is a spatial gradient in resources, with high concentration in one
+subcatchment, low in the other, and intermediate values in the mainstem.  We then use an equilibrium 
+scenario to establish initial species distributions.
+
+```{r fig.height = 7, fig.width = 7}
+st0 = rep(0.4, nrow(adj_all))
+
+## headwaters at opposite sides of the gradient, then gradually come togethermoving downstream
+st0[c(5,7,8,10)] = 0.85
+st0[c(5,7,8,10)+10] = 0.1
+st0[c(3,4,6,9)] = 0.75
+st0[c(3,4,6,9)+10] = 0.15
+st0[c(1:2)] = 0.7
+st0[c(1:2)+10] = 0.2
+st0 = matrix(st0, ncol=1)
+
+state(network) = st0
+plot(network, edge.arrow.size = 0.5, edge.width = 20, vertex.label.cex = 0.7)
+```
+
+
+```{r fig.height = 5, fig.width = 15}
+sp0 = community_equilibrium(network, mc)
+site_by_species(network) = sp0
+plot(network, "site_by_species", edge.arrow.size = 0, edge.width = 20, vertex.label.cex = 0.7)
+```
+
+
+
 
 ## 3. Setting up the model
 
@@ -104,12 +198,54 @@ would be expected to be found at equilibrium in the absence of competition. This
 initial state of the network to be specified in advance. Scenarios for resources
 are coming in a future version; for now we simply set an upstream to downstream gradient.
 
-```{r fig.height = 5, fig.width = 8}
-st0 = matrix(seq(0, 1, length.out = length(Q)), ncol = 1)
-state(network) = st0
-sp0 = community_equilibrium(network, mc)
+```{r}
 model = flume(mc, network, sp0, st0)
 ```
 
+
 ## 4. Running the model
+
+Now we are prepared to run the simulation. Here we run for 100 time steps and then explore some of
+the output options. In this case, all species survive the entire simulation.
+
+```{r fig.height = 7, fig.width = 7}
+set.seed(123)
+model_run = run_simulation(model, 100)
+
+## occupancy plot
+plot(model_run)
+```
+
+We can see that resources find an equilibrium after a few time steps. Resource consumption is quite
+low in this scenario, so resource concentrations are determined by transport and lateral input.
+
+```{r fig.height = 7, fig.width = 7}
+## resource plot
+plot(model_run, variable = "resources")
+```
+
+Here we can see the species distributions at the end of the simulation. Note that flume objects
+store the network in a list (to allow for duplicate networks to be run under the same conditions),
+hence the `[[1]]` index to plot the network.
+
+```{r fig.height = 5, fig.width = 15}
+## species distributions at the end
+plot(model_run$network[[1]], variable = "site_by_species")
+```
+
+```{r}
+## additional plots -- forthcoming
+
+## occupancy in time by reach
+## this should be a map of the network, colored so that
+## each node shows the proportion of time it was occupied by each species
+
+## diversity over time
+## diversity in space
+## EF over time
+## EF over space
+## EF vs transport
+
+
+```
 

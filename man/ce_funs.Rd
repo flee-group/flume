@@ -9,12 +9,14 @@
 \usage{
 ce_linear(parm)
 
-ce_constant(scale)
+ce_constant(scale, nr)
 
 ce_gaussian(location, breadth, scale)
 }
 \arguments{
 \item{scale}{Height of the col/ext function}
+
+\item{nr}{Number of resource dimensions}
 
 \item{location}{Location optimum for functions with an optimum}
 

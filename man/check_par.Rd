@@ -18,9 +18,16 @@
 
 .check_breadth_multi(p, nsp, nrx)
 
-.check_r_use(p, nsp, nrx)
+.check_r_use(p, nsp, nrx, static)
 
 .check_species_params(x)
+}
+\arguments{
+\item{p}{The parameter to check}
+
+\item{nsp}{The number of species}
+
+\item{nrx}{The number of resource/niche dimensions}
 }
 \description{
 Check parameter dimensions

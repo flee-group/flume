@@ -17,7 +17,6 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(flume)
-# devtools::load_all()  # for dev, remove when stable version done
 ```
 
 The metacommunity is one of the two main components for creating a `flume` model. It describes the 
@@ -104,3 +103,36 @@ mcom = metacommunity(nsp = nrow(algae$niches), nr = 2, niches = niches_custom, n
 plot(mcom, res = 500, lwd = 0.8)
 ```
 
+### Static resources
+
+Many species' niches depend not only on depletable resources (e.g., nitrogen, organic matter), but 
+also on (relatively) fixed features of the environment, such as light availability, riverbed 
+composition, or the presence of pools. These features are not like resource concentrations:
+they cannot be transported downstream and they are not depeleted by organisms using them. `flume`
+represents these features as 'resources', but they are labelled as `'static'` in order to tell the
+model to use them for computing species' niches, but to hold their amounts constant durint the
+transport-reaction phase.
+
+Here we use the algae dataset again, but this time we add a feature called 'gravel', indicating
+the proportion of the riverbed covered by gravel. As this is only an example, we generate these
+values randomly and assign species locations and breadths along a gradient. 
+
+```{r algae_static, fig.width = 9, fig.height = 3.5, warning = FALSE}
+nsp = nrow(algae$niches)
+location = cbind(algae$niches$location, seq(0, 1, length.out = nsp))
+breadth = cbind(algae$niches$location, 0.3)
+nopts = list(location = location[,2], breadth = breadth[,2], static = 1)
+mcom = metacommunity(nsp = nsp, nr = 1, niches = niches_custom, niche_args = nopts,
+  sp_names = algae$niches$species, r_names = c("gravel"))
+plot(mcom, res = 500, lwd = 0.8, xlim=c(0,1))
+```
+
+Finally, We could combine these two approaches to generate a multidimensional niche. However, we
+won't run this code here; multidimensional niches are slow to generate, because they must be
+integrated numerically in multiple dimensions to generate the competition matrix.
+
+```{r algae_both, eval = FALSE}
+nopts = list(location = location, breadth = breadth, ratio = c(1,2), static = 3)
+mcom = metacommunity(nsp = nsp, nr = 3, niches = niches_custom, niche_args = nopts,
+  sp_names = algae$niches$species, r_names = c("N", "P", "gravel"))
+```
