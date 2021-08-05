@@ -72,14 +72,8 @@
 niches_custom = function(nsp, nr, location, breadth = 1, scale_c = 0.5, scale_e = 0.2,
 		r_use = 0.05, r_lim = matrix(rep(c(0, 1), each = nr), ncol = 2), static, ratio) {
 
-	# TODO
-	# handle static (see below, r_use)
-	# but also need to ensure that this is saved in a property somewhere
-	# because when setting up the model, need to ensure that static variables do not undergo
-	# transport and have no lateral input
-	# also when running the model, they should be excluded from the differential equations
-	# still need to handle plotting/printing/naming for both static and ratio as well
 	val = list()
+	val$r_types = rep("normal", nr)
 	if(missing(ratio)) {
 		nn = nr # number of niche dimensions
 		val$r_trans = identity # transform resources into niche dimensions
@@ -89,6 +83,13 @@ niches_custom = function(nsp, nr, location, breadth = 1, scale_c = 0.5, scale_e 
 		nn = nr - nrow(ratio)
 		val$r_trans = ratio_transform(ratio)
 		val$ratio = ratio
+		val$r_types[as.vector(ratio)] = "ratio"
+	}
+
+	if(missing(static)) {
+		static = integer()
+	} else {
+		val$r_types[static] = "static"
 	}
 
 	if(!is.matrix(location)) {
@@ -101,7 +102,7 @@ niches_custom = function(nsp, nr, location, breadth = 1, scale_c = 0.5, scale_e 
 	val$breadth = .check_breadth(breadth, nsp, nn)
 	val$scale_c = .check_scale(scale_c, nsp)
 	val$scale_e = .check_scale(scale_e, nsp)
-	val$r_use = .check_r_use(r_use, nsp, nr) ## pass static along here, gets set to zero if static
+	val$r_use = .check_r_use(r_use, nsp, nr, static)
 
 	if(!is.matrix(r_lim))
 		r_lim = matrix(r_lim, ncol = 2)

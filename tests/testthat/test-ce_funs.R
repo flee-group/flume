@@ -16,7 +16,7 @@ test_that("Colonisation and extinction functions", {
 
 	# constant functions
 	sc = 0.2
-	expect_error(cfun <- ce_constant(scale = sc), regex = NA)
+	expect_error(cfun <- ce_constant(scale = sc, nr = 1), regex = NA)
 	expect_error(res <- cfun(R), regex = NA)
 	expect_identical(res, rep(sc, length(R)))
 

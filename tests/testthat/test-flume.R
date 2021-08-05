@@ -42,5 +42,23 @@ test_that("Model creation", {
 
 })
 
+test_that("Create model with special resource types", {
+	data(algae)
 
+	# static
+	loc = apply(algae$r0, 2, function(x) colMeans(x*algae$sp0))
+	bre = apply(algae$r0, 2, function(x) apply((x*algae$sp0), 2, sd))
+	nopts = list(location = loc, breadth = bre, static = 1, r_lim = t(apply(algae$r0, 2, range)))
+	mc = metacommunity(nsp = nrow(algae$niches), nr = 2, niches = niches_custom, niche_args = nopts,
+		sp_names = algae$niches$species, r_names = c("N", "P"))
+	expect_error(fl <- flume(mc, algae$network, algae$sp0, algae$r0), regex=NA)
+	expect_error(fl <- run_simulation(fl, 1), regex=NA)
+	# first resource is static and shouldn't change, second should change
+	expect_equal(state(fl$network[[1]])[,1], algae$r0[,1]) 
+	expect_false(all(state(fl$network[[1]])[,2] == algae$r0[,2])) 
+
+	# ratio
+	expect_error(fl <- flume(algae$metacommunity, algae$network, algae$sp0, algae$r0), regex=NA)
+	expect_error(fl <- run_simulation(fl, 1), regex=NA)
+})
 

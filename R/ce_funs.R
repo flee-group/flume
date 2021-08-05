@@ -12,6 +12,7 @@
 #' @param location Location optimum for functions with an optimum
 #' @param breadth Breadth of the function (e.g., standard deviation or vcv matrix for gaussian)
 #' @param scale Height of the col/ext function
+#' @param nr Number of resource dimensions
 #'
 #' @return For c/e functions, a vector of colonisation/extinction rates with length == `nrow(x)`
 #' For all others, a c/e function of the desired form
@@ -26,12 +27,12 @@ ce_linear = function(parm) {
 }
 
 #' @rdname ce_funs
-ce_constant = function(scale) {
+ce_constant = function(scale, nr) {
 	function(x) {
 		if(is.data.frame(x))
 			x = as.matrix(x)
 		if(!is.matrix(x))
-		   x = matrix(x, ncol = 1)
+		   x = matrix(x, ncol = nr)
 		return(rep(scale, nrow(x)))
 	}
 }

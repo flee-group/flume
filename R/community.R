@@ -45,7 +45,10 @@ metacommunity = function(nsp = 2, nr = 1, niches = niches_uniform, dispersal = d
 			sp_names = paste0("sp", 1:nsp), r_names = paste0("r", 1:nr), niche_args = list(),
 			dispersal_args = list()) {
 	comm = structure(list(), class = "metacommunity")
-
+### TODO: add a competition constant for determining the max strength of competition
+### default value should be (c_scale - e_scale)/(nsp)
+### this as a default ensures that species can always occur near their optimum, even if all spp
+### are present
 	## niche parameters
 	niche_args$nsp = nsp
 	niche_args$nr = nr
@@ -62,10 +65,12 @@ metacommunity = function(nsp = 2, nr = 1, niches = niches_uniform, dispersal = d
 	attr(comm, "sp_names") = sp_names
 	attr(comm, "r_names") = r_names
 	attr(comm, "r_lim") = n_params$r_lim
+	attr(comm, "r_types") = n_params$r_types
+	attr(comm, "r_ratio") = n_params$ratio
 	attr(comm, "n_species") = nsp
 	attr(comm, "n_resources") = nr
-	if("ratio" %in% names(n_params)) {
-		attr(comm, "ratio") = n_params$ratio
+
+	if("ratio" %in% attr(comm, "r_types")) {
 		nn = nr - nrow(n_params$ratio)
 		i_r = (nn - nrow(n_params$ratio) + 1):nn  # ratio indices
 		n_names_ratio = apply(matrix(r_names[n_params$ratio], ncol=2), 1, 
@@ -80,14 +85,14 @@ metacommunity = function(nsp = 2, nr = 1, niches = niches_uniform, dispersal = d
 	}
 
 	## compute reasonable niche limits for plotting and integration
-	## this is done rather simply by looking for +/- 3 sds beyond any niche location
+	## this is done rather simply by looking for +/- 2 sds beyond any niche location
 	nlocs = niche_par(comm, "location")
 	nsds = niche_par(comm, "sd")
-	nmins = nlocs - 3 * nsds
-	nmaxes = nlocs + 3 * nsds
+	nmins = nlocs - 2 * nsds
+	nmaxes = nlocs + 2 * nsds
 
-	# ratios have a natural minmum of zero
-	if("ratio" %in% names(n_params))
+	# ratios have a natural minmum of zero (lol, all resources also have this limit)
+	if("ratio" %in% attr(comm, "r_types"))
 		nmins[nmins[, i_r] < 0, i_r] = 0
 	attr(comm, "niche_lim") = cbind(apply(nmins, 2, min), apply(nmaxes, 2, max))
 
@@ -161,7 +166,7 @@ species = function(location, breadth, scale_c, scale_e, alpha, beta, r_use, r_tr
 	.check_species_params(x)
 	x$r_trans = r_trans
 	x$col = ce_gaussian(location, breadth, scale_c)
-	x$ext = ce_constant(scale_e)
+	x$ext = ce_constant(scale_e, length(location))
 
 	attr(x, "niche_max") = f_niche(x, N = location)
 	return(x)

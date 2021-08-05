@@ -16,3 +16,15 @@ test_that("Species flux works", {
 
 	expect_error(Rflux <- dRdt(comm, network), regex=NA)
 })
+
+test_that("Fluxes with static resources", {
+	data(algae)
+	loc = apply(algae$r0, 2, function(x) colMeans(x*algae$sp0))
+	bre = apply(algae$r0, 2, function(x) apply((x*algae$sp0), 2, sd))
+	nopts = list(location = loc, breadth = bre, static = 1, r_lim = t(apply(algae$r0, 2, range)))
+	mc = metacommunity(nsp = nrow(algae$niches), nr = 2, niches = niches_custom, niche_args = nopts,
+		sp_names = algae$niches$species, r_names = c("N", "P"))
+	fl = flume(mc, algae$network, algae$sp0, algae$r0)
+	expect_error(dR <- dRdt(fl$metacom, fl$network[[1]]), regex = NA)
+	expect_true(all(dR[,1] == 0))
+})

@@ -140,8 +140,12 @@ test_that("Niches estimated correctly", {
 	expect_identical(c_niche[, 1, drop = FALSE], sp_niche)
 })
 
-test_that("Ratio niches", {
+test_that("Ratio and static niches", {
 	data(algae)
+	nopts = list(location = algae$niches$location, breadth = algae$niches$breadth, static = 1)
+	expect_error(
+		metacommunity(nsp = nrow(algae$niches), nr = 1, niches = niches_custom, niche_args = nopts),
+		regex = NA)
 
 	nopts = list(location = algae$niches$location, breadth = algae$niches$breadth, ratio = c(1, 2))
 	expect_error(

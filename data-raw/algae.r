@@ -29,7 +29,7 @@ cs_area = z * w
 
 
 rn = river_network(adjacency = adj, discharge = drop_units(Q), area = drop_units(cs_area),
-	layout = layout)
+	layout = layout, site_names = rownames(adj))
 
 # and we need starting resource concentrations and species distributions
 r0 = as.matrix(site_by_env[, c("N_mean", "P_mean")])

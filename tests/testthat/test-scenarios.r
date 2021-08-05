@@ -80,6 +80,23 @@ test_that("Custom niches", {
 		r_use = r_use[1:2, ]), regex = "r_use")
 })
 
+test_that("Static niche dimensions", {
+	location = matrix(c(1, 2), ncol = 2)
+	breadth = c(1, 1.5)
+	r_use =  c(0.5, 0.4)
+	r_lim = rbind(c(0, 1), c(0, 1))
+	expect_error(ni <- niches_custom(nsp = 1, nr = 2, location = location, breadth = breadth,
+		r_use = r_use, r_lim = r_lim, static = 1), regex = NA)
+	expect_equal(ni$r_use[[1]][1], 0)
+	expect_equal(ni$r_use[[1]][2], r_use[2])
+
+	expect_error(niches_custom(nsp = 1, nr = 2, location = location, breadth = breadth,
+		r_use = r_use, r_lim = r_lim, static = -1), regex = "Indices in static")
+	expect_error(niches_custom(nsp = 1, nr = 2, location = location, breadth = breadth,
+		r_use = r_use, r_lim = r_lim, static = 3), regex = "Indices in static")
+
+})
+
 test_that("Niche scenarios", {
 	expect_error(niches_uniform(nsp = 2, nr = 2), regex = "multiple resources")
 

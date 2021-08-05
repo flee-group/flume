@@ -40,6 +40,12 @@ flume = function(comm, network, sp0, st0, spb, stb, dt = 1) {
 	network = reset_state(network, st0)
 	if(missing(stb))
 		stb = state(network)
+
+	i_static = which(attr(comm, "r_types") == "static")
+	if(length(i_static) > 0) {
+		stb[i_static] = 0
+	}
+
 	boundary(network) = stb
 	if(missing(sp0))
 		sp0 = site_by_species(network)

@@ -1,5 +1,8 @@
 #' @name check_par
 #' @title Check parameter dimensions
+#' @param p The parameter to check
+#' @param nrx The number of resource/niche dimensions
+#' @param nsp The number of species
 #' @rdname check_par
 #' @keywords internal
 .check_scale = function(p, nsp) {
@@ -77,7 +80,7 @@
 
 #' @rdname check_par
 #' @keywords internal
-.check_r_use = function(p, nsp, nrx) {
+.check_r_use = function(p, nsp, nrx, static) {
 	if(length(p) == 1)
 		p = rep(p, nsp)
 
@@ -90,6 +93,12 @@
 	if(!(is.matrix(p) && nrow(p) == nsp && ncol(p) == nrx))
 		stop("r_use must be a matrix with one row per species and one column per niche axis")
 
+	if(length(static) > 0) {
+		if(any(static > nrx) || any(static <= 0))
+			stop("Indices in static must be <= to the number of resources")
+		p[,static] = 0
+	}
+	
 	# convert to a list, one entry per row
 	apply(p, 1, function(x) x, simplify = FALSE)
 }

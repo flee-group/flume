@@ -92,8 +92,8 @@ dRdt = function(comm, network, components = FALSE) {
 
 	output = Q * R
 
-	# when lateral discharge is NEGATIVE (i.e., the stream is shrinking) we export based on the concentration
-	# in the stream, not the boundary condition
+	# when lateral discharge is NEGATIVE (i.e., the stream is shrinking) we export based on the
+	# concentration in the stream, not the boundary condition
 	# TODO: this will need to be improved for intermittent rivers
 	if(any(lQ < 0)) {
 		for(i in 1:ncol(lR))
@@ -102,8 +102,13 @@ dRdt = function(comm, network, components = FALSE) {
 
 	input = apply(Ru, 2, function(x) Qu * x) + apply(lR, 2, function(x) lQ * x)
 	transport = (output - input) / (A*l)
-
 	rxn = ruf(S, R, comm)
+
+	i_static = which(attr(comm, "r_types") == "static")
+	if(length(i_static) > 0) {
+		transport[, i_static] = 0
+		rxn[, i_static] = 0
+	} 
 
 	dimnames(transport) = dimnames(rxn) = dimnames(R)
 	if(components) {
