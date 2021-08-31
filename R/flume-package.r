@@ -37,3 +37,14 @@ NULL
 #' }
 "kamp"
 
+#' Flume river networks for 5 different rivers
+#'
+#' @format A `list`, with members:
+#' \describe{
+#'   \item{kamp}{Kamp river, Austria}
+#'   \item{mara}{Mara river, Kenya}
+#'   \item{thur}{Thur river, Switzerland}
+#'   \item{vjosa}{Vjosa river, Greece & Albania}
+#'   \item{ybbs}{Ybbs river, Austria}
+#' }
+"flume_networks"
