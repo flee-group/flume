@@ -100,7 +100,7 @@
 	}
 	
 	# convert to a list, one entry per row
-	apply(p, 1, function(x) x, simplify = FALSE)
+	lapply(seq_len(nrow(p)), function(i) p[i, ])
 }
 
 #' @rdname check_par
