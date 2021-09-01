@@ -1,6 +1,6 @@
 Package: flume
 Title: A Model For Fluvial Meta-Ecosystems
-Version: 0.4.0
+Version: 0.4.0.9001
 Authors@R: 
     person(given = "Matthew",
            family = "Talluto",
