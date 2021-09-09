@@ -43,6 +43,6 @@ ruf = function(x, R, C) {
 
 	# this produces the resources consumed, so the rate of change will have the opposite sign
 	r_use = n_ht %*% r_use_scale
-	-1 * r_use
+	-1 * r_use * R
 }
 
