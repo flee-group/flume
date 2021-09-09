@@ -19,4 +19,10 @@ test_that("Resource use functions", {
 
 	# absolute rate of change should be greatest when a greedy species is at it's optimum
 	expect_gt(abs(ru[1,1]), abs(ru[4,1]))
+
+	# make sure that the presence-absence matrix actually matters
+	site_by_species(rn) = matrix(c(1,0,0,1,1,1,1,0), nrow = length(Q), ncol = length(comm$species))
+	ru2 = ruf(site_by_species(rn), state(rn), comm)
+	expect_lt(sum(-1*ru2), sum(-1*ru)) #when all species are present, resource use is higher
+
 })

@@ -1,10 +1,19 @@
 # flume
-An r package for a FLUvial Meta Ecosystem Model
+An R-package for a FLUvial Meta Ecosystem Model
 
 ## Installation
 
+First steps:
+Flume requires R 4 or later, so please upgrade if you are still on an early version of R.
+
+There is a companion package in development, [watershed](https://github.com/flee-group/watershed), that is useful for importing river networks into flume (also see the flume vignette about [importing a river network](https://flee-group.github.io/flume/network_import.html)).
+
 ```r
+## requires a recent version of the remotes package
 remotes::install_github("flee-group/flume")
+
+## if you are out of date, try:
+remotes::install_github("flee-group/flume", ref="main")
 ```
 
 ## Getting started

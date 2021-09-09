@@ -35,6 +35,9 @@ ruf = function(x, R, C) {
 	r_use_scale = do.call(rbind, lapply(C[['species']], function(sp) sp$r_use))
 	n_ht = f_niche(C, R) / niche_max
 
+	## take into account presence-absence
+	n_ht = x * n_ht
+
 	# we assume that species that are outside their niche have a negligible effect on resource use
 	n_ht[n_ht < 0] = 0
 
