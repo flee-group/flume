@@ -33,7 +33,7 @@ col_prob = function(comm, network, dt, components = FALSE) {
 	Q = matrix(discharge(network), nrow=nsites, ncol = nsp)
 
 
-	dispersal = P * (A + B*Q + boundary_species(network))
+	dispersal = P * (A + B*Q) + boundary_species(network)
 
 	dimnames(col) = dimnames(dispersal) = dimnames(site_by_species(network))
 	if(components) {
