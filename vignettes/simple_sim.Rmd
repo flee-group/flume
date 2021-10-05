@@ -157,7 +157,7 @@ scenario to establish initial species distributions.
 ```{r fig.height = 7, fig.width = 7}
 st0 = rep(0.4, nrow(adj_all))
 
-## headwaters at opposite sides of the gradient, then gradually come togethermoving downstream
+## headwaters at opposite sides of the gradient, then gradually come together moving downstream
 st0[c(5,7,8,10)] = 0.85
 st0[c(5,7,8,10)+10] = 0.1
 st0[c(3,4,6,9)] = 0.75
