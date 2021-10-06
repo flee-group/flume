@@ -23,7 +23,7 @@
 #' data(algae)
 #' model = flume(algae$metacommunity, algae$network, algae$sp0, algae$r0)
 #' @export
-flume = function(comm, network, sp0, st0, spb, stb, dt = 1) {
+flume = function(comm, network, sp0, st0, spb, stb, dt = 86400) {
 
 	## define initial states, and check dimensionality
 	if(is.null(state(network)) && missing(st0))
@@ -121,14 +121,32 @@ resource_summary = function(x) {
 #' then returns a copy of `x` with the updated state and state history.
 #'
 #' @param x A [flume()] object
-#' @param nt The number of time steps
+#' @param nt The number of outer time steps, see 'details'
+#' @param nt_i The number of inner/integration time steps, see 'details'
 #' @param reps The number of replicate simulations to run; by default a single sim is run
 #' on a new flume; for continuing simulations, the same number of replicates will be used
+#' @details Flume runs at two different time scales to account for the fact that community changes
+#' are often slower than resource transport. Thus we have two different parameters here (along
+#' with the `dt` parameter from the [flume()] function) for specifying the length of time to run 
+#' the model:
+#'
+#' * `nt` Controls the "outer" time step; this is the number of times the model will simulate
+#' colonisations and extinctions, and the number of time steps that will be reported in model 
+#' output.
+#' * `nt_i` Defines the number of inner time steps for each outer time step; this controls the
+#' temporal resolution at which the integration for the transport/reaction model is run.
+#' * `dt` (Not specified here, but in the [flume()] function) Determines the length of each outer
+#' time step; units are the same units as discharge and other fluxes.
+#'
+#' For example, if discharge is in m^3/s, then the default `dt = 86400` corresponds to an outer
+#' time step of 86400 seconds, or one day. Setting nt = 100 will run the model for 100 days, and 
+#' setting nt_i = 144 will integrate resource transport and reaction 144 times each day, 
+#' corresponding to a 10-minute temporal resolution.
 #' @return A modified copy of `x`, with state updated with the results of the simulation.
 #' @export
-run_simulation = function(x, nt, reps, parallel = TRUE, cores = parallel::detectCores()) {
+run_simulation = function(x, nt, nt_i=1, reps, parallel = TRUE, cores = parallel::detectCores()) {
 
-	if(nt < 1)
+	if(nt < 1 || nt_i < 1)
 		stop("at least one time step is required")
 
 	if(missing(reps))
@@ -148,10 +166,10 @@ run_simulation = function(x, nt, reps, parallel = TRUE, cores = parallel::detect
 
 	if(parallel && reps > 1 && cores > 1) {
 		x[["networks"]] = parallel::mclapply(x[["networks"]], .do_sim, comm = x[["metacom"]], 
-			dt = x[["dt"]], nt = nt, mc.cores = cores)
+			dt = x[["dt"]], nt = nt, nt_i = nt_i, mc.cores = cores)
 	} else {
 		x[["networks"]] = lapply(x[["networks"]], .do_sim, comm = x[["metacom"]], dt = x[["dt"]], 
-			nt = nt)
+			nt = nt, nt_i = nt_i)
 	}
 
 	return(x)
@@ -161,18 +179,25 @@ run_simulation = function(x, nt, reps, parallel = TRUE, cores = parallel::detect
 #' Worker function for running simulations in parallel
 #' @param network A river network
 #' @param comm A metacommunity
-#' @param dt The size of the time step
-#' @param nt The number of time steps
+#' @param dt The size of the (outer) time step; one "generation" for the metacommunity
+#' @param nt The number of outer time steps
+#' @param nt_i The number of inner time steps
 #' @return A modified copy of `network` with the results of the simulation
 #' @keywords internal
-.do_sim = function(network, comm, dt, nt) {
+.do_sim = function(network, comm, dt, nt, nt_i) {
 	R = state(network)
 	S = site_by_species(network)
 
-	for(tstep in 1:nt) {
+	dt_i = dt/nt_i
+	for(t_out in 1:nt) {
 		cp = col_prob(comm, network, dt = dt)
 		ep = ext_prob(comm, network, dt = dt)
-		dR = dRdt(comm, network)
+
+			for(t_in in 1:nt_i) {
+				dR = dRdt(comm, network)
+				## euler integration for now
+				R = R + dR * dt_i
+			}
 
 		# no cols where already present, no exts where already absent
 		cp[S == 1] = 0
@@ -182,11 +207,8 @@ run_simulation = function(x, nt, reps, parallel = TRUE, cores = parallel::detect
 		S[cols == 1] = 1
 		S[exts == 1] = 0
 
-		## euler integration for now
-		R = R + dR * dt
-
 		site_by_species(network) = S
-		state(network) = R
+		state(network) = R # currently we update state only at the end of each outer time step
 	}
 	return(network)
 }

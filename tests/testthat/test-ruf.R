@@ -17,8 +17,9 @@ test_that("Resource use functions", {
 	# overall by default we expect all resource uses to be negative or zero
 	expect_true(all(colSums(ru) <= 0))
 
-	# absolute rate of change should be greatest when a greedy species is at it's optimum
-	expect_gt(abs(ru[1,1]), abs(ru[4,1]))
+	# rate of change per unit of resource should be greatest at the niche optimum
+	ru_norm = ru / state(rn)
+	expect_gt(abs(ru_norm[2,1]), abs(ru_norm[4,1]))
 
 	# make sure that the presence-absence matrix actually matters
 	site_by_species(rn) = matrix(c(1,0,0,1,1,1,1,0), nrow = length(Q), ncol = length(comm$species))
