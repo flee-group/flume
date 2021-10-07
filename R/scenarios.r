@@ -216,6 +216,8 @@ dispersal_custom = function(nsp, alpha = 0.05, beta = 0.5) {
 #' @param mc A [metacommunity()]
 #' @param prevalence A vector of length 1 or `length(mc[['species']])`, what proportion of sites
 #' should be occupied on average by each species.
+#' @param allow_empty_sites Logical, if FALSE then empty sites will be filled with a single species
+#' at random; this may result in slight departures from the desired prevalence.
 #' @return A site by species matrix, with sites taken from `rc` and species from `mc`
 #' @examples
 #' Q = rep(1, 4)
@@ -226,7 +228,7 @@ dispersal_custom = function(nsp, alpha = 0.05, beta = 0.5) {
 #' site_by_species(rn) = community_random(rn, mc)
 #' plot(rn, variable = "site_by_species")
 #' @export
-community_random = function(rn, mc, prevalence = 0.25) {
+community_random = function(rn, mc, prevalence = 0.25, allow_empty_sites = TRUE) {
 	i = nrow(adjacency(rn))
 	j = length(mc$species)
 	com = do.call(cbind, mapply(function(jj, pr)
@@ -235,9 +237,9 @@ community_random = function(rn, mc, prevalence = 0.25) {
 	if(all(prevalence < 1/i))
 		warning("All species have low prevalence; random communities might not match desired prevalences")
 	r0 = which(rowSums(com) == 0)
-	if(length(r0) > 0) {
+	if(length(r0) > 0 & !allow_empty_sites) {
 		for(k in r0)
-			com[k, sample(1:length(j))] = 1
+			com[k, sample(1:j)] = 1
 	}
 	return(com)
 }
