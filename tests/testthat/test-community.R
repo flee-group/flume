@@ -163,3 +163,39 @@ test_that("Ratio and static niches", {
 		metacommunity(nsp = nrow(algae$niches), nr = 2, niches = niches_custom, 
 			niche_args = nopts2), regex = "Invalid niche breadth")
 })
+
+test_that("Asymmetric competition", {
+	data(algae)
+	nopts = list(location = algae$niches$location, breadth = algae$niches$breadth)
+
+	# simple scale with all species the same
+	expect_error(comm1 <- metacommunity(nsp = nrow(algae$niches), nr = 1, niches = niches_custom, 
+		niche_args = nopts, comp_scale = 1), regex = NA)
+	comm2 <- metacommunity(nsp = nrow(algae$niches), nr = 1, niches = niches_custom, 
+		niche_args = nopts, comp_scale = 2)
+	expect_true(all(comm2$competition >= comm1$competition))
+	expect_equal(comm2$competition/2, comm1$competition)
+
+	# change scale per species
+	expect_error(comm3 <- metacommunity(nsp = nrow(algae$niches), nr = 1, niches = niches_custom, 
+		niche_args = nopts, comp_scale = c(1, 2, 1, 1)), regex = "nsp")
+	expect_error(comm3 <- metacommunity(nsp = nrow(algae$niches), nr = 1, niches = niches_custom, 
+		niche_args = nopts, comp_scale = c(1, 2, 1, 1, 1)), regex = NA)
+	expect_equal(comm3$competition[2,]/2, comm1$competition[2,])
+
+	# asymmetric pairwise
+	comp = matrix(1, nrow = length(nopts$location), ncol = length(nopts$location))
+	comp[2,1] = 2
+	expect_error(comm4 <- metacommunity(nsp = nrow(algae$niches), nr = 1, niches = niches_custom, 
+		niche_args = nopts, comp_scale = comp), regex = NA)
+	expect_equal(comm4$competition[2,1], comm3$competition[2,1])
+	expect_equal(comm4$competition[1,2], comm1$competition[1,2])
+
+	# species 2 facilitates species 1, but not the other way around
+	comp[2,1] = -0.2
+	expect_error(comm5 <- metacommunity(nsp = nrow(algae$niches), nr = 1, niches = niches_custom, 
+		niche_args = nopts, comp_scale = comp), regex = NA)
+	expect_lt(comm5$competition[2,1], 0)
+	expect_gt(comm5$competition[1,2], 0)
+
+})
