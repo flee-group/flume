@@ -72,7 +72,9 @@ metacommunity = function(nsp = 2, nr = 1, niches = niches_uniform, dispersal = d
 
 	if("ratio" %in% attr(comm, "r_types")) {
 		nn = nr - nrow(n_params$ratio)
-		i_r = (nn - nrow(n_params$ratio) + 1):nn  # ratio indices
+		attr(comm, "niche_types") = "normal"
+		i_r = (nn - nrow(n_params$ratio) + 1):nn  # ratio indices always go on the end
+		attr(comm, "niche_types")[i_r] = "ratio"
 		n_names_ratio = apply(matrix(r_names[n_params$ratio], ncol=2), 1, 
 			function(x) paste(x, collapse=":"))
 		if(length(i_r) < nn) {
@@ -82,6 +84,7 @@ metacommunity = function(nsp = 2, nr = 1, niches = niches_uniform, dispersal = d
 			attr(comm, "niche_names") = n_names_ratio
 	} else {
 		attr(comm, "niche_names") = r_names
+		attr(comm, "niche_types") = attr(comm, "r_types")
 	}
 
 	## compute reasonable niche limits for plotting and integration
@@ -91,10 +94,12 @@ metacommunity = function(nsp = 2, nr = 1, niches = niches_uniform, dispersal = d
 	nmins = nlocs - 2 * nsds
 	nmaxes = nlocs + 2 * nsds
 
-	# ratios have a natural minmum of zero (lol, all resources also have this limit)
-	if("ratio" %in% attr(comm, "r_types"))
-		nmins[nmins[, i_r] < 0, i_r] = 0
+	# niches/resources have a natural limit of zero
+	# note that this means that all habitat variables MUST be on a ratio scale
+	# for example, do not use temperature in C, use K
+	nmins[nmins < 0] = 0
 	attr(comm, "niche_lim") = cbind(apply(nmins, 2, min), apply(nmaxes, 2, max))
+	attr(comm, "niche_lims") = list(min = nmins, max = nmaxes)
 
 	comm[["competition"]] = .compute_comp_matrix(comm)
 
@@ -178,9 +183,9 @@ species = function(location, breadth, scale_c, scale_e, alpha, beta, r_use, r_tr
 #' @return a matrix giving pairwise competition coefficients
 .compute_comp_matrix = function(x) {
 	sp = x[["species"]]
-	xmin = attr(x, "niche_lim")[, 1]
-	xmax = attr(x, "niche_lim")[, 2]
-	if(length(xmin) == 1) {
+	xmin = attr(x, "niche_lims")$min
+	xmax = attr(x, "niche_lims")$max
+	if(ncol(xmin) == 1) {
 		integration_fun = integrate
 		integral_name = "value"
 	} else {
@@ -196,20 +201,23 @@ species = function(location, breadth, scale_c, scale_e, alpha, beta, r_use, r_tr
 	}
 	## guard against case when there is only one species
 	if(length(sp) == 1) {
-		comp = matrix(integration_fun(.pairwise_comp(sp[[1]], sp[[1]]), xmin, xmax)[[integral_name]],
-			nrow = 1, ncol = 1)
+		comp = matrix(integration_fun(.pairwise_comp(sp[[1]], sp[[1]]), 
+			xmin[1,], xmax[1,])[[integral_name]], nrow = 1, ncol = 1)
 	} else {
 		comp = matrix(0., nrow = length(sp), ncol = length(sp))
 		for(i in seq_len(length(sp) - 1)) {
 			si = sp[[i]]
-			comp[i, i] = integration_fun(.pairwise_comp(si, si), xmin, xmax)[[integral_name]]
+			comp[i, i] = integration_fun(.pairwise_comp(si, si), xmin[i,], xmax[i,])[[integral_name]]
 			for(j in (i + 1):length(sp)) {
+				# need to help the integrator with reasonable limits
+				xmn = pmin(xmin[i,], xmin[j,])
+				xma = pmax(xmax[i,], xmax[j,])
 				sj = sp[[j]]
-				comp[i, j] = integration_fun(.pairwise_comp(si, sj), xmin, xmax)[[integral_name]]
+				comp[i, j] = integration_fun(.pairwise_comp(si, sj), xmn, xma)[[integral_name]]
 				comp[j, i] = comp[i, j]
 			}
 		}
-		comp[j, j] = integration_fun(.pairwise_comp(sj, sj), xmin, xmax)[[integral_name]]
+		comp[j, j] = integration_fun(.pairwise_comp(sj, sj), xmin[j,], xmax[j,])[[integral_name]]
 	}
 	rownames(comp) = colnames(comp) = attr(x, "spnames")
 	return(comp)

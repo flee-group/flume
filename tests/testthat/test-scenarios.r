@@ -156,6 +156,9 @@ test_that("Community scenarios", {
 		regex = NA)
 	expect_warning(rcomm <- community_random(rn, mc, prevalence = 0), 
 		regex = "low prevalence")
+
+	expect_error(rcomm <- community_random(rn, mc, prevalence = c(0.5, 0.25), 
+		allow_empty_sites = FALSE), regex = NA)
 	expect_true(all(rowSums(rcomm) > 0))
 
 	expect_error(ecomm <- community_equilibrium(rn, mc), regex = NA)
