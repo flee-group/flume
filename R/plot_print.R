@@ -86,11 +86,13 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 		}
 	}
 	else {
-		if(!is.null(state(x)) && !("vertex.color" %in% names(args)) && requireNamespace("scales", quietly = TRUE)) {
+		if(!is.null(state(x, "resources")) && 
+					!("vertex.color" %in% names(args)) && 
+					requireNamespace("scales", quietly = TRUE)) {
 			if(missing(t)) {
-				R = state(x)[,variable]
+				R = state(x, "resources")[,variable]
 			} else {
-				R = state(x, TRUE)[[t]][,variable]
+				R = state(x, , "resources", history = TRUE)[[t]][,variable]
 			}
 			if(missing(zlim))
 				zlim = range(R)

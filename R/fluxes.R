@@ -14,7 +14,7 @@
 #' 	but see 'details'
 #' @export
 col_prob = function(comm, network, dt, components = FALSE) {
-	R = state(network)
+	R = state(network, "resources")
 	nsites = nrow(R)
 	nsp = length(comm$species)
 
@@ -33,14 +33,14 @@ col_prob = function(comm, network, dt, components = FALSE) {
 	Q = matrix(discharge(network), nrow=nsites, ncol = nsp)
 
 
-	dispersal = P * (A + B*Q) + boundary_species(network)
+	dispersal = P * (A + B*Q) + boundary(network, "species")
 
-	dimnames(col) = dimnames(dispersal) = dimnames(site_by_species(network))
+	dimnames(col) = dimnames(dispersal) = dimnames(state(network, "species"))
 	if(components) {
 		return(list(colonisation = col, dispersal = dispersal))
 	} else {
 		res = 1 - exp(-1 * col * dispersal * dt)
-		dimnames(res) = dimnames(site_by_species(network))
+		dimnames(res) = dimnames(state(network, "species"))
 		return(res)
 	}
 }
@@ -48,8 +48,8 @@ col_prob = function(comm, network, dt, components = FALSE) {
 #' @rdname ceprob
 #' @export
 ext_prob = function(comm, network, dt, components = FALSE) {
-	S = site_by_species(network)
-	R = state(network)
+	S = state(network, "species")
+	R = state(network, "resources")
 
 	# extinction rate has two components, the stochastic extinction rate and the competition portion
 	# stochastic first
@@ -80,15 +80,15 @@ ext_prob = function(comm, network, dt, components = FALSE) {
 #' @return Normally, a site by resource matrix of resource fluxes
 #' @export
 dRdt = function(comm, network, components = FALSE) {
-	S = site_by_species(network)
-	R = state(network)
-	Q = discharge(network)
+	S = state(network, "species")
+	R = state(network, "resources")
+	Q = discharge(network) # state(network, "Q") # not working yet, but eventually
 	Ru = t(adjacency(network)) %*% R ## upstream resource concentration
 	Qu = t(adjacency(network)) %*% Q ## upstream discharge
 	A = cs_area(network)
 	l = reach_length(network)
-	lQ = lateral_discharge(network)
-	lR = boundary(network)
+	lQ = lateral_discharge(network) ## should be boundary(network, "discharge")
+	lR = boundary(network, "resources")
 
 	output = Q * R
 
