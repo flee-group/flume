@@ -35,9 +35,9 @@ plot.flume = function(x, variable = c("occupancy", "resources"), type = c("netwo
 
 
 #' Plot a river network
-#' @details The argument 'variable' can either be a column number from the state variable matrix, a column name from
-#' the state variable matrix, or the special name "site_by_species", which produces a plot of the network with
-#' species presence-absence.
+#' @details The argument 'variable' can either be a column number from the state variable matrix, 
+#' a column name from the state variable matrix, or the special name "species", which produces a 
+#' plot of the network with species presence-absence.
 #' @param x A [river_network()]
 #' @param variable If state is defined, the column to use for plotting; see 'details'
 #' @param t Optional, time step to print; if missing, defaults to most recent
@@ -68,10 +68,14 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 
 	## colour scale, if available and desired
 	if(variable == "site_by_species") {
+		warning("variable = 'site_by_species' is deprecated, use variable = 'species' instead.")
+		variable = "species"
+	}
+	if(variable == "species") {
 		if(missing(t)) {
-			S = site_by_species(x)
+			S = state(x, "species")
 		} else {
-			S = site_by_species(x, TRUE)[[t]]
+			S = state(x, "species", TRUE)[[t]]
 		}
 		nsp = ncol(S)
 		# colours from colorbrewer

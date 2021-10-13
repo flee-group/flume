@@ -143,7 +143,7 @@ state.river_network = function(x, var, history = FALSE) {
 	}
 	allowed_vars = c("resources", "species", "Q", "reaction", "transport")
 	if(length(var) != 1 || !var %in% allowed_vars)
-		stop("var must be one of the following:", paste(allowed_vars))
+		stop("var must be one of the following: ", paste(allowed_vars, collapse = ' '))
 	var = paste0('.', var)
 
 	if(length(x[[var]]) == 0)

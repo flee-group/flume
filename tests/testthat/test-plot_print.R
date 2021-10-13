@@ -24,7 +24,7 @@ test_that("River Network plotting", {
 
 test_that("River Network community plotting", {
 	vdiffr::expect_doppelganger("River Network Species Plot", 
-		plot(rn, variable = 'site_by_species'))
+		plot(rn, variable = 'species'))
 })
 
 ## ggplot figs not working with vdiffr for some reason

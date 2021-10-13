@@ -42,37 +42,36 @@ test_that("River network creation", {
 
 test_that("River network state manipulation", {
 	rn = river_network(adj, Q)
-	expect_true(is.null(state(rn)))
+	expect_true(is.null(state(rn, "resources")))
 
 	st = matrix(seq(0, 1, length.out = length(Q)), ncol = 1, dimnames = list(NULL, 'R'))
 	# construction with state
 
-	expect_error(state(rn) <- st, regex=NA)
-	expect_equal(state(rn), st, check.names = FALSE, check.attributes = FALSE)
+	expect_error(state(rn, "resources") <- st, regex=NA)
+	expect_equal(state(rn, "resources"), st, check.names = FALSE, check.attributes = FALSE)
 
 	# try to add invalid states
-	expect_error(state(rn) <- st[1:3, , drop=FALSE], regex = "one row per reach")
+	expect_error(state(rn, "resources") <- st[1:3, , drop=FALSE], regex = "one row per reach")
 
 	# try to change state dimensionality
-	expect_error(state(rn) <- cbind(st, st), regex = "one column per resource")
+	expect_error(state(rn, "resources") <- cbind(st, st), regex = "one column per")
 
 	# update state and retrieve history
-	expect_error(state(rn) <- st + 1, regex=NA)
-	expect_equal(state(rn), st + 1, , check.names = FALSE, check.attributes = FALSE)
-	expect_equal(state(rn, history = TRUE)[[1]], st, , check.names = FALSE,
+	expect_error(state(rn, "resources") <- st + 1, regex=NA)
+	expect_equal(state(rn, "resources"), st + 1, , check.names = FALSE, check.attributes = FALSE)
+	expect_equal(state(rn, "resources", history = TRUE)[[1]], st, , check.names = FALSE,
 		check.attributes = FALSE)
-	expect_equal(state(rn, history = TRUE)[[2]], state(rn), , check.names = FALSE,
+	expect_equal(state(rn, "resources", history = TRUE)[[2]], state(rn, "resources"), , check.names = FALSE,
 		check.attributes = FALSE)
 
 	# reset state
-	expect_error(rn <- reset_state(rn, 1:nrow(adj)), regex=NA)
-	expect_equal(length(state(rn, history = TRUE)), 1)
-	expect_equal(dim(state(rn, history = TRUE)[[1]]), c(nrow(adj), 1))
+	expect_error(state(rn, "resources") <- NULL, regex = NA)
+	expect_equal(length(state(rn, "resources", history = TRUE)), 0)
 })
 
 test_that("River network community matrix", {
 	rn = river_network(adj, Q)
 	comm <- metacommunity()
-	expect_error(site_by_species(rn), regex = "missing")
-	expect_error(site_by_species(rn) <- community_random(rn, comm), regex = NA)
+	expect_equal(length(state(rn, "species")), 0)
+	expect_error(state(rn, "species") <- community_random(rn, comm), regex = NA)
 })

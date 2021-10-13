@@ -21,7 +21,7 @@
 Plot a river network
 }
 \details{
-The argument 'variable' can either be a column number from the state variable matrix, a column name from
-the state variable matrix, or the special name "site_by_species", which produces a plot of the network with
-species presence-absence.
+The argument 'variable' can either be a column number from the state variable matrix,
+a column name from the state variable matrix, or the special name "species", which produces a
+plot of the network with species presence-absence.
 }

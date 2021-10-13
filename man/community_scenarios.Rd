@@ -6,7 +6,7 @@
 \alias{community_equilibrium}
 \title{Generate scenarios for site by species matrices}
 \usage{
-community_random(rn, mc, prevalence = 0.25)
+community_random(rn, mc, prevalence = 0.25, allow_empty_sites = TRUE)
 
 community_equilibrium(rn, mc)
 }
@@ -17,6 +17,9 @@ community_equilibrium(rn, mc)
 
 \item{prevalence}{A vector of length 1 or \code{length(mc[['species']])}, what proportion of sites
 should be occupied on average by each species.}
+
+\item{allow_empty_sites}{Logical, if FALSE then empty sites will be filled with a single species
+at random; this may result in slight departures from the desired prevalence.}
 }
 \value{
 A site by species matrix, with sites taken from \code{rc} and species from \code{mc}

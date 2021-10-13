@@ -10,7 +10,7 @@ river_network(
   area,
   length = 1,
   layout,
-  site_names,
+  site_names = paste0("si", 1:nrow(adjacency)),
   skip_checks = FALSE
 )
 }
