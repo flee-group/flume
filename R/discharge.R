@@ -7,12 +7,12 @@ discharge = function(x, ...)
 	UseMethod('discharge<-', x)
 
 #' @export
-cs_area = function(x, ...)
-	UseMethod("cs_area", x)
+area = function(x, ...)
+	UseMethod("area", x)
 
 #' @export
-'cs_area<-' = function(x, value)
-	UseMethod('cs_area<-', x)
+'area<-' = function(x, value)
+	UseMethod('area<-', x)
 
 
 #' Get and set discharge and cross-sectional area of a river network
@@ -20,35 +20,45 @@ cs_area = function(x, ...)
 #' @details There are three possible models for discharge/cross-sectional area, depending on the
 #' kind of input provided.
 #'
-#' If discharge is provided as a vector or a single-column matrix, then discharge will be treated as constant
-#' throughout any simulations. In this case, then length of the input must equal the number of nodes in the
-#' river network.
+#' If discharge is provided as a vector or a single-column matrix, then discharge will be treated 
+#' as constant throughout any simulations. In this case, then length of the input must equal the 
+#' number of nodes in the river network.
 #'
-#' If discharge is provided as a matrix with ncol > 1, then a variable discharge model will be used. The input in this
-#' case is a hydrograph, where the rows are nodes in the river network and the columns are time steps. Time
-#' steps will be recycled, so if a model is run for a more steps than is present in the discharge matrix, then discharge
-#' will restart at the first columns of the matrix.
+#' If discharge is provided as a matrix with ncol > 1, then a variable discharge model will be used.
+#' The input in this case is a hydrograph, where the rows are nodes in the river network and the 
+#' columns are time steps. Time steps will be recycled, so if a model is run for a more steps than
+#' is present in the discharge matrix, then discharge will restart at the first columns of the 
+#' matrix.
 #'
-#' The final possibility is to provide a function that takes a single parameter, the time step, as input and returns
-#' a discharge vector with one element per node in the river network.
+#' The final possibility is to provide a function that takes a single parameter, the time step, as 
+#' input and returns a discharge vector with one element per node in the river network.
 #'
-#' Cross sectional area can either be missing or provided in the same format as discharge. If missing, then cross
-#' sectional area will be computed using hydrological scaling relationships; see [geometry()] for details.
+#' Cross sectional area can either be missing or provided in the same format as discharge. If 
+#' missing, then cross sectional area will be computed using hydrological scaling relationships; 
+#' see [geometry()] for details.
 #'
-#' Note that if cross-sectional area is provided, then the discharge model is changed (e.g., from constant to variable),
-#' it is strongly recommended (and not checked!) that the user ALSO update cross-sectional area to match the new model,
-#' otherwise undefined behavior will occur.
+#' Note that if cross-sectional area is provided, then the discharge model is changed (e.g., from 
+#' constant to variable), it is strongly recommended (and not checked!) that the user ALSO update
+#' cross-sectional area to match the new model, otherwise undefined behavior will occur.
 #'
-#' `cs_area(x) <- NULL` will delete any provided cross sectional area and revert to the default behavior, computing
-#' area using [geometry()]
+#' `area(x) <- NULL` will delete any provided cross sectional area and revert to the default 
+#' behavior, computing area using [geometry()]
 #'
 #' @param x A [river_network()]
+#' @param type The type of record to get; either the raw data, the current state, or the whole 
+#'		history
 #' @param value Discharge/cross-sectional area (see 'details')
 #' @name discharge
 #' @return A discharge vector
 #' @export
-discharge.river_network = function(x) {
-	.get_hydro_attr(x, ".Q")
+discharge.river_network = function(x, type = c("raw", "current", "history")) {
+	type = match.arg(type)
+	if(type == "raw") {
+		val = x[[".Q"]]
+	} else {
+		val = .get_hydro_attr(x, ".Q", type)
+	}
+	val
 }
 
 #' @rdname discharge
@@ -79,19 +89,32 @@ discharge.river_network = function(x) {
 #' @rdname discharge
 #' @return Cross-sectional area vector
 #' @export
-cs_area.river_network = function(x) {
-	if('.area' %in% ls(x, all.names=TRUE)) {
-		A = .get_hydro_attr(x, '.area')
+area.river_network = function(x, type = c("raw", "current", "history")) {
+	type = match.arg(type)
+	missing_area = !('.area' %in% ls(x, all.names=TRUE))
+
+	if(type == "raw") {
+		val = x[[".area"]]
+	} else if(missing_area) {
+		if(type == "current") {
+			val = .compute_area(state(x, "Q"))
+		} else {
+			val = apply(state(x, "Q", history = TRUE), 2, .compute_area)
+		}
 	} else {
-		A = geometry(discharge(x))
-		A = A$width * A$depth
+		val = .get_hydro_attr(x, '.area', type)
 	}
-	return(A)
+	val
+}
+
+.compute_area = function(Q) {
+	geom = geometry(Q)
+	geom$depth * geom$width
 }
 
 #' @rdname discharge
 #' @export
-'cs_area<-.river_network' = function(x, value) {
+'area<-.river_network' = function(x, value) {
 	if(is.null(value)) {
 		x[['.area']] = NULL
 		return(x)
@@ -144,22 +167,35 @@ geometry = function(Q) {
 #' @param x A river network
 #' @param attr Which attribute to get
 #' @keywords internal
-.get_hydro_attr = function(x, attr = c('.Q', '.area')) {
+.get_hydro_attr = function(x, attr = c('.Q', '.area'), type) {
 	attr = match.arg(attr)
 	## determine what time step we are at from how many states we have saved
-	tm = length(state(x, "resources", history = TRUE)) 
-	if(attr(x, "discharge_model") == "constant") {
-		## note, this is always stored as a matrix for compatibility, but returned as a vector
-		val = x[[attr]][,1] 
-	} else if(attr(x, "discharge_model") == "variable") {
-		if(tm > ncol(x[[attr]])) {
-			tm = tm %% ncol(x[[attr]])
-			if(tm == 0)
-				tm = ncol(x[[attr]])
+	tm = length(state(x, "resources", history = TRUE))
+	tm = ifelse(tm == 0, 1, tm)
+	mod = attr(x, "discharge_model")
+
+	if(mod == "constant") {
+		val = x[[attr]][,1]
+		if(type == "history") {
+			val = matrix(val, ncol = tm)
 		}
-		val = x[[attr]][,tm]
+	} else if(mod == "variable") {
+		val = x[[attr]]
+		nc = ncol(val)
+		if(type == "current") {
+			i = ifelse(tm <= nc, tm, tm %% nc)
+			i = ifelse(i == 0, nc, i)
+		} else {
+			i = if(tm <= nc) seq_len(tm) else c(rep(seq_lem(nc), tm %/% nc), seq_len(tm %% nc))
+		}
+		val = val[,i]
 	} else {
-		val = x[[attr]](tm)
+		fun = x[[attr]]
+		if(type == "current") {
+			val = fun(tm)
+		} else {
+			val = sapply(1:tm, fun)
+		}
 	}
 	return(val)
 }

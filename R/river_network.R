@@ -141,19 +141,26 @@ state.river_network = function(x, var, history = FALSE) {
 		warning("Calling state(x) with no variable name is deprecated; use state(x, 'resources')")
 		var = "resources"
 	}
-	allowed_vars = c("resources", "species", "Q", "reaction", "transport")
+	allowed_vars = c("resources", "species", "Q", "area", "reaction", "transport")
 	if(length(var) != 1 || !var %in% allowed_vars)
 		stop("var must be one of the following: ", paste(allowed_vars, collapse = ' '))
 	var = paste0('.', var)
 
-	if(length(x[[var]]) == 0)
-		return(NULL)
-
-	if(history) {
-		return(x[[var]])
+	if(var == ".Q") {
+		val = discharge(x, type = ifelse(history, "history", "current"))
+	} else if(var == ".area") {
+		val = area(x, type = ifelse(history, "history", "current"))
 	} else {
-		return(x[[var]][[length(x[[var]])]])
+		if(length(x[[var]]) == 0)
+			return(NULL)
+		
+		if(history) {
+			val = x[[var]]
+		} else {
+			val = x[[var]][[length(x[[var]])]]
+		}
 	}
+	val
 }
 
 
@@ -164,7 +171,11 @@ state.river_network = function(x, var, history = FALSE) {
 		warning("Calling state(x) with no variable name is deprecated; use state(x, 'resources')")
 		var = "resources"
 	}
-	allowed_vars = c("resources", "species", "Q", "reaction", "transport")
+	if(var == "Q")
+		stop("Setting Q with state<- is not permitted, use 'discharge(x) <- value' instead.")
+	if(var == "area")
+		stop("Setting area with state<- is not permitted, use 'area(x) <- value' instead.")
+	allowed_vars = c("resources", "species", "reaction", "transport")
 	if(length(var) != 1 || !var %in% allowed_vars)
 		stop("var must be one of the following:", paste(allowed_vars))
 	cnames = paste0("names_", var)
