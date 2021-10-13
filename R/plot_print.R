@@ -87,7 +87,6 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 		nsp = ncol(S)
 		# colours from colorbrewer
 		cols = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6")
-		#args$vertex.label.color = '#444444'
 
 		par(mfrow = .set_mfrow(nsp))
 		for(i in 1:nsp) {
@@ -103,12 +102,12 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 			if(missing(t)) {
 				R = state(x, "resources")[,variable]
 			} else {
-				R = state(x, , "resources", history = TRUE)[[t]][,variable]
+				R = state(x, "resources", history = TRUE)[[t]][,variable]
 			}
 			if(missing(zlim))
 				zlim = range(R)
 			args$vertex.color = scales::col_numeric("PuBu", zlim)(R)
-			#args$vertex.label.color = rev(scales::col_numeric("YlOrBr", zlim)(R))
+			
 		} else {
 			if(!requireNamespace("scales", quietly = TRUE))
 				message("Install the scales package for plotting the state variable with a colour scale")
@@ -216,7 +215,7 @@ plot.species = function(x, R, axis = 1, res = 100, lwd = 1) {
 	if(!"edge.width" %in% nms) dots$edge.width = 10
 	if(!"edge.color" %in% nms) dots$edge.color = "#a6bddb"
 	if(!"edge.arrow.size" %in% nms) dots$edge.arrow.size = 0.1 * dots$edge.width
-	if(!"vertex.label.color" %in% nms) dots$vertex.label.color ="444444"
+	if(!"vertex.label.color" %in% nms) dots$vertex.label.color ="#444444"
 	return(dots)
 }
 
