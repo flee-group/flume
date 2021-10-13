@@ -7,10 +7,10 @@ test_that("Species flux works", {
 		adj[7,6] = adj[8,6] = adj[10,9] = 1
 
 	network = river_network(adjacency = adj, discharge = Q)
-	state(network) = matrix(seq(0, 1, length.out = nsites), ncol=1)
-	boundary(network) = state(network)
-	site_by_species(network) = community_random(network, comm, prevalence = c(0.35, 0.65))
-	boundary_species(network) = site_by_species(network) * 0
+	state(network, "resources") = matrix(seq(0, 1, length.out = nsites), ncol=1)
+	boundary(network, "resources") = state(network, "resources")
+	state(network, "species") = community_random(network, comm, prevalence = c(0.35, 0.65))
+	boundary(network, "species") = state(network, "species") * 0
 	expect_error(cp <- col_prob(comm, network, dt=1), regex=NA)
 	expect_error(ep <- ext_prob(comm, network, dt=1), regex=NA)
 

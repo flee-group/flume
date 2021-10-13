@@ -148,7 +148,7 @@ test_that("Community scenarios", {
 	adj = matrix(0, nrow = 4, ncol = 4)
 	adj[1,2] = adj[2,3] = adj[4,3] = 1
 	rn = river_network(adj, Q)
-	state(rn) = matrix(seq(0, 1, length.out = 4), ncol=1)
+	state(rn, "resources") = matrix(seq(0, 1, length.out = 4), ncol=1)
 	mc = metacommunity()
 
 	# make sure all sites have species in random communities
@@ -162,5 +162,5 @@ test_that("Community scenarios", {
 	expect_true(all(rowSums(rcomm) > 0))
 
 	expect_error(ecomm <- community_equilibrium(rn, mc), regex = NA)
-	expect_identical(ecomm == 1, f_niche(mc, state(rn)) > 0)
+	expect_identical(ecomm == 1, f_niche(mc, state(rn, "resources")) > 0)
 })

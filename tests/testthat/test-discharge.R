@@ -18,7 +18,7 @@ test_that("discharge", {
 	expect_error(discharge(rn) <- cbind(Q, zeros), regex = NA)
 	expect_match(attr(rn, "discharge_model"), "variable")
 	expect_identical(discharge(rn), Q)
-	state(rn) = state(rn) ## advance the time step of the model
+	state(rn, "resources") = state(rn, "resources") ## advance the time step of the model
 	expect_identical(discharge(rn), zeros)
 
 	expect_error(discharge(rn) <- Q, regex = NA)
@@ -55,7 +55,7 @@ test_that("cross sectional area", {
 	expect_error(cs_area(rn) <- A, regex = "dimensions")
 	expect_error(cs_area(rn) <- cbind(A, zeros), regex = NA)
 	expect_identical(cs_area(rn), A)
-	state(rn) = state(rn) ## advance the time step of the model
+	state(rn, "resources") = state(rn, "resources") ## advance the time step of the model
 	expect_identical(cs_area(rn), zeros)
 
 	## function

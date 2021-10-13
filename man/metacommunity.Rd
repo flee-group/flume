@@ -12,7 +12,8 @@ metacommunity(
   sp_names = paste0("sp", 1:nsp),
   r_names = paste0("r", 1:nr),
   niche_args = list(),
-  dispersal_args = list()
+  dispersal_args = list(),
+  comp_scale = 1/nsp
 )
 }
 \arguments{
@@ -27,6 +28,8 @@ metacommunity(
 \item{niche_args}{A list of named arguments to be passed to the niche function}
 
 \item{dispersal_args}{A list of named arguments to be passed to the dispersal function}
+
+\item{comp_scale}{Scale for the strength of competition, see 'details'.}
 }
 \value{
 A metacommunity object
@@ -45,6 +48,19 @@ on each other species; generated using the overlap between species'
 \href{f_niche.species()}{fundamental niches}.
 \item \code{boundary}: A function that returns a site by species matrix giving the colonisation flux
 from outside the river network; by default returns zero for all sites/species.
+}
+
+The \code{comp_scale} is treated as a multiplier, changing the value of the competition matrix.
+By default the \code{comp_scale} parameter is 1/nsp, meaning pairwise competition gets less important
+with the number of species (but overall competition may still increase, because pairwise
+interactions are summed). This parameter must be:
+\itemize{
+\item a single value, interpreted as the overall strength of competition in the metacommunity,
+\item a vector of length \code{nsp}, interpreted as the competitive strength of each species, or
+\item a matrix with \code{nsp} rows and \code{nsp} columns, if asymmetric competition or fine control over
+the strength of each interaction is desired. For asymmetric competition, changing the value of
+\code{comp_scale[i,j]} will change the effect of species \code{i} on species \code{j}, but not the other way
+around.
 }
 
 Each species' fundamental niche is defined as the difference between a Gaussian colonisation

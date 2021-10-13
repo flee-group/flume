@@ -303,7 +303,9 @@ f_niche.species = function(x, R, N, component = c("lambda", "col", "ext")) {
 #' @export
 f_niche.metacommunity = function(x, R, N, component = c("lambda", "col", "ext")) {
 	component = match.arg(component)
-	do.call(cbind, lapply(x$species, f_niche, R = R, N = N, component = component))
+	res = do.call(cbind, lapply(x$species, f_niche, R = R, N = N, component = component))
+	colnames(res) = attr(x, "sp_names")
+	res
 }
 
 

@@ -16,9 +16,9 @@ layout = matrix(c(0,0,0,1,-0.5,2,-0.5,3,-1,4,0,4,-0.5,5,0.5,5,0.5,2,1,3),
 	byrow=TRUE, nrow=nsites)
 R = matrix(seq(0, 1, length.out = nsites), ncol=1, dimnames = list(NULL, 'R'))
 network = river_network(adjacency = adj, discharge = Q, layout = layout)
-state(network) = R
-boundary(network) = R
-site_by_species(network) = community_equilibrium(network, mc)
+state(network, "resources") = R
+boundary(network, "resources") = R
+state(network, "species") = community_equilibrium(network, mc)
 saveRDS(network, "inst/testdata/river_network.rds")
 
 sim = flume(mc, network)

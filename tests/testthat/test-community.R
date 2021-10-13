@@ -137,7 +137,7 @@ test_that("Niches estimated correctly", {
 	expect_error(c_niche <- f_niche(comm, st), regex = NA)
 	expect_true(is(c_niche, "matrix"))
 	expect_equal(dim(c_niche), c(nrow(st), length(comm$species)))
-	expect_identical(c_niche[, 1, drop = FALSE], sp_niche)
+	expect_equal(c_niche[, 1, drop = FALSE], sp_niche, check.attributes = FALSE)
 })
 
 test_that("Ratio and static niches", {

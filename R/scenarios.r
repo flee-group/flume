@@ -247,8 +247,10 @@ community_random = function(rn, mc, prevalence = 0.25, allow_empty_sites = TRUE)
 #' @rdname community_scenarios
 #' @export
 community_equilibrium = function(rn, mc) {
-	niches = f_niche(mc, state(rn))
-	(f_niche(mc, state(rn)) > 0) * 1
+	niches = f_niche(mc, state(rn, "resources"))
+	val = (f_niche(mc, state(rn, "resources")) > 0) * 1
+	colnames(val) = attr(mc, "sp_names")
+	val
 }
 
 

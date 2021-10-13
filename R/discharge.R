@@ -146,9 +146,11 @@ geometry = function(Q) {
 #' @keywords internal
 .get_hydro_attr = function(x, attr = c('.Q', '.area')) {
 	attr = match.arg(attr)
-	tm = length(x[['.state']]) ## determine what time step we are at from how many states we have saved
+	## determine what time step we are at from how many states we have saved
+	tm = length(state(x, "resources", history = TRUE)) 
 	if(attr(x, "discharge_model") == "constant") {
-		val = x[[attr]][,1]  ## note, this is always stored as a matrix for compatibility, but returned as a vector
+		## note, this is always stored as a matrix for compatibility, but returned as a vector
+		val = x[[attr]][,1] 
 	} else if(attr(x, "discharge_model") == "variable") {
 		if(tm > ncol(x[[attr]])) {
 			tm = tm %% ncol(x[[attr]])

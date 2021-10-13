@@ -4,7 +4,7 @@
 \alias{flume}
 \title{Create a FLUvial Meta-Ecosystem model}
 \usage{
-flume(comm, network, sp0, st0, spb, stb, dt = 1)
+flume(comm, network, sp0, st0, spb, stb, dt = 86400)
 }
 \arguments{
 \item{comm}{A \code{\link[=metacommunity]{metacommunity()}}}
