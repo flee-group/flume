@@ -82,12 +82,12 @@ ext_prob = function(comm, network, dt, components = FALSE) {
 dRdt = function(comm, network, components = FALSE) {
 	S = state(network, "species")
 	R = state(network, "resources")
-	Q = discharge(network) # state(network, "Q") # not working yet, but eventually
+	Q = state(network, "Q") 
 	Ru = t(adjacency(network)) %*% R ## upstream resource concentration
 	Qu = t(adjacency(network)) %*% Q ## upstream discharge
-	A = cs_area(network)
+	A = state(network, "area")
 	l = reach_length(network)
-	lQ = lateral_discharge(network) ## should be boundary(network, "discharge")
+	lQ = boundary(network, "Q")
 	lR = boundary(network, "resources")
 
 	output = Q * R

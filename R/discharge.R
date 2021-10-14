@@ -209,7 +209,7 @@ geometry = function(Q) {
 #' @return A vector of discharge values
 #' @export
 lateral_discharge = function(x) {
-	Q = discharge(x)
+	Q = state(x, "Q")
 	Qu = t(adjacency(x)) %*% Q
 	as.vector(Q - Qu)
 }

@@ -7,7 +7,7 @@
 #' equal to one.
 #' @param adjacency An adjacency matrix; see 'details'
 #' @param discharge Optional discharge values, see [discharge.river_network()]
-#' @param area Optional vector for cross sectional area values, one per reach
+#' @param area Optional cross sectional area values, see [discharge.river_network()]
 #' @param length The length of each reach, must be a single value (the model assumes all reaches
 #' are the same length)
 #' @param layout Optional, matrix of x-y coordinates used for plotting the network
@@ -50,7 +50,7 @@ river_network = function(adjacency, discharge, area, length = 1, layout,
 	if(!missing(discharge))
 		discharge(rn) = discharge
 	if(!missing(area))
-		cs_area(rn) = area
+		area(rn) = area
 
 	if(!missing(layout))
 		attr(rn, "layout") = layout
@@ -211,11 +211,17 @@ boundary.river_network = function(x, var) {
 			"use boundary(x, 'resources')")
 		var = "resources"
 	}
-	allowed_vars = c("resources", "species")
+	allowed_vars = c("resources", "species", "Q")
 	if(length(var) != 1 || !var %in% allowed_vars)
 		stop("var must be one of the following:", paste(allowed_vars))
-	var = paste0('.b_', var)
-	return(x[[var]])
+
+	if(var == "Q") {
+		val = lateral_discharge(x)
+	} else {
+		var = paste0('.b_', var)
+		val = x[[var]]
+	}
+	return(val)
 }
 
 #' @rdname state
