@@ -25,28 +25,6 @@
 #' @export
 flume = function(comm, network, sp0, st0, spb, stb, dt = 86400) {
 
-	# if(missing(st0)) {
-	# 	if(is.null(state(network, "resources")))
-	# 		stop("Initial resource state not specified")
-	# 	st0 = state(network)
-	# }
-	# if(ncol(st0) != attr(comm, "n_r"))
-	# 	stop("Initial network state doesn't match number of resources in comm")
-	# colnames(st0) = attr(comm, "r_names")
-	# state(network, "resources") <- NULL
-	# state(network, "resources") <- st0
-	## initial state for species
-	# if(missing(sp0)) {
-	# 	if(is.null(state(network, "species")))
-	# 		stop("Initial site by species matrix not specified")
-	# 	sp0 = state(network, "species")
-	# }		
-	# 	if(ncol(sp0) != attr(comm, "n_species"))
-	# 	stop("Initial site by species doesn't match number of species in comm")
-	# colnames(sp0) = attr(comm, "sp_names")
-	# state(network, "species") <- NULL
-	# state(network, "species") <- sp0
-
 	## define initial states and check dimensionality
 	network = .set_flume_initial_state(network, comm, st0, "resources")
 	network = .set_flume_initial_state(network, comm, sp0, "species")
@@ -143,32 +121,25 @@ resource_summary = function(x) {
 #' then returns a copy of `x` with the updated state and state history.
 #'
 #' @param x A [flume()] object
-#' @param nt The number of outer time steps, see 'details'
-#' @param nt_i The number of inner/integration time steps, see 'details'
+#' @param nt The number of time steps, see 'details'
 #' @param reps The number of replicate simulations to run; by default a single sim is run
 #' on a new flume; for continuing simulations, the same number of replicates will be used
-#' @details Flume runs at two different time scales to account for the fact that community changes
-#' are often slower than resource transport. Thus we have two different parameters here (along
-#' with the `dt` parameter from the [flume()] function) for specifying the length of time to run 
-#' the model:
+#' @details The time scale of flume is determiend by the combination of (a) the units of the
+#' discharge variable (assumed generally to be m^3/s) and (b) the size of the time step (which is
+#' specified with the `dt` parameter of the [flume()] function).
+#' 
+#' At each time step of length `dt`, the model will simulate colonisations and extinctions assuming
+#' that resource state is constant throughout the time step, and simulate resource dynamics 
+#' continuously via numerical integration. Model output will include the various state variables
+#' at each time step.
 #'
-#' * `nt` Controls the "outer" time step; this is the number of times the model will simulate
-#' colonisations and extinctions, and the number of time steps that will be reported in model 
-#' output.
-#' * `nt_i` Defines the number of inner time steps for each outer time step; this controls the
-#' temporal resolution at which the integration for the transport/reaction model is run.
-#' * `dt` (Not specified here, but in the [flume()] function) Determines the length of each outer
-#' time step; units are the same units as discharge and other fluxes.
-#'
-#' For example, if discharge is in m^3/s, then the default `dt = 86400` corresponds to an outer
-#' time step of 86400 seconds, or one day. Setting nt = 100 will run the model for 100 days, and 
-#' setting nt_i = 144 will integrate resource transport and reaction 144 times each day, 
-#' corresponding to a 10-minute temporal resolution.
+#' For example, if discharge is in m^3/s, then the default `dt = 86400` corresponds to a
+#' time step of 86400 seconds, or one day. Setting nt = 100 will run the model for 100 days.
 #' @return A modified copy of `x`, with state updated with the results of the simulation.
 #' @export
-run_simulation = function(x, nt, nt_i=1, reps, parallel = TRUE, cores = parallel::detectCores()) {
+run_simulation = function(x, nt, reps, parallel = TRUE, cores = parallel::detectCores()) {
 
-	if(nt < 1 || nt_i < 1)
+	if(nt < 1)
 		stop("at least one time step is required")
 
 	if(missing(reps))
@@ -188,43 +159,40 @@ run_simulation = function(x, nt, nt_i=1, reps, parallel = TRUE, cores = parallel
 
 	if(parallel && reps > 1 && cores > 1) {
 		x[["networks"]] = parallel::mclapply(x[["networks"]], .do_sim, comm = x[["metacom"]], 
-			dt = x[["dt"]], nt = nt, nt_i = nt_i, mc.cores = cores)
+			dt = x[["dt"]], nt = nt, mc.cores = cores)
 	} else {
 		x[["networks"]] = lapply(x[["networks"]], .do_sim, comm = x[["metacom"]], dt = x[["dt"]], 
-			nt = nt, nt_i = nt_i)
+			nt = nt)
 	}
 
 	return(x)
 }
 
 
+
+
+
 #' Worker function for running simulations in parallel
 #' @param network A river network
 #' @param comm A metacommunity
-#' @param dt The size of the (outer) time step; one "generation" for the metacommunity
-#' @param nt The number of outer time steps
-#' @param nt_i The number of inner time steps
+#' @param dt The size of the time step; one "generation" for the metacommunity
+#' @param nt The number of time steps
 #' @return A modified copy of `network` with the results of the simulation
 #' @keywords internal
-.do_sim = function(network, comm, dt, nt, nt_i) {
+.do_sim = function(network, comm, dt, nt) {
 	R = state(network, "resources")
 	S = state(network, "species")
 
-	dt_i = dt/nt_i
-	for(t_out in 1:nt) {
+	for(tm in 1:nt) {
 		cp = col_prob(comm, network, dt = dt)
 		ep = ext_prob(comm, network, dt = dt)
 
-		# transport-reaction terms for each site/resource, in concentration units
-		rxn_t = transport_t = 0 * R
-		for(t_in in 1:nt_i) {
-			dR_comp = dRdt(comm, network, components = TRUE)
-			dR = dR_comp$reaction - dR_comp$transport
-			rxn_t = rxn_t + dR_comp$reaction * dt_i
-			transport_t = transport_t + dR_comp$transport * dt_i
-			## euler integration for now
-			R = R + dR * dt_i
-		}
+		times = c(0,dt)
+		pars = .dRdt_params(comm, network)
+		R_out = deSolve::ode(y = R, times = times, func = dRdt, parms = pars)
+		pars$components = TRUE
+		ef_fluxes = dRdt(times[2], R, pars)
+		R = matrix(R_out[2, -1], ncol = ncol(R), nrow = nrow(R), dimnames = dimnames(R))
 
 		# no cols where already present, no exts where already absent
 		cp[S == 1] = 0
@@ -234,11 +202,10 @@ run_simulation = function(x, nt, nt_i=1, reps, parallel = TRUE, cores = parallel
 		S[cols == 1] = 1
 		S[exts == 1] = 0
 
-		# currently we update state only at the end of each outer time step
 		state(network, "species") = S
 		state(network, "resources") = R
-		state(network, "reaction") = rxn_t
-		state(network, "transport") = transport_t
+		state(network, "reaction") = ef_fluxes$resource_use
+		state(network, "transport") = ef_fluxes$downstream_transport
 	}
 	return(network)
 }

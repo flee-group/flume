@@ -167,14 +167,16 @@ st0[c(1:2)+10] = 0.2
 st0 = matrix(st0, ncol=1)
 
 state(network) = st0
-plot(network, edge.arrow.size = 0.5, edge.width = 20, vertex.label.cex = 0.7)
+vlc = c(rep("white", 10), rep("black", 10), rep("#444444", 5))
+plot(network, edge.arrow.size = 0.5, edge.width = 20, 
+  vertex.label.cex = 0.8, vertex.label.color = vlc)
 ```
 
 
-```{r fig.height = 5, fig.width = 15}
+```{r fig.height = 8, fig.width = 12}
 sp0 = community_equilibrium(network, mc)
-site_by_species(network) = sp0
-plot(network, "site_by_species", edge.arrow.size = 0, edge.width = 20, vertex.label.cex = 0.7)
+state(network, "species") = sp0
+plot(network, "species", edge.arrow.size = 0, edge.width = 20, vertex.label.cex = 0.7)
 ```
 
 

@@ -4,23 +4,38 @@
 \alias{dRdt}
 \title{Compute time-derivative for resources}
 \usage{
-dRdt(comm, network, components = FALSE)
+dRdt(t, R, params, components = FALSE)
 }
 \arguments{
-\item{comm}{A metacommnunity}
+\item{t}{Time variable}
 
-\item{network}{A river network}
+\item{R}{A resource state matrix; stored as a vector in column major order}
 
-\item{components}{Boolean, normally FALSE, see 'details'}
+\item{params}{Named list; additional parameters, see 'details'}
 }
 \value{
-Normally, a site by resource matrix of resource fluxes
+Normally, a site by resource matrix of resource fluxes, in units of
+mass * volume^-1 * time^-1
 }
 \description{
 Compute time-derivative for resources
 }
 \details{
-For debugging and tuning, it can be useful to examine the individual components of the
-derivative rate by setting \code{components = TRUE}, in which case a named list of site
-by resource matrices is returned, with separate transport and reaction components.
+The required params for the resource derivative are as follows:
+\itemize{
+\item S: a site by species matrix
+\item Q: a site by discharge vector
+\item A: a site by cross-sectional area vector
+\item l: a site by length vector
+\item lQ: site by lateral input discharge
+\item lR: site by lateral resource concentration
+\item i_static: indices of static resources
+\item adj: the network adjacency matrix
+\item comm: a \code{\link[=metacommunity]{metacommunity()}}
+\item components: logical, optional, default FALSE
+}
+
+If \code{params$components = TRUE}, instead of computing the derivative the function returns
+the individual components, including the use by species, downstream transport, and input from
+upstream. The units in this case will be mass/time
 }

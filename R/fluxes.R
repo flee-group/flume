@@ -70,26 +70,63 @@ ext_prob = function(comm, network, dt, components = FALSE) {
 
 }
 
-#' Compute time-derivative for resources
-#' @details For debugging and tuning, it can be useful to examine the individual components of the
-#' derivative rate by setting `components = TRUE`, in which case a named list of site
-#' by resource matrices is returned, with separate transport and reaction components.
-#' @param comm A metacommnunity
-#' @param network A river network
-#' @param components Boolean, normally FALSE, see 'details'
-#' @return Normally, a site by resource matrix of resource fluxes
-#' @export
-dRdt = function(comm, network, components = FALSE) {
-	S = state(network, "species")
-	R = state(network, "resources")
-	Q = state(network, "Q") 
-	Ru = t(adjacency(network)) %*% R ## upstream resource concentration
-	Qu = t(adjacency(network)) %*% Q ## upstream discharge
-	A = state(network, "area")
-	l = reach_length(network)
-	lQ = boundary(network, "Q")
-	lR = boundary(network, "resources")
 
+#' Prepare parameter list for dRdt
+#' @param C a metacommunity
+#' @param N a river network
+#' @return Parameter list, to be passed to dRdt function
+#' @keywords internal
+.dRdt_params = function(C, N) {
+	list(S =  state(N, "species"),
+		Q =  state(N, "Q"),
+		A =  state(N, "area"),
+		l = reach_length(N),
+		lQ = boundary(N, "Q"),
+		lR = boundary(N, "resources"),
+		i_static = which(attr(C, "r_types") == "static"),
+		adj = adjacency(N),
+		comm = C
+	)
+}
+
+#' Compute time-derivative for resources
+#' @details The required params for the resource derivative are as follows:
+#'
+#'  * S: a site by species matrix
+#'  * Q: a site by discharge vector
+#'  * A: a site by cross-sectional area vector
+#'  * l: a site by length vector
+#'  * lQ: site by lateral input discharge
+#'  * lR: site by lateral resource concentration
+#'  * i_static: indices of static resources
+#'  * adj: the network adjacency matrix
+#'  * comm: a [metacommunity()]
+#'  * components: logical, optional, default FALSE
+#'
+#' If `params$components = TRUE`, instead of computing the derivative the function returns
+#' the individual components, including the use by species, downstream transport, and input from
+#' upstream. The units in this case will be mass/time
+#' @param t Time variable
+#' @param R A resource state matrix; stored as a vector in column major order
+#' @param params Named list; additional parameters, see 'details'
+#' @return Normally, a site by resource matrix of resource fluxes, in units of 
+#' mass * volume^-1 * time^-1
+#' @export
+dRdt = function(t, R, params, components = FALSE) {
+	S = params$S
+	Q = params$Q
+	A = params$A
+	l = params$l
+	lQ = params$lQ
+	lR = params$lR
+	i_static = params$i_static
+	adj = params$adj
+	comm = params$comm
+	components = ifelse("components" %in% names(params), params$components, FALSE)
+
+	if(!is.matrix(R))
+		R = matrix(R, ncol = ncol(lR), nrow=nrow(lR))
+	# mass flux out of each site
 	output = Q * R
 
 	# when lateral discharge is NEGATIVE (i.e., the stream is shrinking) we export based on the
@@ -100,22 +137,30 @@ dRdt = function(comm, network, components = FALSE) {
 			lR[lQ < 0, i] = R[lQ < 0, i]
 	}
 
-	input = apply(Ru, 2, function(x) Qu * x) + apply(lR, 2, function(x) lQ * x)
+	# mass flux into each site
+	input = t(adj) %*% output + apply(lR, 2, function(x) lQ * x)
+
+	# convert back to concentration
 	transport = (output - input) / (A*l)
+
+	# reaction component, in concentration units
 	rxn = ruf(S, R, comm)
 
-	i_static = which(attr(comm, "r_types") == "static")
 	if(length(i_static) > 0) {
 		transport[, i_static] = 0
+		input[, i_static] = 0
+		output[, i_static] = 0
 		rxn[, i_static] = 0
 	} 
 
-	dimnames(transport) = dimnames(rxn) = dimnames(R)
 	if(components) {
-		return(list(transport = transport, reaction = rxn))
+		# return the components of the derivative, in mass units
+		dimnames(output) = dimnames(rxn) = dimnames(input) = dimnames(R)
+		return(list(resource_use = rxn*A*l, downstream_transport = output, input_transport = input))
 	} else {
+		# return the derivative in concentration units
 		res = rxn - transport
 		dimnames(res) = dimnames(R)
-		return(res)
+		return(list(res))
 	}
 }

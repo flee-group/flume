@@ -10,7 +10,7 @@ river_network(
   area,
   length = 1,
   layout,
-  site_names = paste0("si", 1:nrow(adjacency)),
+  site_names = rownames(adjacency),
   skip_checks = FALSE
 )
 }
@@ -19,7 +19,7 @@ river_network(
 
 \item{discharge}{Optional discharge values, see \code{\link[=discharge.river_network]{discharge.river_network()}}}
 
-\item{area}{Optional vector for cross sectional area values, one per reach}
+\item{area}{Optional cross sectional area values, see \code{\link[=discharge.river_network]{discharge.river_network()}}}
 
 \item{length}{The length of each reach, must be a single value (the model assumes all reaches
 are the same length)}

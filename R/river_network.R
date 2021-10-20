@@ -28,11 +28,12 @@
 #' plot(rn)
 #' @export
 river_network = function(adjacency, discharge, area, length = 1, layout, 
-	site_names = paste0("si", 1:nrow(adjacency)), skip_checks = FALSE) {
+	site_names = rownames(adjacency), skip_checks = FALSE) {
 
 	if(any(! as(adjacency, "vector") %in% c(0,1))) {
 		adjacency[adjacency != 0] = 1
 	}
+	
 
 	if(!skip_checks) {
 		if(!requireNamespace("igraph", quietly = TRUE) || 
@@ -44,6 +45,9 @@ river_network = function(adjacency, discharge, area, length = 1, layout,
 		if(!.validate_adjacency(adjacency))
 			stop("Adjacency matrix failed validation; see '?river_network' for the requirements.")
 	}
+
+	if(is.null(site_names))
+		site_names = paste0("si", 1:nrow(adjacency))
 
 	rn = structure(list(.adjacency = adjacency, .length = length), class = "river_network")
 

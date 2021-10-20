@@ -13,8 +13,8 @@ test_that("Species flux works", {
 	boundary(network, "species") = state(network, "species") * 0
 	expect_error(cp <- col_prob(comm, network, dt=1), regex=NA)
 	expect_error(ep <- ext_prob(comm, network, dt=1), regex=NA)
-
-	expect_error(Rflux <- dRdt(comm, network), regex=NA)
+	expect_error(Rflux <- dRdt(0, state(network, "resources"), 
+		.dRdt_params(comm, network)), regex=NA)
 })
 
 test_that("Fluxes with static resources", {
@@ -25,6 +25,7 @@ test_that("Fluxes with static resources", {
 	mc = metacommunity(nsp = nrow(algae$niches), nr = 2, niches = niches_custom, niche_args = nopts,
 		sp_names = algae$niches$species, r_names = c("N", "P"))
 	fl = flume(mc, algae$network, algae$sp0, algae$r0)
-	expect_error(dR <- dRdt(fl$metacom, fl$network[[1]]), regex = NA)
-	expect_true(all(dR[,1] == 0))
+	expect_error(dR <- dRdt(0, state(fl$network[[1]], "resources"), 
+		.dRdt_params(fl$metacom, fl$network[[1]])), regex = NA)
+	expect_true(all(dR[[1]][,1] == 0))
 })

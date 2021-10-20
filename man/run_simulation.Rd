@@ -4,21 +4,12 @@
 \alias{run_simulation}
 \title{Run the simulation for a specified number of time steps}
 \usage{
-run_simulation(
-  x,
-  nt,
-  nt_i = 1,
-  reps,
-  parallel = TRUE,
-  cores = parallel::detectCores()
-)
+run_simulation(x, nt, reps, parallel = TRUE, cores = parallel::detectCores())
 }
 \arguments{
 \item{x}{A \code{\link[=flume]{flume()}} object}
 
-\item{nt}{The number of outer time steps, see 'details'}
-
-\item{nt_i}{The number of inner/integration time steps, see 'details'}
+\item{nt}{The number of time steps, see 'details'}
 
 \item{reps}{The number of replicate simulations to run; by default a single sim is run
 on a new flume; for continuing simulations, the same number of replicates will be used}
@@ -31,22 +22,15 @@ This function begins with the current state of \code{x}, runs the model for \cod
 then returns a copy of \code{x} with the updated state and state history.
 }
 \details{
-Flume runs at two different time scales to account for the fact that community changes
-are often slower than resource transport. Thus we have two different parameters here (along
-with the \code{dt} parameter from the \code{\link[=flume]{flume()}} function) for specifying the length of time to run
-the model:
-\itemize{
-\item \code{nt} Controls the "outer" time step; this is the number of times the model will simulate
-colonisations and extinctions, and the number of time steps that will be reported in model
-output.
-\item \code{nt_i} Defines the number of inner time steps for each outer time step; this controls the
-temporal resolution at which the integration for the transport/reaction model is run.
-\item \code{dt} (Not specified here, but in the \code{\link[=flume]{flume()}} function) Determines the length of each outer
-time step; units are the same units as discharge and other fluxes.
-}
+The time scale of flume is determiend by the combination of (a) the units of the
+discharge variable (assumed generally to be m^3/s) and (b) the size of the time step (which is
+specified with the \code{dt} parameter of the \code{\link[=flume]{flume()}} function).
 
-For example, if discharge is in m^3/s, then the default \code{dt = 86400} corresponds to an outer
-time step of 86400 seconds, or one day. Setting nt = 100 will run the model for 100 days, and
-setting nt_i = 144 will integrate resource transport and reaction 144 times each day,
-corresponding to a 10-minute temporal resolution.
+At each time step of length \code{dt}, the model will simulate colonisations and extinctions assuming
+that resource state is constant throughout the time step, and simulate resource dynamics
+continuously via numerical integration. Model output will include the various state variables
+at each time step.
+
+For example, if discharge is in m^3/s, then the default \code{dt = 86400} corresponds to a
+time step of 86400 seconds, or one day. Setting nt = 100 will run the model for 100 days.
 }

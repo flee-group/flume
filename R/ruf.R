@@ -31,9 +31,9 @@
 #'	rn = river_network(adj, Q, state = st)
 #'	site_by_species(rn) = matrix(1, nrow = length(Q), ncol = length(comm$species))
 ruf = function(x, R, C) {
-	niche_max = sapply(C[['species']], function(sp) attr(sp, "niche_max"))
-	r_use_scale = do.call(rbind, lapply(C[['species']], function(sp) sp$r_use))
-	n_ht = f_niche(C, R) / niche_max
+	niche_max = niche_par(C, "niche_max")
+	r_use_scale = niche_par(C, "r_use")
+	n_ht = sweep(f_niche(C, R), 2, niche_max, "/")
 
 	## take into account presence-absence
 	n_ht = x * n_ht
@@ -45,4 +45,3 @@ ruf = function(x, R, C) {
 	r_use = n_ht %*% r_use_scale
 	-1 * r_use * R
 }
-

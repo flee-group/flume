@@ -4,18 +4,16 @@
 \alias{.do_sim}
 \title{Worker function for running simulations in parallel}
 \usage{
-.do_sim(network, comm, dt, nt, nt_i)
+.do_sim(network, comm, dt, nt)
 }
 \arguments{
 \item{network}{A river network}
 
 \item{comm}{A metacommunity}
 
-\item{dt}{The size of the (outer) time step; one "generation" for the metacommunity}
+\item{dt}{The size of the time step; one "generation" for the metacommunity}
 
-\item{nt}{The number of outer time steps}
-
-\item{nt_i}{The number of inner time steps}
+\item{nt}{The number of time steps}
 }
 \value{
 A modified copy of \code{network} with the results of the simulation

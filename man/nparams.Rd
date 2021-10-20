@@ -6,9 +6,15 @@
 \alias{niche_par.metacommunity}
 \title{Functions for accessing species niche parameters}
 \usage{
-\method{niche_par}{species}(x, par = c("location", "breadth", "sd", "scale"))
+\method{niche_par}{species}(
+  x,
+  par = c("location", "breadth", "sd", "scale", "r_use", "niche_max")
+)
 
-\method{niche_par}{metacommunity}(x, par = c("location", "breadth", "sd", "scale"))
+\method{niche_par}{metacommunity}(
+  x,
+  par = c("location", "breadth", "sd", "scale", "r_use", "niche_max")
+)
 }
 \arguments{
 \item{x}{A species or metacommunity}

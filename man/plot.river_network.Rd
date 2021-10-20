@@ -25,3 +25,11 @@ The argument 'variable' can either be a column number from the state variable ma
 a column name from the state variable matrix, or the special name "species", which produces a
 plot of the network with species presence-absence.
 }
+\examples{
+Q = rep(1, 4)
+adj = matrix(0, nrow = 4, ncol = 4)
+adj[1,2] = adj[2,3] = adj[4,3] = 1
+rn = river_network(adj, Q)
+plot(rn)
+plot.river_network(rn)
+}

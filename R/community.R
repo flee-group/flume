@@ -317,34 +317,34 @@ niche_par = function(x, ...)
 #' @name nparams
 #' @param x A species or metacommunity
 #' @export
-niche_par.species = function(x, par = c("location", "breadth", "sd", "scale")) {
+niche_par.species = function(x, 
+			par = c("location", "breadth", "sd", "scale", "r_use", "niche_max")) {
 	par = match.arg(par)
 	
-	if(par == "sd") {
-		val = x$par_c[["breadth"]]
-		if(is.matrix(val))
-			val = diag(val)
-	} else if(par == "scale"){
-		val = c(c = x$par_c$scale, e = x$par_e$scale)
-	} else {
-		val = x$par_c[[par]]
-	}
-	val
+	switch(par, 
+		sd = {val <- x$par_c[["breadth"]]; if(is.matrix(val)) diag(val) else val},
+		scale = c(c = x$par_c$scale, e = x$par_e$scale),
+		r_use = x[[par]],
+		niche_max = c("niche_max" = attr(x, par)),
+		x$par_c[[par]]
+	)
 }
 
 #' @name nparams
 #' @export
-niche_par.metacommunity = function(x, par = c("location", "breadth", "sd", "scale")) {
+niche_par.metacommunity = function(x, 
+			par = c("location", "breadth", "sd", "scale", "r_use", "niche_max")) {
 	par = match.arg(par)
 	val = lapply(x$species, niche_par.species, par)
-	if(par == "scale") {
-		val = do.call(cbind, val)
-		rownames(val) = c("c", "e")
-		colnames(val) = attr(x, "sp_names")
-	} else if(par != "breadth") {
-		val = do.call(rbind, val)
-		rownames(val) = attr(x, "sp_names")
+	names(val) = attr(x, "sp_names")
+	val = switch(par, 
+		breadth = val,
+		scale = do.call(cbind, val),
+		do.call(rbind, val)
+	)
+	if(par %in% c("location", "sd"))
 		colnames(val) = attr(x, "niche_names")
-	}
+	if(par == "r_use")
+		colnames(val) = attr(x, "r_names")
 	val
 }
