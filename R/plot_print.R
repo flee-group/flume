@@ -30,7 +30,8 @@ plot.flume = function(x, variable = c("occupancy", "resources"), type = c("netwo
 .resource_plot = function(x) {
 	res = resource_summary(x)
 	ggplot2::ggplot(res, ggplot2::aes(x = time, y = concentration, colour = as.factor(reach))) +
-		ggplot2::geom_line() + ggplot2::theme_minimal() + ggplot2::facet_wrap(.~resource, scales = 'free')
+		ggplot2::geom_line() + ggplot2::theme_minimal() + 
+		ggplot2::facet_wrap(.~resource, scales = 'free') + ggplot2::labs(colour = "Reach")
 }
 
 
@@ -96,22 +97,19 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 		}
 	}
 	else {
-		if(!is.null(state(x, "resources")) && 
-					!("vertex.color" %in% names(args)) && 
-					requireNamespace("scales", quietly = TRUE)) {
-			if(missing(t)) {
-				R = state(x, "resources")[,variable]
+		## choose a vertex colour scheme if none specified
+		if(!("vertex.color" %in% names(args))) {
+			if(is.null(state(x, "resources"))) {
+				args$vertex.color = "#7BA08C"
 			} else {
-				R = state(x, "resources", history = TRUE)[[t]][,variable]
+				R = state(x, "resources", history = TRUE)
+				t = if(missing(t)) length(R) else t
+				R = R[[t]][,variable]
+
+				if(missing(zlim))
+					zlim = range(R)
+				args$vertex.color = scales::col_numeric("PuBu", zlim)(R)
 			}
-			if(missing(zlim))
-				zlim = range(R)
-			args$vertex.color = scales::col_numeric("PuBu", zlim)(R)
-			
-		} else {
-			if(!requireNamespace("scales", quietly = TRUE))
-				message("Install the scales package for plotting the state variable with a colour scale")
-			args$vertex.color = "#7BA08C"
 		}
 		do.call(plot, args)
 	}
@@ -212,10 +210,11 @@ plot.species = function(x, R, axis = 1, res = 100, lwd = 1) {
 .default_river_plot_options = function(...) {
 	dots = 	list(...)
 	nms = names(dots)
-	if(!"edge.width" %in% nms) dots$edge.width = 10
+	if(!"edge.width" %in% nms) dots$edge.width = 20
 	if(!"edge.color" %in% nms) dots$edge.color = "#a6bddb"
-	if(!"edge.arrow.size" %in% nms) dots$edge.arrow.size = 0.1 * dots$edge.width
+	if(!"edge.arrow.size" %in% nms) dots$edge.arrow.size = 0
 	if(!"vertex.label.color" %in% nms) dots$vertex.label.color ="#444444"
+	if(!"vertex.label.cex" %in% nms) dots$vertex.label.cex = 0.8
 	return(dots)
 }
 

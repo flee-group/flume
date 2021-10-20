@@ -103,7 +103,7 @@ resource_summary = function(x) {
 		S = state(r, variable, history = TRUE)
 		res = data.table::rbindlist(lapply(S, function(s) {
 			val = data.table::data.table(s)
-			val$reach = seq_len(nrow(val))
+			val$reach = rownames(s)
 			val
 		}), idcol = "time")
 		res = data.table::melt(res, id.vars = c("reach", "time"), variable.name = variable.name,

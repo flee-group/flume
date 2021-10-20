@@ -50,12 +50,16 @@ more details.
 
 
 ```{r fig.height = 3, fig.width = 7}
-mc = metacommunity(nsp = 3, nr = 1, niches = niches_uniform)
+niche_args = list(scale_c = 2e-6, scale_e = 2e-7)
+dispersal_args = list()
+mc = metacommunity(nsp = 3, nr = 1, niches = niches_uniform, niche_args = niche_args, 
+  dispersal_args = dispersal_args)
 plot(mc)
 ```
 
 The `niches_uniform` scenario spreads the resources out along a gradient, with species' optima 
-uniformly spread along this gradient. We can see the niche parameters used with the `niche_par`
+uniformly spread along this gradient. We set the scale of the colonisation and extinction function
+(here in units of reaches/second), and leave the dispersal parameters blank for now. We can see the niche parameters used with the `niche_par`
 function:
 
 ```{r}
@@ -142,7 +146,7 @@ also how I will set up my resource gradients (in **3. Setting up the model** bel
 proportional to the discharge between sites. 
 
 ```{r fig.height = 7, fig.width = 7}
-plot(network, edge.arrow.size = 0.5, edge.width = 20, vertex.label.cex = 0.7)
+plot(network)
 ```
 
 
@@ -155,6 +159,7 @@ subcatchment, low in the other, and intermediate values in the mainstem.  We the
 scenario to establish initial species distributions.
 
 ```{r fig.height = 7, fig.width = 7}
+
 st0 = rep(0.4, nrow(adj_all))
 
 ## headwaters at opposite sides of the gradient, then gradually come together moving downstream
@@ -166,17 +171,16 @@ st0[c(1:2)] = 0.7
 st0[c(1:2)+10] = 0.2
 st0 = matrix(st0, ncol=1)
 
-state(network) = st0
+state(network, "resources") = st0
 vlc = c(rep("white", 10), rep("black", 10), rep("#444444", 5))
-plot(network, edge.arrow.size = 0.5, edge.width = 20, 
-  vertex.label.cex = 0.8, vertex.label.color = vlc)
+plot(network, vertex.label.color = vlc)
 ```
 
 
-```{r fig.height = 8, fig.width = 12}
+```{r fig.height = 8, fig.width = 10}
 sp0 = community_equilibrium(network, mc)
 state(network, "species") = sp0
-plot(network, "species", edge.arrow.size = 0, edge.width = 20, vertex.label.cex = 0.7)
+plot(network, "species")
 ```
 
 
@@ -207,19 +211,20 @@ model = flume(mc, network, sp0, st0)
 
 ## 4. Running the model
 
-Now we are prepared to run the simulation. Here we run for 100 time steps and then explore some of
-the output options. In this case, all species survive the entire simulation.
+Now we are prepared to run the simulation. Here we run for 400 time steps and then explore some of
+the output options. In this case, all species survive the entire simulation, and occupancy seems
+to fluctuate around the same(ish) values for all species.
 
 ```{r fig.height = 7, fig.width = 7}
 set.seed(123)
-model_run = run_simulation(model, 100)
+model_run = run_simulation(model, nt = 400)
 
 ## occupancy plot
 plot(model_run)
 ```
 
-We can see that resources find an equilibrium after a few time steps. Resource consumption is quite
-low in this scenario, so resource concentrations are determined by transport and lateral input.
+We can see that resources fluctuate around relatively stable equilibria. Resource consumption is
+low relative to the total concentrations, especially in the low-resource sites, so mostly resources are determined by transport.
 
 ```{r fig.height = 7, fig.width = 7}
 ## resource plot
@@ -230,9 +235,9 @@ Here we can see the species distributions at the end of the simulation. Note tha
 store the network in a list (to allow for duplicate networks to be run under the same conditions),
 hence the `[[1]]` index to plot the network.
 
-```{r fig.height = 5, fig.width = 15}
+```{r fig.height = 5, fig.width = 10}
 ## species distributions at the end
-plot(model_run$network[[1]], variable = "site_by_species")
+plot(model_run$network[[1]], variable = "species")
 ```
 
 ```{r}

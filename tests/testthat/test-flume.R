@@ -38,8 +38,10 @@ test_that("Model creation", {
 	expect_error(occ_re <- occupancy(sim, "reach"), regex=NA)
 
 	expect_error(res <- resource_summary(sim), regex=NA)
-	expect_equal(res[time == 1]$concentration, R[,1], check.names = FALSE)
-
+	R_chk = R[,1]
+	res_chk = res[time == 1]
+	res_chk = res_chk[match(names(R_chk), rchk$reach)]$concentration
+	expect_equal(res_chk, R_chk, check.attributes = FALSE)
 })
 
 test_that("Create model with special resource types", {
