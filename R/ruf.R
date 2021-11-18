@@ -28,8 +28,9 @@
 #'	adj = matrix(0, nrow = 4, ncol = 4)
 #'	adj[1,2] = adj[2,3] = adj[4,3] = 1
 #'	rn = river_network(adj, Q)
-#'	state (rn, "resources") = matrix(seq(0, 1, length.out = length(Q)), ncol = 1, dimnames = list(NULL, 'R'))
-#'	state(rn, "species) = matrix(1, nrow = length(Q), ncol = length(comm$species))
+#'	st0 = matrix(seq(0, 1, length.out = length(Q)), ncol = 1, dimnames = list(NULL, 'R'))
+#'	state (rn, "resources") = st0
+#'	state(rn, "species") = community_equilibrium(rn, mc)
 #'	ruf(rn$.species[[1]], rn$.resources[[1]], mc)
 ruf = function(x, R, C) {
 	niche_max = niche_par(C, "niche_max")
