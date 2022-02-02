@@ -40,17 +40,24 @@
 #'		mc = metacommunity()
 #'
 #'		# multiple species
-#'		mc = metacommunity(location = c(1, 2))
+#'		mc = metacommunity(nsp = 5)
 #'
 #'		# multiple resources
-#'		nlim = matrix(c(0, 0, 1, 1), ncol = 2) # we need to specify the limits manually
-#'		mc = metacommunity(location = matrix(c(1, 2), ncol = 2), niche_lim = nlim)
+#'		nlim = list( location = matrix(c(1, 2, 1, 3, 2, 4), ncol = 2))  # we need to specify the limits manually
+#'		mc = metacommunity(nsp = 3, nr=2, niches = niches_custom, niche_args = nlim)
 #'
 #'		# multiple species and resources with variance covariance matrices
 #'		loc = matrix(c(1, 2, 1, 3, 2, 4), ncol = 2) # 3 species, 2 resources
 #'		br_sp1 = matrix(c(1, 0.2, 0.2, 1), ncol = 2) # vcv matrix for one species
 #'		breadth = list(br_sp1, br_sp1, br_sp1) # assume the same matrix for all species
-#'		mc = metacommunity(location = loc, breadth = bre, niche_lim = nlim)
+#'		
+#'		nopts = list(location = matrix(c(1, 2, 1, 3, 2, 4), ncol = 2), breadth = breadth, scale_c = c(0.5, 0.5, 0.55))
+#'    # location of the species along the resource space
+#'    # breadth defines the resouce utilisation 
+#'    # scale competition 
+#'		
+#'		mc = metacommunity(nsp = 3, nr = 2, niches = niches_custom, niche_args = nopts)
+#'		plot(mc)
 #' }
 #' @export
 metacommunity = function(nsp = 2, nr = 1, niches = niches_uniform, dispersal = dispersal_custom,

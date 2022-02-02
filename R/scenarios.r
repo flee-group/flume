@@ -224,9 +224,13 @@ dispersal_custom = function(nsp, alpha = 0.05, beta = 0.5) {
 #' adj = matrix(0, nrow = 4, ncol = 4)
 #' adj[1,2] = adj[2,3] = adj[4,3] = 1
 #' rn = river_network(adj, Q)
+#' st0=rep(0.4,nrow(adj))
+#' state(rn, "resources") = st0
 #' mc = metacommunity()
-#' site_by_species(rn) = community_random(rn, mc)
-#' plot(rn, variable = "site_by_species")
+#' state(rn, "species") = community_random(rn, mc)
+#' plot(rn, variable = "species")
+#' state(rn, "species") = community_equilibrium(rn, mc)
+#' plot(rn, variable = "species")
 #' @export
 community_random = function(rn, mc, prevalence = 0.25, allow_empty_sites = TRUE) {
 	i = nrow(adjacency(rn))
