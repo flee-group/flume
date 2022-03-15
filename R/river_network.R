@@ -242,7 +242,14 @@ boundary.river_network = function(x, var) {
 	cnames = paste0("names_", var)
 	var_b = paste0('.b_', var)
 
-	.check_state(value, nrow(adjacency(x)), ncol(state(x, var)))
+	nc = ncol(state(x, var))
+	if(is.null(nc)) {
+		stop("can't set boundary conditions before state is defined")
+	} else {
+		.check_state(value, nrow(adjacency(x)), nc)
+	}
+
+	
 	rownames(value) = attr(x, "names_sites")
 	colnames(value) = attr(x, cnames)
 	x[[var_b]] = value
@@ -270,8 +277,8 @@ boundary.river_network = function(x, var) {
 #' @return A site by species matrix; values indicate the prevalence in surrounding sites
 prevalence = function(x) {
 	## for prevalence, adjacency is upstream, downstream or self
-	adj = adjacency(x) + t(adjacency(x))
-	diag(adj) = 1
+	adj = adjacency(x) + Matrix::t(adjacency(x))
+	Matrix::diag(adj) = 1
 
 	adj %*% state(x, "species")
 }

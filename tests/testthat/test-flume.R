@@ -40,7 +40,7 @@ test_that("Model creation", {
 	expect_error(res <- resource_summary(sim), regex=NA)
 	R_chk = R[,1]
 	res_chk = res[time == 1]
-	res_chk = res_chk[match(names(R_chk), rchk$reach)]$concentration
+	res_chk = res_chk[match(names(R_chk), res_chk$reach)]$concentration
 	expect_equal(res_chk, R_chk, check.attributes = FALSE)
 })
 
