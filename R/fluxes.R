@@ -138,7 +138,7 @@ dRdt = function(t, R, params, components = FALSE) {
 	}
 
 	# mass flux into each site
-	input = t(adj) %*% output + apply(lR, 2, function(x) lQ * x)
+	input = Matrix::t(adj) %*% output + apply(lR, 2, function(x) lQ * x)
 
 	# convert back to concentration
 	transport = (output - input) / (A*l)
@@ -155,12 +155,18 @@ dRdt = function(t, R, params, components = FALSE) {
 
 	if(components) {
 		# return the components of the derivative, in mass units
-		dimnames(output) = dimnames(rxn) = dimnames(input) = dimnames(R)
+		if(!is.null(rownames(R)))
+			rownames(output) = rownames(rxn) = rownames(input) = rownames(R)
+		if(!is.null(colnames(R)))
+			colnames(output) = colnames(rxn) = colnames(input) = colnames(R)
 		return(list(resource_use = rxn*A*l, downstream_transport = output, input_transport = input))
 	} else {
 		# return the derivative in concentration units
 		res = rxn - transport
-		dimnames(res) = dimnames(R)
-		return(list(res))
+		if(!is.null(rownames(R)))
+			rownames(res) = rownames(R)
+		if(!is.null(colnames(R)))
+			colnames(res) = colnames(R)
+		return(list(methods::as(res, "matrix")))
 	}
 }

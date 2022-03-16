@@ -186,6 +186,8 @@ run_simulation = function(x, nt, reps, parallel = TRUE, cores = parallel::detect
 	for(tm in 1:nt) {
 		cp = col_prob(comm, network, dt = dt)
 		ep = ext_prob(comm, network, dt = dt)
+		nr = nrow(cp)
+		n = nr * ncol(cp)
 
 		times = c(0,dt)
 		pars = .dRdt_params(comm, network)
@@ -197,8 +199,8 @@ run_simulation = function(x, nt, reps, parallel = TRUE, cores = parallel::detect
 		# no cols where already present, no exts where already absent
 		cp[S == 1] = 0
 		ep[S == 0] = 0
-		cols = matrix(rbinom(length(cp), 1, cp), nrow=nrow(cp))
-		exts = matrix(rbinom(length(ep), 1, ep), nrow=nrow(ep))
+		cols = matrix(rbinom(n, 1, as(cp, "vector")), nrow=nr)
+		exts = matrix(rbinom(n, 1, as(ep, "vector")), nrow=nr)
 		S[cols == 1] = 1
 		S[exts == 1] = 0
 

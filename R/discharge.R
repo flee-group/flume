@@ -210,6 +210,6 @@ geometry = function(Q) {
 #' @export
 lateral_discharge = function(x) {
 	Q = state(x, "Q")
-	Qu = t(adjacency(x)) %*% Q
+	Qu = Matrix::t(adjacency(x)) %*% Q
 	as.vector(Q - Qu)
 }
