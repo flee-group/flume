@@ -90,8 +90,9 @@ layout =  st_coordinates(lwgeom::st_startpoint(kv))
 kv$Q = units::drop_units(kv$Q)
 kv$z = units::drop_units(kv$z)
 kv$w = units::drop_units(kv$w)
-rn = river_network(A, discharge = kv$Q, area = kv$z*kv$w, state = matrix(0, nrow=nrow(A), ncol=1), 
+rn = river_network(A, discharge = kv$Q, area = kv$z*kv$w, 
               length = 2000, layout = layout)
+state(rn, "resources") = matrix(0, nrow=nrow(A), ncol=1)
 plot(rn, edge.arrow.size=0, vertex.size=2, vertex.label=NA)
 
 ```

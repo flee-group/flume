@@ -23,13 +23,15 @@
 #' @param C A [metacommunity()]
 #' @return A matrix of the same dimensions as `R` giving the rate of change of each resource
 #' @examples
-#'	comm = metacommunity()
+#'	mc = metacommunity(nsp=3)
 #'	Q = rep(1, 4)
 #'	adj = matrix(0, nrow = 4, ncol = 4)
 #'	adj[1,2] = adj[2,3] = adj[4,3] = 1
-#'	st = matrix(seq(0, 1, length.out = length(Q)), ncol = 1, dimnames = list(NULL, 'R'))
-#'	rn = river_network(adj, Q, state = st)
-#'	site_by_species(rn) = matrix(1, nrow = length(Q), ncol = length(comm$species))
+#'	rn = river_network(adj, Q)
+#'	st0 = matrix(seq(0, 1, length.out = length(Q)), ncol = 1, dimnames = list(NULL, 'R'))
+#'	state (rn, "resources") = st0
+#'	state(rn, "species") = community_equilibrium(rn, mc)
+#'	ruf(rn$.species[[1]], rn$.resources[[1]], mc)
 ruf = function(x, R, C) {
 	niche_max = niche_par(C, "niche_max")
 	r_use_scale = niche_par(C, "r_use")
