@@ -29,6 +29,9 @@ flume = function(comm, network, sp0, st0, spb, stb, dt = 86400) {
 	network = .set_flume_initial_state(network, comm, st0, "resources")
 	network = .set_flume_initial_state(network, comm, sp0, "species")
 
+	# initial state for reaction/transport are zero
+	state(network, "reaction") = state(network, "transport") = 0 * state(network, "resources")
+
 	# set resource boundary conditions
 	if(missing(stb))
 		stb = state(network, "resources")
@@ -63,57 +66,6 @@ flume = function(comm, network, sp0, st0, spb, stb, dt = 86400) {
 	rn
 }
 
-#' Compute post simulation statistics
-#' @name flumestats
-#' @param x A [flume()]
-#' @import data.table
-#' @return A [data.table::data.table()] with the desired summary statistics
-#' @export
-occupancy = function(x, type = c("network", "reach")) {
-	type = match.arg(type)
-	occ = .reshape_sim(x, variable = "species")
-	if(type == "network") {
-		keyby = c("species", "time")
-	} else {
-		keyby = c("species", "reach", "time")
-	}
-	return(occ[, .(occupancy = sum(occupancy) / .N), keyby = keyby])
-}
-
-#' @rdname flumestats
-#' @export
-resource_summary = function(x) {
-	res = .reshape_sim(x, variable = "resources")
-	return(res[, .(concentration = mean(concentration)), keyby = .(resource, reach, time)])
-}
-
-#' Get a long-format occupancy by time by reach by network dataset
-#' @keywords internal
-.reshape_sim = function(x, variable = c("species", "resources")) {
-	variable = match.arg(variable)
-	if(variable == "species") {
-		variable.name = "species"
-		value.name = "occupancy"
-	} else {
-		variable.name = "resource"
-		value.name = "concentration"
-	}
-	cores = ifelse(.Platform$OS.type == "unix", parallel::detectCores(), 1)
-	data.table::rbindlist(parallel::mclapply(x[["networks"]], function(r) {
-		S = state(r, variable, history = TRUE)
-		res = data.table::rbindlist(lapply(S, function(s) {
-			val = data.table::data.table(s)
-			val$reach = rownames(s)
-			val
-		}), idcol = "time")
-		res = data.table::melt(res, id.vars = c("reach", "time"), variable.name = variable.name,
-			value.name = value.name)
-		if(variable.name == "species")
-			res[[variable.name]] = sub("V(.+)", "\\1", res[[variable.name]])
-		res
-	}, mc.cores = cores), idcol = "network")
-}
-
 
 #' Run the simulation for a specified number of time steps
 #'
@@ -135,36 +87,37 @@ resource_summary = function(x) {
 #'
 #' For example, if discharge is in m^3/s, then the default `dt = 86400` corresponds to a
 #' time step of 86400 seconds, or one day. Setting nt = 100 will run the model for 100 days.
+#'
+#' On unix-like platforms, if multiple cores are detectable and replicate simulations are requested,
+#' then these will be run in parallel using the number of cores specified in 
+#' `getOption("mc.cores")`. If this value is not set, then all available cores will be used by 
+#' default. Override the default by setting `mc.cores`; for example, to disable parallel execution, 
+#' run `options(mc.cores = 1)`.
 #' @return A modified copy of `x`, with state updated with the results of the simulation.
 #' @export
-run_simulation = function(x, nt, reps, parallel = TRUE, cores = parallel::detectCores()) {
-
+run_simulation = function(x, nt, reps = length(x[["networks"]])) {
 	if(nt < 1)
 		stop("at least one time step is required")
-
-	if(missing(reps))
-		reps = length(x[["networks"]])
-
-	parallel = parallel && (.Platform$OS.type == "unix")
 
 	# normally flumes are initialized with only a single river network
 	# if more reps are desired, duplicate them
 	if(reps > 1 && length(x[["networks"]]) == 1)
 		x[["networks"]] = lapply(1:reps, function(i) x[["networks"]][[1]])
 
-	if(reps != length(x[["networks"]]))
+	if(reps != length(x[["networks"]])) {
 		warning("'reps' was specified, but it is not equal to the number of existing sims ",
 			"in 'x'\n'reps' will be ignored and the number of simulations will be equal to ",
 			"length(x$networks) (",length(x$networks), ")")
-
-	if(parallel && reps > 1 && cores > 1) {
-		x[["networks"]] = parallel::mclapply(x[["networks"]], .do_sim, comm = x[["metacom"]], 
-			dt = x[["dt"]], nt = nt, mc.cores = cores)
-	} else {
-		x[["networks"]] = lapply(x[["networks"]], .do_sim, comm = x[["metacom"]], dt = x[["dt"]], 
-			nt = nt)
+		reps = length(x[["networks"]])
 	}
 
+	cores = ifelse(reps > 1 && (.Platform$OS.type == "unix"), 
+		getOption("mc.cores", parallel::detectCores()), 1L)
+	if(cores > reps) cores = reps
+	if(cores > 1) message("Using ", cores, " parallel simulations")
+
+	x[["networks"]] = parallel::mclapply(x[["networks"]], .do_sim, comm = x[["metacom"]], 
+		dt = x[["dt"]], nt = nt, mc.cores = cores)
 	return(x)
 }
 

@@ -4,7 +4,7 @@
 \alias{run_simulation}
 \title{Run the simulation for a specified number of time steps}
 \usage{
-run_simulation(x, nt, reps, parallel = TRUE, cores = parallel::detectCores())
+run_simulation(x, nt, reps = length(x[["networks"]]))
 }
 \arguments{
 \item{x}{A \code{\link[=flume]{flume()}} object}
@@ -33,4 +33,10 @@ at each time step.
 
 For example, if discharge is in m^3/s, then the default \code{dt = 86400} corresponds to a
 time step of 86400 seconds, or one day. Setting nt = 100 will run the model for 100 days.
+
+On unix-like platforms, if multiple cores are detectable and replicate simulations are requested,
+then these will be run in parallel using the number of cores specified in
+\code{getOption("mc.cores")}. If this value is not set, then all available cores will be used by
+default. Override the default by setting \code{mc.cores}; for example, to disable parallel execution,
+run \code{options(mc.cores = 1)}.
 }

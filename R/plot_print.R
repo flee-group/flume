@@ -1,33 +1,73 @@
 #' Plot the results of a flume simulation
+#'
 #' @param x A [flume()]
-#' @param variable Variable to plot; 'occupancy' plots occupancy by species over time, 'resources' plots
-#' resource concentration over time
-#' @param type How to compute the plot; either shows the average for the entire network, or plots by reach.
+#' @param type Which plot to produce; see 'details'.
+#' 
+#' @details `flume` comes with a collection of default plots. All of them are built around the
+#' [summarise()] function, which can be used to extract the data from a fitted `flume`. The
+#' following plot `type`s are recognized (partial matches are allowed):
+#'
+#' 	* **occupancy**: (plots the proportion of sites occupied by each in the network against time,  
+#'		with quantiles if replciates are present)
+#' 
+#' All plots return a `ggplot`, so further customisation is easy.
 #' @return A ggplot2 object
 #' @export
-plot.flume = function(x, variable = c("occupancy", "resources"), type = c("network", "reach")) {
-	variable = match.arg(variable)
-	type = match.arg(type)
-
-	if(variable == "occupancy") {
-		.occupancy_plot(x, type=type)
-	} else {
-		.resource_plot(x)
-	}
+plot.flume = function(x, type = "occupancy") {
+	pl_types = list(occupancy = .pl_occupancy, ef_time = .pl_ef_time, bef = .pl_bef)
+	type = match.arg(type, names(pl_types))
+	pl_types[[type]](x)
 }
 
-.occupancy_plot = function(x, type) {
-	occ = occupancy(x, type=type)
-	if(type == 'network') {
-		pl = ggplot2::ggplot(occ, ggplot2::aes(x = time, y = occupancy, colour = species))
-	} else {
-		pl = ggplot2::ggplot(occ, ggplot2::aes(x = time, y = occupancy, colour = as.factor(reach))) +
-			ggplot2::facet_grid(.~species)
-	}
-	pl + ggplot2::geom_line() + ggplot2::theme_minimal() + ggplot2::ylim(0,1)
+#' @keywords internal
+.pl_occupancy = function(x) {
+	occ = summarise(x, stat = "occupancy", by = c("time", "species"))
+	pl = ggplot2::ggplot(occ, ggplot2::aes(x = time, y = occupancy, colour = species))
+	if("occupancy_lo" %in% colnames(occ))
+		pl = pl + geom_ribbon(aes(ymin = occupancy_lo, ymax = occupancy_hi, fill = species, 
+			colour = NULL), alpha = 0.3)
+	pl = pl + ggplot2::geom_line() + theme_flume() + ggplot2::ylim(0,1)
+	pl
 }
 
-.resource_plot = function(x) {
+#' @keywords internal
+.pl_ef_time = function(x) {
+	summ = summarise(x, stat = "EF", by = c("time", "resources"))
+	summ = data.table::melt(summ, id.vars = c("time"), variable.name = "resource")
+	if(any(grepl(".+_lo", summ$resource))) {
+		summ$stat = "value"
+		pat = ".+_(lo|hi)"
+		i = grep(pat, summ$resource)
+		summ$stat[i] = sub(pat, "\\1", summ$resource[i])
+		summ$resource = sub("ef(_(.*?)_?)(hi|lo)?$", "\\2", summ$resource, perl = TRUE)
+		summ = data.table::dcast(summ, time + resource ~ stat)
+	}
+	col = scales::hue_pal()(1)
+	pl = ggplot2::ggplot(summ, ggplot2::aes(x = time, y = value)) 
+	if("lo" %in% colnames(summ))
+		pl = pl + ggplot2::geom_ribbon(ggplot2::aes(ymin = hi, ymax=lo), fill = col, 
+			alpha = 0.4, col = NA)
+	pl = pl+ ggplot2::geom_line(colour = col) + theme_flume() + ggplot2::facet_wrap(~resource) + 
+		ggplot2::ylab("EF")
+	pl
+}
+
+.pl_bef = function(x) {
+	summ = summarise(x, stat = c("EF", "richness"), 
+		by = c("time", "resources", "reach"), quantile = NULL)
+	summ = data.table::melt(summ, id.vars = c("network", "reach", "time", "richness"))
+	pl = ggplot2::ggplot(summ, ggplot2::aes(x = factor(richness), y = value, fill = variable))
+	pl = pl + ggplot2::geom_boxplot() + theme_flume() + ggplot2::ylab("EF")
+	pl = pl + ggplot2::xlab("Species Richness") + ggplot2::labs(fill = "Resource")
+	pl
+}
+
+
+#' ggplot2 theme for flume
+#' @keywords internal
+theme_flume = function() ggplot2::theme_minimal()
+
+resource_plot = function(x) {
 	res = resource_summary(x)
 	ggplot2::ggplot(res, ggplot2::aes(x = time, y = concentration, colour = as.factor(reach))) +
 		ggplot2::geom_line() + ggplot2::theme_minimal() + 
@@ -124,8 +164,10 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 #'		the default is to use the midpoint of possible values for each niche axis.
 #' @param xlim A vector of two, optional axis limits for plotting
 #' @param ylim A vector of two, optional axis limits for plotting
+#' @param plot_comp logical, should the competition matrix be plotted as well?
 #' @export
-plot.metacommunity = function(x, axis = 1, res = 100, default_r, lwd = 1, xlim, ylim) {
+plot.metacommunity = function(x, axis = 1, res = 100, default_r, lwd = 1, xlim, ylim, 
+	plot_comp = TRUE) {
 	# loc = niche_par(x, "location")
 	# sc = niche_par(x, "sd")
 	if(missing(xlim))
@@ -159,20 +201,24 @@ plot.metacommunity = function(x, axis = 1, res = 100, default_r, lwd = 1, xlim, 
 		ggplot2::ylab("Dominant Eigenvalue") + 
 		ggplot2::geom_hline(ggplot2::aes(yintercept = 0), size = 1.2)
 
-	comp = x$competition
-	comp[upper.tri(comp)] = NA
-	comp = reshape2::melt(comp)
-	comp = comp[complete.cases(comp), ]
-	colnames(comp) = c("sp1", "sp2", "competition")
-	comp$sp1 = factor(attr(x, "sp_names")[comp$sp1], levels = attr(x, "sp_names"))
-	comp$sp2 = factor(attr(x, "sp_names")[comp$sp2], levels = attr(x, "sp_names"))
+	if(plot_comp) {
+		comp = x$competition
+		comp[upper.tri(comp)] = NA
+		comp = reshape2::melt(comp)
+		comp = comp[complete.cases(comp), ]
+		colnames(comp) = c("sp1", "sp2", "competition")
+		comp$sp1 = factor(attr(x, "sp_names")[comp$sp1], levels = attr(x, "sp_names"))
+		comp$sp2 = factor(attr(x, "sp_names")[comp$sp2], levels = attr(x, "sp_names"))
 
-	p2 = ggplot2::ggplot(comp) +
-		ggplot2::geom_tile(ggplot2::aes(x = sp1, y = sp2, fill = competition)) +
-		ggplot2::scale_fill_viridis_c(option = "plasma") + ggplot2::theme_minimal() +
-		ggplot2::xlab("") + ggplot2::ylab("")
+		p2 = ggplot2::ggplot(comp) +
+			ggplot2::geom_tile(ggplot2::aes(x = sp1, y = sp2, fill = competition)) +
+			ggplot2::scale_fill_viridis_c(option = "plasma") + ggplot2::theme_minimal() +
+			ggplot2::xlab("") + ggplot2::ylab("")
 
-	gridExtra::grid.arrange(p1, p2, nrow = 1)
+		gridExtra::grid.arrange(p1, p2, nrow = 1)
+	} else {
+		p1
+	}
 }
 
 

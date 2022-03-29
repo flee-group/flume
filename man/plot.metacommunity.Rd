@@ -4,7 +4,7 @@
 \alias{plot.metacommunity}
 \title{Plot species independent stable envelopes}
 \usage{
-\method{plot}{metacommunity}(x, axis = 1, res = 100, default_r, lwd = 1, xlim, ylim)
+\method{plot}{metacommunity}(x, axis = 1, res = 100, default_r, lwd = 1, xlim, ylim, plot_comp = TRUE)
 }
 \arguments{
 \item{x}{A \code{\link[=metacommunity]{metacommunity()}}}
@@ -20,6 +20,8 @@ the default is to use the midpoint of possible values for each niche axis.}
 \item{xlim}{A vector of two, optional axis limits for plotting}
 
 \item{ylim}{A vector of two, optional axis limits for plotting}
+
+\item{plot_comp}{logical, should the competition matrix be plotted as well?}
 }
 \description{
 Plot species independent stable envelopes

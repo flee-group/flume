@@ -4,19 +4,25 @@
 \alias{plot.flume}
 \title{Plot the results of a flume simulation}
 \usage{
-\method{plot}{flume}(x, variable = c("occupancy", "resources"), type = c("network", "reach"))
+\method{plot}{flume}(x, type = "occupancy")
 }
 \arguments{
 \item{x}{A \code{\link[=flume]{flume()}}}
 
-\item{variable}{Variable to plot; 'occupancy' plots occupancy by species over time, 'resources' plots
-resource concentration over time}
-
-\item{type}{How to compute the plot; either shows the average for the entire network, or plots by reach.}
+\item{type}{Which plot to produce; see 'details'.}
 }
 \value{
 A ggplot2 object
 }
 \description{
 Plot the results of a flume simulation
+}
+\details{
+\code{flume} comes with a collection of default plots. All of them are built around the
+\code{\link[=summarise]{summarise()}} function, which can be used to extract the data from a fitted \code{flume}. The
+following plot \code{type}s are recognized (partial matches are allowed):\preformatted{* **occupancy**: (plots the proportion of sites occupied by each in the network against time,  
+with quantiles if replciates are present)
+}
+
+All plots return a \code{ggplot}, so further customisation is easy.
 }
