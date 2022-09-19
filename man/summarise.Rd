@@ -40,12 +40,11 @@ value in \code{by}. Allowable values, with compatible margins in parentheses, an
 in bold:
 \itemize{
 \item occupany (\strong{species}, reach, time)
-\item concentration (\strong{resources}, reach, time)
-\item function (resources, reach, time)
+\item EF (resources, reach, time)
 \item richness (reach, time)
 }
 
 If the fitted model includes multiple replicate networks, then summarise by default returns
-the median for all statistics taken across each network. If desired, upper and lower quantiles
-can also be computed. Only two quantiles may be provided.
+upper and lower quantiles along with the median, summarised across networks.
+Only two quantiles may be provided. If quantile is NULL, then all replicates will be returned.
 }

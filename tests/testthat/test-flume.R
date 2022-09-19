@@ -29,19 +29,16 @@ test_that("Model creation", {
 
 	expect_error(sim <- run_simulation(sim, 1), regex=NA)
 
-	expect_error(occ_nt <- occupancy(sim), regex=NA)
+
+	warning("Move these tests to test_summarise")
+	expect_error(occ_nt <- summarise(sim, c("species", "time"), "occupancy"), regex=NA)
 	expect_true(all(occ_nt$occupancy >= 0 & occ_nt$occupancy <= 1))
 	expect_identical(length(unique(occ_nt$species)), length(comm$species))
 	expect_true(all(range(unique(occ_nt$time)) == c(1,2)))
 	expect_equal(occ_nt[time == 1]$occupancy, colSums(S)/nrow(S), check.names = FALSE)
 
-	expect_error(occ_re <- occupancy(sim, "reach"), regex=NA)
+	expect_error(occ_re <- summarise(sim, c("species", "reach"), "occupancy"), regex=NA)
 
-	expect_error(res <- resource_summary(sim), regex=NA)
-	R_chk = R[,1]
-	res_chk = res[time == 1]
-	res_chk = res_chk[match(names(R_chk), res_chk$reach)]$concentration
-	expect_equal(res_chk, R_chk, check.attributes = FALSE)
 })
 
 test_that("Create model with special resource types", {
