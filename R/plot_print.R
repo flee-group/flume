@@ -180,7 +180,6 @@ plot.metacommunity = function(x, axis = 1, res = 100, default_r, lwd = 1, xlim, 
 	R[,axis] = seq(xlim[1], xlim[2], length.out = res)
 
 	niches = f_niche(x, N = R)
-	colnames(niches) = attr(x, "sp_names")
 	pldat = as.data.frame(niches)
 	pldat$r = R[,axis]
 	pldat = reshape2::melt(pldat, id.vars = "r", variable.name = "species")
