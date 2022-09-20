@@ -15,44 +15,6 @@ itime = 4:6
 Q[inodes, itime] = 0
 
 
-test_that("Full sim runs with intermittency and recovery", {
-
-	sim = flume(comm, network)
-	discharge(sim$networks[[1]]) = Q
-
-	## sim runs with intermittency
-	expect_warning(sim_r <- run_simulation(sim, nt), regex = NA)
-
-	## all species go extinct when discharge = 0
-	# occ = summarise(sim_r, c("time", "occupancy")
-	sphist = state(sim_r$networks[[1]], "species", TRUE)
-	## itime + 2 because we add one for the initial state (time = 0), add one because
-	## the extinctions should happen in the time step after discharge drops
-	sptotal_i = Reduce(`+`, sphist[itime + 2])
-	expect_equal(sptotal_i[inodes,], sptotal_i[inodes,]*0)
-	# do not expect global extinctions
-	expect_gt(sum(sptotal_i), 0)
-
-	## reaction and transport should also go to zero when discharge is zero
-	rxn = do.call(cbind, state(sim_r$networks[[1]], "reaction", history = TRUE))
-	tr = do.call(cbind, state(sim_r$networks[[1]], "transport", history = TRUE))
-	expect_true(all(rxn[inodes, itime + 1] == 0))
-	expect_true(all(tr[inodes, itime + 1] == 0))
-	expect_true(all(rxn[-inodes, itime + 1] <= 0))
-	expect_true(all(tr[-inodes, itime + 1] > 0))
-	# and recover when flow resumes
-	expect_lt(sum(rxn[inodes, nt + 1]), 0)
-	expect_gt(sum(tr[inodes, nt + 1]), 0)
-
-	## resource concentration should be stored as zero (not quite accurate, but prob most useful)
-	rhist = do.call(cbind, state(sim_r$networks[[1]], "resources", TRUE))
-	expect_equal(sum(rhist[inodes, itime + 1]), 0)
-	expect_gt(sum(rhist[-inodes, itime + 1]), 0)
-	## after resumption of flow we get reasources back in the affected nodes
-	expect_true(all(rhist[inodes, ncol(rhist)] > 0))
-
-})
-
 
 test_that("Sim behaves itself during intermittent phase", {
 	sim = flume(comm, network)
@@ -95,12 +57,54 @@ test_that("Sim behaves itself during intermittent phase", {
 	cp = col_prob(sim$metacom, sim$networks[[1]], sim$dt)
 	ep = ext_prob(sim$metacom, sim$networks[[1]], sim$dt)
 	expect_true(all(cp[inodes,] > 0))
-	expect_true(all(ep[inodes,] < 1))
+	expect_true(all(ep[inodes,] < 1))   ## failing due to bug in test data
 	expect_true(all(is.finite(cp)))
 	expect_true(all(is.finite(ep)))
 
 	## zero discharge is correctly recorded in history
-	expect_equal(discharge(sim$networks[[1]], "history"), Q)
+	expect_equal(discharge(sim$networks[[1]], "history"), Q)    #failing
 
 })
+
+
+test_that("Full sim runs with intermittency and recovery", {
+
+	sim = flume(comm, network)
+	discharge(sim$networks[[1]]) = Q
+
+	## sim runs with intermittency
+	expect_warning(sim_r <- run_simulation(sim, nt), regex = NA)
+
+	## all species go extinct when discharge = 0
+	# occ = summarise(sim_r, c("time", "occupancy")
+	sphist = state(sim_r$networks[[1]], "species", TRUE)
+	## itime + 2 because we add one for the initial state (time = 0), add one because
+	## the extinctions should happen in the time step after discharge drops
+	sptotal_i = Reduce(`+`, sphist[itime + 2])
+	expect_equal(sptotal_i[inodes,], sptotal_i[inodes,]*0) # fails, species are present
+	# do not expect global extinctions
+	expect_gt(sum(sptotal_i), 0)
+
+	## reaction and transport should also go to zero when discharge is zero
+	rxn = do.call(cbind, state(sim_r$networks[[1]], "reaction", history = TRUE))
+	tr = do.call(cbind, state(sim_r$networks[[1]], "transport", history = TRUE))
+	expect_true(all(rxn[inodes, itime + 1] == 0))
+	expect_true(all(tr[inodes, itime + 1] == 0))
+	expect_true(all(rxn[-inodes, itime + 1] <= 0))
+	expect_true(all(tr[-inodes, itime + 1] > 0))
+	# and recover when flow resumes
+	expect_lt(sum(rxn[inodes, nt + 1]), 0)
+	expect_gt(sum(tr[inodes, nt + 1]), 0)
+
+	## resource concentration should be stored as zero (not quite accurate, but prob most useful)
+	rhist = do.call(cbind, state(sim_r$networks[[1]], "resources", TRUE))
+	expect_equal(sum(rhist[inodes, itime + 1]), 0) # fails, concentrations not zero
+	expect_gt(sum(rhist[-inodes, itime + 1]), 0)
+	## after resumption of flow we get reasources back in the affected nodes
+	expect_true(all(rhist[inodes, ncol(rhist)] > 0))
+
+})
+
+
+
 

@@ -35,6 +35,13 @@ col_prob = function(comm, network, dt, components = FALSE) {
 
 	dispersal = P * (A + B*Q) + boundary(network, "species")
 
+	# check for zero discharge condition
+	if(any(Q == 0)) {
+		i = which(Q[,1] == 0)
+		col[i,] = 0
+		dispersal[i,] = 0
+	}
+
 	dimnames(col) = dimnames(dispersal) = dimnames(state(network, "species"))
 	if(components) {
 		return(list(colonisation = col, dispersal = dispersal))
@@ -146,13 +153,23 @@ dRdt = function(t, R, params, components = FALSE) {
 	# reaction component, in concentration units
 	rxn = ruf(S, R, comm)
 
+	# handle static resources
 	if(length(i_static) > 0) {
 		transport[, i_static] = 0
 		input[, i_static] = 0
 		output[, i_static] = 0
 		rxn[, i_static] = 0
-	} 
+	}
 
+	# handle zero discharge conditions
+	if(any(Q == 0)) {
+		iQ = which(Q == 0)
+		transport[iQ,] = 0
+		input[iQ,] = 0
+		output[iQ,] = 0
+		rxn[iQ,] = 0
+	}
+	
 	if(components) {
 		# return the components of the derivative, in mass units
 		if(!is.null(rownames(R)))
