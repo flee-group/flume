@@ -149,6 +149,10 @@ run_simulation = function(x, nt, reps = length(x[["networks"]])) {
 		ef_fluxes = dRdt(times[2], R, pars)
 		R = matrix(R_out[2, -1], ncol = ncol(R), nrow = nrow(R), dimnames = dimnames(R))
 
+		Q = state(network, "Q")
+		if(any(Q == 0))
+			R[which(Q == 0),] = 0
+
 		# no cols where already present, no exts where already absent
 		cp[S == 1] = 0
 		ep[S == 0] = 0

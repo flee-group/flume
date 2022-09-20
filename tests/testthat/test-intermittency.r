@@ -62,7 +62,7 @@ test_that("Sim behaves itself during intermittent phase", {
 	expect_true(all(is.finite(ep)))
 
 	## zero discharge is correctly recorded in history
-	expect_equal(discharge(sim$networks[[1]], "history"), Q)    #failing
+	expect_equal(discharge(sim$networks[[1]], "history"), Q)    # failing, enhancements needed in main branch
 
 })
 
@@ -81,7 +81,7 @@ test_that("Full sim runs with intermittency and recovery", {
 	## itime + 2 because we add one for the initial state (time = 0), add one because
 	## the extinctions should happen in the time step after discharge drops
 	sptotal_i = Reduce(`+`, sphist[itime + 2])
-	expect_equal(sptotal_i[inodes,], sptotal_i[inodes,]*0) # fails, species are present
+	expect_equal(sptotal_i[inodes,], sptotal_i[inodes,]*0) # fails, species are present; this test should solve itself after CP and EP are resolved
 	# do not expect global extinctions
 	expect_gt(sum(sptotal_i), 0)
 
