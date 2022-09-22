@@ -30,7 +30,7 @@ col_prob = function(comm, network, dt, components = FALSE) {
 	B = matrix(dispersal_params(comm)$beta, nrow=nsites, ncol = nsp, byrow = TRUE)
 
 	# repeat discharge by site across all species
-	Q = matrix(discharge(network), nrow=nsites, ncol = nsp)
+	Q = matrix(state(network, "Q"), nrow=nsites, ncol = nsp)
 
 
 	dispersal = P * (A + B*Q) + boundary(network, "species")

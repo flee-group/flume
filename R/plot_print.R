@@ -108,7 +108,7 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 	}
 	up_nodes = igraph::ends(args$x, igraph::E(args$x))[,1]
 	up_nodes = match(up_nodes, node_names)
-	wt = discharge(x)[up_nodes]
+	wt = state(x, "Q")[up_nodes]
 
 	args$edge.width = (wt / max(wt)) * args$edge.width
 	if(!("layout" %in% args) && "layout" %in% names(attributes(x)))

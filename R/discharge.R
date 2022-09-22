@@ -186,7 +186,7 @@ geometry = function(Q) {
 			i = ifelse(tm <= nc, tm, tm %% nc)
 			i = ifelse(i == 0, nc, i)
 		} else {
-			i = if(tm <= nc) seq_len(tm) else c(rep(seq_lem(nc), tm %/% nc), seq_len(tm %% nc))
+			i = if(tm <= nc) seq_len(tm) else c(rep(seq_len(nc), tm %/% nc), seq_len(tm %% nc))
 		}
 		val = val[,i]
 	} else {
