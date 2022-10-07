@@ -8,28 +8,37 @@ metacommunity(
   nsp = 2,
   nr = 1,
   niches = niches_uniform,
-  dispersal = dispersal_custom,
+  niche_args = list(),
   sp_names = paste0("sp", 1:nsp),
   r_names = paste0("r", 1:nr),
-  niche_args = list(),
-  dispersal_args = list(),
-  comp_scale = 1/nsp
+  comp_scale = 1/nsp,
+  dry_q_threshold = 0,
+  r_lim = matrix(rep(c(0, 1), each = nr), ncol = 2),
+  ratio,
+  static
 )
 }
 \arguments{
 \item{niches}{The \href{niches}{niche scenario} to use.}
 
-\item{dispersal}{The \href{dispersal}{dispersal scenario} to use}
+\item{niche_args}{A list of named arguments to be passed to the niche function}
 
 \item{sp_names}{A vector of species names}
 
 \item{r_names}{A vector of resource names}
 
-\item{niche_args}{A list of named arguments to be passed to the niche function}
-
-\item{dispersal_args}{A list of named arguments to be passed to the dispersal function}
-
 \item{comp_scale}{Scale for the strength of competition, see 'details'.}
+
+\item{dry_q_threshold}{The discharge at which a reach is considered dry, see 'details'}
+
+\item{r_lim}{Minimum and maximum possible values for each resource dimension; can be a vector
+in the case of a single resource, otherwise a matrix with 2 columns and nr rows.}
+
+\item{ratio}{A 2-column matrix; each row is the indices of a pair of resources. The ratio of
+the first to the second will define a single niche dimension. If missing, no ratios used.}
+
+\item{static}{Vector, the indices of resources that are static, \code{NA} if none. Any resources
+that are not static are by definition dynamic}
 }
 \value{
 A metacommunity object
@@ -67,6 +76,12 @@ Each species' fundamental niche is defined as the difference between a Gaussian 
 function and a constant extinction function; a species will be present when c - e > 0.
 Niches can be automatically generated (see \code{\link[=generate_niches]{generate_niches()}}; alternatively, to specify
 the parameters manually, the following can be specified.
+
+By default, intermittency will drive all species extinct (i.e., the extinction rate is infinite)
+and colonisation rate will be zero. This can be changed using \code{dry_niche_scale}, which should be
+a list of two vectors, one named \code{col}, one named \code{ext}. Each of these vectors should have one
+entry per species, the values are the factor by which the colonisation and extinction rates
+should be multiplied in the case that a reach is dry.
 }
 \examples{
 \donttest{
@@ -86,11 +101,15 @@ the parameters manually, the following can be specified.
 	breadth = list(br_sp1, br_sp1, br_sp1) # assume the same matrix for all species
 	
 	nopts = list(location = matrix(c(1, 2, 1, 3, 2, 4), ncol = 2), breadth = breadth, scale_c = c(0.5, 0.5, 0.55))
-   # location of the species along the resource space
-   # breadth defines the resouce utilisation 
-   # scale competition 
+     # location of the species along the resource space
+     # breadth defines the resouce utilisation 
+     # scale competition 
 	
 	mc = metacommunity(nsp = 3, nr = 2, niches = niches_custom, niche_args = nopts)
 	plot(mc)
+
+     # variable tolerance to drying
+	mc = metacommunity(nsp = 3, nr = 1, niches = niches_custom, niche_args = nopts, 
+            dry_niche_scale = list(col = c(0, 0.1, 1), ext = c(Inf, 2, 1)))
 }
 }

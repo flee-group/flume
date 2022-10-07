@@ -2,18 +2,18 @@
 #' @name niches
 #' @title Generate scenarios for species niches
 #' @param nsp Number of species
+#' @param nn Number of niche dimensions
 #' @param nr Number of resources
 #' @param location Location parameter for the niche, see 'details'.
 #' @param breadth Niche breadth, see 'details'.
 #' @param scale_c Niche height for colonisation, see 'details'.
 #' @param scale_e Niche height for extinction, see 'details'.
+#' @param dry_c Factor to multiply colonisation rate by when a reach is dry
+#' @param dry_e Factor to multiply extinction rate by when a reach is dry
 #' @param r_use Resource use scaling parameter, see 'details
-#' @param r_lim Minimum and maximum possible values for each resource dimension; can be a vector
-#'		in the case of a single resource, otherwise a matrix with 2 columns and nr rows.
-#' @param static Vector, the indices of resources that are static, `NA` if none. Any resources
-#'		that are not static are by definition dynamic
-#' @param ratio A 2-column matrix; each row is the indices of a pair of resources. The ratio of
-#'		the first to the second will define a single niche dimension. If missing, no ratios used.
+#' @param alpha A scalar or a vector, active dispersal ability for each species
+#' @param beta A scalar or a vector, passive dispersal ability for each species
+#' @param r_trans A function for transforming niche dimensions, default is identity
 #' @param ... Additional named niche parameters to override the defaults in `niches_custom()`.
 #' @details
 #' Scenarios handle the complexity of generating niches for you. For custom niches, there is some
@@ -69,28 +69,8 @@
 #' niches_uniform(nsp = 4)
 #' niches_custom(nsp = 2, nr = 2, location = matrix(c(1,2,3,4), nrow=2))
 #' @export
-niches_custom = function(nsp, nr, location, breadth = 1, scale_c = 0.5, scale_e = 0.2,
-		r_use = 0.05, r_lim = matrix(rep(c(0, 1), each = nr), ncol = 2), static, ratio) {
-
-	val = list()
-	val$r_types = rep("normal", nr)
-	if(missing(ratio)) {
-		nn = nr # number of niche dimensions
-		val$r_trans = identity # transform resources into niche dimensions
-	}
-	else {
-		ratio = .check_ratio(ratio, nr)
-		nn = nr - nrow(ratio)
-		val$r_trans = ratio_transform(ratio)
-		val$ratio = ratio
-		val$r_types[as.vector(ratio)] = "ratio"
-	}
-
-	if(missing(static)) {
-		static = integer()
-	} else {
-		val$r_types[static] = "static"
-	}
+niches_custom = function(nsp, nr, nn, location, breadth = 1, scale_c = 0.5, scale_e = 0.2, dry_c = 0, 
+		dry_e = Inf, r_use = 0.05, static, alpha = 0.05, beta = 0.5, r_trans = identity) {
 
 	if(!is.matrix(location)) {
 		if(nn != 1)
@@ -98,19 +78,40 @@ niches_custom = function(nsp, nr, location, breadth = 1, scale_c = 0.5, scale_e 
 		location = matrix(location, ncol = 1)
 	}
 
-	val$location = lapply(1:nsp, function(i) location[i, ])
-	val$breadth = .check_breadth(breadth, nsp, nn)
-	val$scale_c = .check_scale(scale_c, nsp)
-	val$scale_e = .check_scale(scale_e, nsp)
-	val$r_use = .check_r_use(r_use, nsp, nr, static)
+	if(length(alpha) == 1)
+		alpha = rep(alpha, nsp)
+	if(length(beta) == 1)
+		beta = rep(beta, nsp)
+	if(length(alpha) != nsp)
+		stop("length(alpha) must be 1 or the number of species")
+	if(length(beta) != nsp)
+		stop("length(beta) must be 1 or the number of species")
 
-	if(!is.matrix(r_lim))
-		r_lim = matrix(r_lim, ncol = 2)
+	location = lapply(1:nsp, function(i) location[i, ])
+	breadth = .check_breadth(breadth, nsp, nn)
+	scale_c = .check_scale(scale_c, nsp)
+	scale_e = .check_scale(scale_e, nsp)
+	r_use = .check_r_use(r_use, nsp, nr, static)
+	if(length(dry_c) == 1)
+		dry_c = rep(dry_c, nsp)
+	if(length(dry_e) == 1)
+		dry_e = rep(dry_e, nsp)
 
-	if(nrow(r_lim) != nr)
-		stop("r_lim must be a matrix with 1 row per resource and 2 columns")
-	val$r_lim = r_lim
-	val
+	if(length(dry_c) != nsp)
+		stop("length(dry_c) must be 1 or the number of species")
+	if(length(dry_e) != nsp)
+		stop("length(dry_e) must be 1 or the number of species")
+
+
+
+	splist = list()
+	for(i in 1:nsp) {
+		c_par = list(location = location[[i]], breadth = breadth[[i]], scale = scale_c[[i]], 
+			dry = dry_c[[i]])
+		e_par = list(scale = scale_e[[i]], dry = dry_e[[i]])
+		splist[[i]] = species(c_par, e_par, alpha[i], beta[i], r_use[[i]], r_trans)
+	}
+	splist
 }
 
 #' @rdname niches
@@ -133,31 +134,19 @@ niches_uniform = function(nsp = 2, nr = 1, r_lim = c(0, 1), ...) {
 	pars$nsp = nsp
 	pars$nr = nr
 	pars$location = location
-	pars$r_lim = r_lim
 	do.call(niches_custom, pars)
 }
 
 #' @rdname niches
 #' @name niches
 #' @export
-niches_random = function(nsp = 2, nr = 1, r_lim = c(0, 1), ratio, ...) {
+niches_random = function(nsp = 2, nr = 1, r_lim = c(0, 1), ...) {
 	if(!is.matrix(r_lim) && length(r_lim == 2))
 		r_lim = cbind(rep(r_lim[1], nr), rep(r_lim[2], nr))
-
-	pars = list(...)
-	if(missing(ratio)) {
-		nn = nr # number of niche dimensions
-	}
-	else {
-		ratio = .check_ratio(ratio, nr)
-		nn = nr - nrow(ratio)
-		pars$ratio = ratio
-	}
 
 
 	location = do.call(rbind, lapply(1:nsp, function(i) runif(nn, r_lim[, 1], r_lim[, 2])))
 	pars$location = location
-	pars$r_lim = r_lim
 	pars$nsp = nsp
 	pars$nr = nr
 	if(! "breadth" %in% names(pars)) {
@@ -176,29 +165,7 @@ niches_random = function(nsp = 2, nr = 1, r_lim = c(0, 1), ratio, ...) {
 	do.call(niches_custom, pars)
 }
 
-#' @rdname dispersal
-#' @name dispersal
-#' @title Generate scenarios for species' dispersal abilities
-#' @param nsp Number of species
-#' @param alpha A scalar or a vector, active dispersal ability for each species
-#' @param beta A scalar or a vector, passive dispersal ability for each species
-#' @param ... Additional named dispersal parameters to override the defaults in
-#'		`dispersal_custom()`.
-#' @return A list of dispersal parameters
-#' @examples
-#' dispersal_custom(nsp = 3)
-#' @export
-dispersal_custom = function(nsp, alpha = 0.05, beta = 0.5) {
-	if(length(alpha) == 1)
-		alpha = rep(alpha, nsp)
-	if(length(beta) == 1)
-		beta = rep(beta, nsp)
-	if(length(alpha) != nsp)
-		stop("length(alpha) must be 1 or the number of species")
-	if(length(beta) != nsp)
-		stop("length(beta) must be 1 or the number of species")
-	list(alpha = alpha, beta = beta)
-}
+
 
 
 #' @rdname community_scenarios

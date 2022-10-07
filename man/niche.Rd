@@ -6,9 +6,9 @@
 \alias{f_niche.metacommunity}
 \title{Functions for determining the niche of species}
 \usage{
-\method{f_niche}{species}(x, R, N, component = c("lambda", "col", "ext"))
+\method{f_niche}{species}(x, R, N, component = c("lambda", "col", "ext"), dry = FALSE)
 
-\method{f_niche}{metacommunity}(x, R, N, component = c("lambda", "col", "ext"))
+\method{f_niche}{metacommunity}(x, R, N, component = c("lambda", "col", "ext"), dry = FALSE)
 }
 \arguments{
 \item{x}{A \code{\link[=species]{species()}} or \code{\link[=metacommunity]{metacommunity()}}}
@@ -19,6 +19,8 @@
 
 \item{component}{One of "lambda", "col", or "ext" specifying whether the total niche (C - E),
 only C, or only E should be returned}
+
+\item{dry}{A TRUE/FALSE vector, one value per site, indicating whether the site is dry}
 }
 \value{
 A vector (for a single species) or matrix (for a metacommunity) giving the value(s)

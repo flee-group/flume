@@ -10,24 +10,30 @@
 niches_custom(
   nsp,
   nr,
+  nn,
   location,
   breadth = 1,
   scale_c = 0.5,
   scale_e = 0.2,
+  dry_c = 0,
+  dry_e = Inf,
   r_use = 0.05,
-  r_lim = matrix(rep(c(0, 1), each = nr), ncol = 2),
   static,
-  ratio
+  alpha = 0.05,
+  beta = 0.5,
+  r_trans = identity
 )
 
 niches_uniform(nsp = 2, nr = 1, r_lim = c(0, 1), ...)
 
-niches_random(nsp = 2, nr = 1, r_lim = c(0, 1), ratio, ...)
+niches_random(nsp = 2, nr = 1, r_lim = c(0, 1), ...)
 }
 \arguments{
 \item{nsp}{Number of species}
 
 \item{nr}{Number of resources}
+
+\item{nn}{Number of niche dimensions}
 
 \item{location}{Location parameter for the niche, see 'details'.}
 
@@ -37,16 +43,17 @@ niches_random(nsp = 2, nr = 1, r_lim = c(0, 1), ratio, ...)
 
 \item{scale_e}{Niche height for extinction, see 'details'.}
 
+\item{dry_c}{Factor to multiply colonisation rate by when a reach is dry}
+
+\item{dry_e}{Factor to multiply extinction rate by when a reach is dry}
+
 \item{r_use}{Resource use scaling parameter, see 'details}
 
-\item{r_lim}{Minimum and maximum possible values for each resource dimension; can be a vector
-in the case of a single resource, otherwise a matrix with 2 columns and nr rows.}
+\item{alpha}{A scalar or a vector, active dispersal ability for each species}
 
-\item{static}{Vector, the indices of resources that are static, \code{NA} if none. Any resources
-that are not static are by definition dynamic}
+\item{beta}{A scalar or a vector, passive dispersal ability for each species}
 
-\item{ratio}{A 2-column matrix; each row is the indices of a pair of resources. The ratio of
-the first to the second will define a single niche dimension. If missing, no ratios used.}
+\item{r_trans}{A function for transforming niche dimensions, default is identity}
 
 \item{...}{Additional named niche parameters to override the defaults in \code{niches_custom()}.}
 }

@@ -8,16 +8,18 @@
 \usage{
 \method{niche_par}{species}(
   x,
-  par = c("location", "breadth", "sd", "scale", "r_use", "niche_max")
+  par = c("location", "breadth", "sd", "scale", "r_use", "niche_max", "dry")
 )
 
 \method{niche_par}{metacommunity}(
   x,
-  par = c("location", "breadth", "sd", "scale", "r_use", "niche_max")
+  par = c("location", "breadth", "sd", "scale", "r_use", "niche_max", "dry")
 )
 }
 \arguments{
 \item{x}{A species or metacommunity}
+
+\item{par}{The parameter to retrieve}
 }
 \description{
 Functions for accessing species niche parameters

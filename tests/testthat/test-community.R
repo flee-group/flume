@@ -6,22 +6,24 @@ test_that("Species creation", {
 
 	# input validation
 	# many parameters must not be negative
-	expect_error(species(location = 0, breadth = -1, scale_c = 1, scale_e = 1, alpha = 1, beta = 1,
-		r_use = 1), regex = "negative")
-	expect_error(species(location = 0, breadth = 1, scale_c = -1, scale_e = 1, alpha = 1, beta = 1,
-		r_use = 1), regex = "negative")
-	expect_error(species(location = 0, breadth = 1, scale_c = 1, scale_e = -1, alpha = 1, beta = 1,
-		r_use = 1), regex = "negative")
-	expect_error(species(location = 0, breadth = 1, scale_c = 1, scale_e = 1, alpha = -1, beta = 1,
-		r_use = 1), regex = "negative")
-	expect_error(species(location = 0, breadth = 1, scale_c = 1, scale_e = 1, alpha = 1, beta = -1,
-		r_use = 1), regex = "negative")
+	par_c_default = list(location = 0, breadth = 1, scale = 1)
+	par_c = par_c_default; par_c$breadth = -1
+	par_e_default = list(scale = 1)
+	par_e = par_e_default
+	expect_error(species(par_c, par_e, alpha = 1, beta = 1, r_use = 1), regex = "negative")
+	par_c = par_c_default; par_c$scale = -1
+	expect_error(species(par_c, par_e, alpha = 1, beta = 1, r_use = 1), regex = "negative")
+	par_c = par_c_default; par_e$scale = -1
+	expect_error(species(par_c, par_e, alpha = 1, beta = 1, r_use = 1), regex = "negative")
+	par_e = par_e_default
+	expect_error(species(par_c, par_e, alpha = -1, beta = 1, r_use = 1), regex = "negative")
+	expect_error(species(par_c, par_e, alpha = 1, beta = -1, r_use = 1), regex = "negative")
 
 	# some parameters may be negative or positive
-	expect_error(species(location = 1, breadth = 1, scale_c = 1, scale_e = 1, alpha = 1, beta = 1,
-		r_use = 1), regex = NA)
-	expect_error(species(location = -1, breadth = 1, scale_c = 1, scale_e = 1, alpha = 1, beta = 1,
-		r_use = -1), regex = NA)
+	par_c = par_c_default
+	expect_error(species(par_c, par_e, alpha = 1, beta = 1, r_use = -1), regex = NA)
+	par_c$location = -1
+	expect_error(species(par_c, par_e,  alpha = 1, beta = 1, r_use = 1), regex = NA)
 
 
 	# multivariate niches
@@ -30,28 +32,33 @@ test_that("Species creation", {
 	rsc_wrong = 1:3
 	bre = matrix(c(1, 0, 0, 1), nrow = 2)
 	bre_wrong = matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1), nrow = 3)
+	par_c = list(location = loc, breadth = bre, scale = 1)
 
 	# all dimensions must agree
-	expect_error(species(location = loc, breadth = bre_wrong, scale_c = 1, scale_e = 1, alpha = 1,
-		beta = 1, r_use = rsc), regex = "dimension mismatch")
-	expect_error(species(location = 1, breadth = bre, scale_c = 1, scale_e = 1, alpha = 1,
-		beta = 1, r_use = rsc), regex = "dimension mismatch")
-	expect_error(species(location = loc, breadth = bre[1, ], scale_c = 1, scale_e = 1, alpha = 1,
-		beta = 1, r_use = rsc_wrong), regex = "dimension mismatch")
+	par_c$breadth = bre_wrong
+	expect_error(species(par_c, par_e, alpha = 1, beta = 1, r_use = rsc), 
+		regex = "dimension mismatch")
+	par_c$breadth = bre; par_c$location = 1
+	expect_error(species(par_c, par_e, alpha = 1, beta = 1, r_use = rsc), 
+		regex = "dimension mismatch")
+	par_c$location = loc; par_c$breadth = bre[1,]
+	expect_error(species(par_c, par_e, alpha = 1, beta = 1, r_use = rsc_wrong), 
+		regex = "dimension mismatch")
 
 	# also check that no entries in vcv matrix are negative
-	expect_error(species(location = loc, breadth = -1 * bre, scale_c = 1, scale_e = 1, alpha = 1,
-		beta = 1, r_use = rsc), regex = "negative")
+	par_c$breadth = -1 * bre
+	expect_error(species(par_c, par_e, alpha = 1, beta = 1, r_use = rsc), regex = "negative")
 
 	# scale_c, scale_e, alpha and beta must be single values
-	expect_error(species(location = loc, breadth = bre, scale_c = c(1, 2), scale_e = 1, alpha = 1,
-		beta = 1, r_use = rsc), regex = "single value")
-	expect_error(species(location = loc, breadth = bre, scale_c = 1, scale_e = c(1, 2), alpha = 1,
-		beta = 1, r_use = rsc), regex = "single value")
-	expect_error(species(location = loc, breadth = bre, scale_c = 1, scale_e = 1, alpha = c(1, 0),
-		beta = 1, r_use = rsc), regex = "single value")
-	expect_error(species(location = loc, breadth = bre, scale_c = 1, scale_e = 1, alpha = 1,
-		beta = c(1, 0), r_use = rsc), regex = "single value")
+	par_c = list(location = loc, breadth = bre, scale = c(1, 2))
+	expect_error(species(par_c, par_e, alpha = 1, beta = 1, r_use = rsc), regex = "single value")
+	par_c$scale = 1
+	expect_error(species(par_c, list(scale = c(1, 2)), alpha = 1, beta = 1, r_use = rsc), 
+		regex = "single value")
+	expect_error(species(par_c, par_e, alpha = c(1, 0), beta = 1, r_use = rsc), 
+		regex = "single value")
+	expect_error(species(par_c, par_e, alpha = 1, beta = c(1, 0), r_use = rsc), 
+		regex = "single value")
 })
 
 test_that("Metacommunity creation", {
@@ -65,13 +72,10 @@ test_that("Metacommunity creation", {
 		scale_c = c(0.5, 0.7),
 		scale_e = c(0.2, 0.3),
 		r_use = c(0.5, 0.4),
-		r_lim = c(0, 1)
-	)
-
-	dargs = list(
 		alpha = c(0.05, 0.07),
 		beta = c(0.4, 0.3)
 	)
+	r_lim = c(0, 1)
 
 	# single species, single niche axis
 	expect_error(metacommunity(nsp = 1, nr = 1, niches = niches_custom,
@@ -81,7 +85,7 @@ test_that("Metacommunity creation", {
 	expect_error(metacommunity(nsp = 2, nr = 1, niches = niches_custom,
 		niche_args = list(location = nargs$location)), regex = NA)
 	expect_error(metacommunity(nsp = 2, nr = 1, niches = niches_custom, niche_args = nargs, 
-		dispersal_args = dargs), regex = NA)
+		r_lim = r_lim), regex = NA)
 })
 
 
@@ -97,9 +101,7 @@ test_that("Multivariate metacommunities", {
 	nargs_12 = list(
 		location = matrix(c(1, 2), ncol = 2),
 		breadth = c(1, 1.5),
-		r_use =  c(0.5, 0.4),
-		r_lim = rbind(c(0, 1), c(0, 1))
-	)
+		r_use =  c(0.5, 0.4))
 
 	nargs_32 = list(
 		location = rbind(nargs_12$location, nargs_12$location + 0.25, nargs_12$location - 0.25),
@@ -107,8 +109,8 @@ test_that("Multivariate metacommunities", {
 		r_use = rbind(nargs_12$r_use, nargs_12$r_use, nargs_12$r_use)
 	)
 	# single species, multiple niche axes
-	expect_error(metacommunity(nsp = 1, nr = 2, niches = niches_custom, niche_args = nargs_12), 
-		regex = NA)
+	expect_error(metacommunity(nsp = 1, nr = 2, niches = niches_custom, niche_args = nargs_12, 
+		r_lim = rbind(c(0, 1), c(0, 1))), regex = NA)
 
 	# multiple species, multiple niche axes
 	expect_error(metacommunity(nsp = 3, nr = 2, niches = niches_custom, niche_args = nargs_32),
@@ -123,7 +125,7 @@ test_that("Niches estimated correctly", {
 	comm = metacommunity(niches = niches_custom, 
 		niche_args = list(location = loc, scale_c = scale_c, scale_e = scale_e))
 	expect_equal(attr(comm$species[[1]], "niche_max"), scale_c - scale_e, check.names = FALSE)
-	expect_equal(f_niche(comm$species[[1]], loc[1]), attr(comm$species[[1]], "niche_max"))
+	expect_equal(as.vector(f_niche(comm$species[[1]], loc[1])), attr(comm$species[[1]], "niche_max"))
 
 	# species 2 performs worse at species 1's optimum
 	expect_gt(f_niche(comm$species[[1]], loc[1]), f_niche(comm$species[[2]], loc[1]))
@@ -147,21 +149,19 @@ test_that("Ratio and static niches", {
 		metacommunity(nsp = nrow(algae$niches), nr = 1, niches = niches_custom, niche_args = nopts),
 		regex = NA)
 
-	nopts = list(location = algae$niches$location, breadth = algae$niches$breadth, ratio = c(1, 2))
-	expect_error(
-		metacommunity(nsp = nrow(algae$niches), nr = 2, niches = niches_custom, niche_args = nopts),
-		regex = NA)
+	nopts = list(location = algae$niches$location, breadth = algae$niches$breadth)
+	expect_error(metacommunity(nsp = nrow(algae$niches), nr = 2, niches = niches_custom, 
+		niche_args = nopts, ratio = c(1, 2)), regex = NA)
 
 	# various dimension errors
-	expect_error(
-		metacommunity(nsp = nrow(algae$niches), nr = 1, niches = niches_custom, 
-			niche_args = nopts), regex = "<= nr")
+	expect_error(metacommunity(nsp = nrow(algae$niches), nr = 1, niches = niches_custom, 
+			ratio = c(1, 2), niche_args = nopts), regex = "<= nr")
 
 	nopts2 = nopts
 	nopts2$breadth = rep(nopts2$breadth, 2)
 	expect_error(
 		metacommunity(nsp = nrow(algae$niches), nr = 2, niches = niches_custom, 
-			niche_args = nopts2), regex = "Invalid niche breadth")
+			niche_args = nopts2, ratio = c(1, 2)), regex = "Invalid niche breadth")
 })
 
 test_that("Asymmetric competition", {
@@ -197,5 +197,39 @@ test_that("Asymmetric competition", {
 		niche_args = nopts, comp_scale = comp), regex = NA)
 	expect_lt(comm5$competition[2,1], 0)
 	expect_gt(comm5$competition[1,2], 0)
+
+})
+
+test_that("Niches/species with intermittency", {
+	# try creating a community with invalid drying parameters
+	n_params = list(dry_c = c(0, 0), dry_e = c(Inf, Inf, Inf))
+	expect_error(mc <- metacommunity(niche_args = n_params), regex = "species")
+
+	# create a community with defaults and test the niches when dry
+	mc <- metacommunity()
+	R = matrix(rep(0, 2), ncol = 1)
+	# inappropriate dry length causes error
+	dry = c(TRUE, FALSE, TRUE)
+	expect_error(cn <- f_niche(mc, R, component = "col", dry = dry), regex = "length\\(dry\\)")
+
+	dry = c(TRUE, FALSE)
+	expect_error(ln <- f_niche(mc, R, dry = dry), regex = NA)
+	expect_error(cn <- f_niche(mc, R, component = "col", dry = dry), regex = NA)
+	expect_error(en <- f_niche(mc, R, component = "ext", dry = dry), regex = NA)
+	expect_true(all(cn[dry,] == 0))
+	expect_true(all(cn[!dry,] != 0))
+	expect_true(all(is.infinite(en[dry,])))
+	expect_true(all(is.finite(en[!dry,])))
+	expect_true(all(is.infinite(ln[dry,])))
+	expect_true(all(is.finite(ln[!dry,])))
+
+
+	# create and test community with non defaults
+	n_params = list(dry_c = c(0.5, 0.5), dry_e = c(2, 2))
+	mc = metacommunity(niche_args = n_params)
+	cn = f_niche(mc, R, component = "col", dry = dry)
+	en = f_niche(mc, R, component = "ext", dry = dry)
+	expect_equal(cn[dry,], cn[!dry,] * n_params$dry_c)
+	expect_equal(en[dry,], en[!dry,] * n_params$dry_e)
 
 })

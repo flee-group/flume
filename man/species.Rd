@@ -4,25 +4,12 @@
 \alias{species}
 \title{Creates species}
 \usage{
-species(
-  location,
-  breadth,
-  scale_c,
-  scale_e,
-  alpha,
-  beta,
-  r_use,
-  r_trans = identity
-)
+species(c_params, e_params, alpha, beta, r_use, r_trans = identity)
 }
 \arguments{
-\item{location}{Location of the niche optimum; one per niche axis}
+\item{c_params}{Colonisation niche parameters, including \code{location}, \verb{breadth, }scale\code{and}dry`}
 
-\item{breadth}{Niche breadth, or variance-covariance matrix for multivariate}
-
-\item{scale_c}{Scale of the colonisation portion of the niche}
-
-\item{scale_e}{Scale of the extinction portion of the niche}
+\item{e_params}{Extinction niche parameters, including \code{scale} and \code{dry}}
 
 \item{alpha}{Active dispersal ability}
 
