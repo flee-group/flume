@@ -1,4 +1,5 @@
 test_that("Model creation", {
+	stop("need to re-make the test data")
 	comm = readRDS(system.file("testdata/metacom.rds", package = "flume"))
 	network = readRDS(system.file("testdata/river_network.rds", package = "flume"))
 
@@ -47,9 +48,10 @@ test_that("Create model with special resource types", {
 	# static
 	loc = apply(algae$r0, 2, function(x) colMeans(x*algae$sp0))
 	bre = apply(algae$r0, 2, function(x) apply((x*algae$sp0), 2, sd))
-	nopts = list(location = loc, breadth = bre, static = 1, r_lim = t(apply(algae$r0, 2, range)))
+	nopts = list(location = loc, breadth = bre)
+	rlim = t(apply(algae$r0, 2, range))
 	mc = metacommunity(nsp = nrow(algae$niches), nr = 2, niches = niches_custom, niche_args = nopts,
-		sp_names = algae$niches$species, r_names = c("N", "P"))
+		sp_names = algae$niches$species, r_names = c("N", "P"), r_lim = rlim, static = 1)
 	expect_error(fl <- flume(mc, algae$network, algae$sp0, algae$r0), regex=NA)
 	expect_error(fl <- run_simulation(fl, 1), regex=NA)
 	# first resource is static and shouldn't change, second should change

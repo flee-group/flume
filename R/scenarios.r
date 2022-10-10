@@ -2,8 +2,8 @@
 #' @name niches
 #' @title Generate scenarios for species niches
 #' @param nsp Number of species
-#' @param nn Number of niche dimensions
 #' @param nr Number of resources
+#' @param nn Number of niche dimensions
 #' @param location Location parameter for the niche, see 'details'.
 #' @param breadth Niche breadth, see 'details'.
 #' @param scale_c Niche height for colonisation, see 'details'.
@@ -11,6 +11,7 @@
 #' @param dry_c Factor to multiply colonisation rate by when a reach is dry
 #' @param dry_e Factor to multiply extinction rate by when a reach is dry
 #' @param r_use Resource use scaling parameter, see 'details
+#' @param static Vector of resource indices that are static, default is empty vector
 #' @param alpha A scalar or a vector, active dispersal ability for each species
 #' @param beta A scalar or a vector, passive dispersal ability for each species
 #' @param r_trans A function for transforming niche dimensions, default is identity
@@ -69,8 +70,9 @@
 #' niches_uniform(nsp = 4)
 #' niches_custom(nsp = 2, nr = 2, location = matrix(c(1,2,3,4), nrow=2))
 #' @export
-niches_custom = function(nsp, nr, nn, location, breadth = 1, scale_c = 0.5, scale_e = 0.2, dry_c = 0, 
-		dry_e = Inf, r_use = 0.05, static, alpha = 0.05, beta = 0.5, r_trans = identity) {
+niches_custom = function(nsp, nr, nn = nr, location, breadth = 1, scale_c = 0.5, scale_e = 0.2, 
+		dry_c = 0, dry_e = Inf, r_use = 0.05, static = integer(), alpha = 0.05, beta = 0.5, 
+		r_trans = identity) {
 
 	if(!is.matrix(location)) {
 		if(nn != 1)
@@ -82,26 +84,24 @@ niches_custom = function(nsp, nr, nn, location, breadth = 1, scale_c = 0.5, scal
 		alpha = rep(alpha, nsp)
 	if(length(beta) == 1)
 		beta = rep(beta, nsp)
+	if(length(dry_c) == 1)
+		dry_c = rep(dry_c, nsp)
+	if(length(dry_e) == 1)
+		dry_e = rep(dry_e, nsp)
 	if(length(alpha) != nsp)
 		stop("length(alpha) must be 1 or the number of species")
 	if(length(beta) != nsp)
 		stop("length(beta) must be 1 or the number of species")
+	if(length(dry_c) != nsp)
+		stop("length(dry_c) must be 1 or the number of species")
+	if(length(dry_e) != nsp)
+		stop("length(dry_e) must be 1 or the number of species")
 
 	location = lapply(1:nsp, function(i) location[i, ])
 	breadth = .check_breadth(breadth, nsp, nn)
 	scale_c = .check_scale(scale_c, nsp)
 	scale_e = .check_scale(scale_e, nsp)
 	r_use = .check_r_use(r_use, nsp, nr, static)
-	if(length(dry_c) == 1)
-		dry_c = rep(dry_c, nsp)
-	if(length(dry_e) == 1)
-		dry_e = rep(dry_e, nsp)
-
-	if(length(dry_c) != nsp)
-		stop("length(dry_c) must be 1 or the number of species")
-	if(length(dry_e) != nsp)
-		stop("length(dry_e) must be 1 or the number of species")
-
 
 
 	splist = list()
@@ -145,19 +145,20 @@ niches_random = function(nsp = 2, nr = 1, r_lim = c(0, 1), ...) {
 		r_lim = cbind(rep(r_lim[1], nr), rep(r_lim[2], nr))
 
 
-	location = do.call(rbind, lapply(1:nsp, function(i) runif(nn, r_lim[, 1], r_lim[, 2])))
+	pars = list(...)
+	location = do.call(rbind, lapply(1:nsp, function(i) runif(nr, r_lim[, 1], r_lim[, 2])))
 	pars$location = location
 	pars$nsp = nsp
 	pars$nr = nr
 	if(! "breadth" %in% names(pars)) {
 		sd_avg = (r_lim[, 2] - r_lim[, 1]) / nsp
 		sd_sd = sd_avg / 4
-		if(nn == 1) {
+		if(nr == 1) {
 			pars$breadth = rnorm(nsp, sd_avg, sd_sd)
 		} else {
 			pars$breadth = lapply(1:nsp, function(i) {
-				y = matrix(0, nrow = nn, ncol = nn)
-				diag(y) = rnorm(nn, sd_avg, sd_sd)
+				y = matrix(0, nrow = nr, ncol = nr)
+				diag(y) = rnorm(nr, sd_avg, sd_sd)
 				y
 			})
 		}

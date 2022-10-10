@@ -18,9 +18,16 @@ col_prob = function(comm, network, dt, components = FALSE) {
 	nsites = nrow(R)
 	nsp = length(comm$species)
 
+
+	# repeat discharge by site across all species
+	Q = matrix(state(network, "Q"), nrow=nsites, ncol = nsp)
+
+	# determine which sites are dry
+	dry = (Q[,1] <= attr(comm, "dry_q_threshold"))
+
 	## colonisation rate has two terms, the niche portion and the dispersal portion
 	## first the niche portion
-	col = f_niche(comm, R = R, component = "col")
+	col = f_niche(comm, R = R, component = "col", dry = dry)
 
 	## here the dispersal portion
 	P = prevalence(network)
@@ -28,9 +35,6 @@ col_prob = function(comm, network, dt, components = FALSE) {
 	# repeat the alphas and betas across all sites in a matrix
 	A = matrix(dispersal_params(comm)$alpha, nrow=nsites, ncol = nsp, byrow = TRUE)
 	B = matrix(dispersal_params(comm)$beta, nrow=nsites, ncol = nsp, byrow = TRUE)
-
-	# repeat discharge by site across all species
-	Q = matrix(state(network, "Q"), nrow=nsites, ncol = nsp)
 
 
 	dispersal = P * (A + B*Q) + boundary(network, "species")
@@ -58,9 +62,12 @@ ext_prob = function(comm, network, dt, components = FALSE) {
 	S = state(network, "species")
 	R = state(network, "resources")
 
+	# determine which sites are dry
+	dry = (state(network, "Q") <= attr(comm, "dry_q_threshold"))
+	
 	# extinction rate has two components, the stochastic extinction rate and the competition portion
 	# stochastic first
-	m_i = f_niche(comm, R = R, component = "ext")
+	m_i = f_niche(comm, R = R, component = "ext", dry = dry)
 
 	# competition, which is the sum of the competitive effects of species present in each site
 	m_ij = comm$competition ## species by species competition matrix
