@@ -24,10 +24,9 @@ needed to make intermittency work.
 
 First install the latest version (if needed) and load it.
 
-```{r install}
-if(!"iflume" %in% rownames(installed.packages()) || packageVersion("iflume") < "0.5.3.9907")
+```{r install, eval = FALSE}
+if(!"iflume" %in% rownames(installed.packages()) || packageVersion("iflume") < "0.5.3.9908")
 	remotes::install_github("flee-group/flume", ref = "iflume")
-library("iflume")
 ```
 
 
@@ -35,6 +34,7 @@ Very little has changed about the procedure for generating a network, so we can 
 network from the `algae` dataset without modification; intermittency can be added after the fact.
 
 ```{r network}
+library("iflume")
 data(algae)
 plot(algae$network)
 ```
@@ -90,12 +90,11 @@ i = match(as.character(c(33:36, 38)), attr(algae$network, "names_sites"))
 i_begin = 30
 i_end = 60
 Qmat[i, i_begin:i_end] = 0
-knitr::kable(Qmat, digits = 2)
 discharge(algae$network) = Qmat
 
 ## make a copy of the network to see what it will look like in intermittent phase
 net_plot = algae$network
-discharge(net_plot) = Qmat[,4]
+discharge(net_plot) = Qmat[,i_begin]
 plot(net_plot)
 ```
 
