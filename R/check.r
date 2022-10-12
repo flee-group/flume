@@ -52,6 +52,7 @@
 	p
 }
 
+
 #' @rdname check_par
 #' @keywords internal
 .check_breadth_multi = function(p, nsp, nrx) {

@@ -235,6 +235,10 @@ ratio_transform = function(ratio) {
 	# take the ratio of the designated columns, and append them to the end, dropping the originals
 	return(function(x) {
 		cbind(x[,-as.vector(ratio)], 
-			apply(ratio, 1, function(i) x[,i[1]] / x[, i[2]]))
+			apply(ratio, 1, function(i) {
+				val = x[,i[1]] / x[, i[2]]
+				val[x[, i[2]] == 0] = Inf
+				val
+			}))
 	})
 }

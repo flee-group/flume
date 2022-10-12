@@ -1,0 +1,130 @@
+---
+title: "Setting up an iflume"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{A simple simulation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+	collapse = TRUE,
+	comment = "#>",
+	error = TRUE,
+	fig.height = 5,
+	fig.width = 5
+)
+```
+
+
+Sample code here to document the changes needed to get a sim running with `iflume`. Focus will be on
+the differences between `iflume` and the current released version of `flume`, and on the steps
+needed to make intermittency work.
+
+First install the latest version (if needed) and load it.
+
+```{r install}
+if(!"iflume" %in% rownames(installed.packages()) || packageVersion("iflume") < "0.5.3.9907")
+	remotes::install_github("flee-group/flume", ref = "iflume")
+library("iflume")
+```
+
+
+Very little has changed about the procedure for generating a network, so we can simply use the
+network from the `algae` dataset without modification; intermittency can be added after the fact.
+
+```{r network}
+data(algae)
+plot(algae$network)
+```
+
+
+The interface for generating a `metacommunity` has changed; we will still use the `algae` data, but we
+re-create the `metacommunity` to point out the changes.
+
+A summary of user-impacting changes:
+
+* There is no longer a `dispersal_custom` scenario, and no `dispersal_args` to provide; rather
+the dispersal parameters `alpha` and `beta` are added via `niche_args`.
+* There is a new parameter, `dry_q_threshold`, which is zero by default, which gives the threshold
+below which (strictly `<=`) a reach is considered to be dry.
+* The `r_lim` parameter is no longer part of `niche_args`, rather it is a top level argument to the
+`metacommunity` function.
+* Similarly, the `static` and `ratio` parameters are now provided in `metacommunity` and not as a
+part of `niche_args`.
+* There are two new parameters to describe drying resistance: `dry_c` is the factor by which to 
+multiply the colonisation rate in dry niches (default zero), and `dry_e` the same factor for
+extinction rate (default `Inf`, results in extinction probability of one). Remember these are
+multiplicative factors; generally we should reduce colonisation (so `0 <= dry_c <= 1`) and increase
+extinction (`dry_e >= 1`). See `?niches_custom` for details.
+
+```{r metacom, fig.width = 9}
+knitr::kable(algae$niches, digits = 2)
+# species 1:3 have no drying resistance, species 4 a little, species 5 a lot
+nargs = list(location = algae$niches[,'location'], breadth = algae$niches[, 'breadth'], 
+	scale_c = 5e-4, scale_e = 1e-5, alpha = 0.1, beta = 0.1, dry_c = c(0, 0, 0, 0.1, 0.2), 
+	dry_e = c(Inf, Inf, Inf, 5, 2))
+mc = metacommunity(nsp = nrow(algae$niches), nr = 2, niches = niches_custom, niche_args = nargs,
+	sp_names = algae$niches[, 'species'], r_names = c("N", "P"), comp_scale = 3e-6,
+	r_lim = t(apply(algae$r0, 2, range)), ratio = 1:2)
+plot(mc)
+```
+
+
+## Intermittency
+
+We introduce intermittency by using a variable discharge model and setting Q to below the threshold
+for some reaches and time steps. Note that we use the `state` function for **viewing** the actual
+discharge state of the network, but we use the `discharge` function for getting/setting the raw
+data. Here is a very simple example:
+
+```{r interm}
+Q = state(algae$network, 'Q')
+knitr::kable(matrix(Q, nrow=1), digits = 2)
+nt = 100
+Qmat = matrix(Q, nrow = length(Q), ncol = nt) ## columns here are time steps
+
+# match up sites by names
+i = match(as.character(c(33:36, 38)), attr(algae$network, "names_sites"))
+i_begin = 30
+i_end = 60
+Qmat[i, i_begin:i_end] = 0
+knitr::kable(Qmat, digits = 2)
+discharge(algae$network) = Qmat
+
+## make a copy of the network to see what it will look like in intermittent phase
+net_plot = algae$network
+discharge(net_plot) = Qmat[,4]
+plot(net_plot)
+```
+
+
+## Running the sim
+
+Now we set up and run the simulation. It can be useful to set boundary conditions for species
+(to allow for immigration when networks are isolated), but it can also be interesting to leave this
+at the default of no immigration from outside the river network.
+
+Here we also run the model for three time steps (i.e., the non intermittent intro phase) just to
+plot it and make sure everything is ok before continuing.
+
+```{r flume}
+## immigration in headwaters only
+## immigration is in the form of a site-by-species matrix of immigration rates
+# here we use the initial state as a template
+knitr::kable(algae$sp0, digits = 0)
+spb = algae$sp0 * 0
+# find headwaters by name
+i = match(as.character(c(27:29, 31:32, 35, 39, 42)), attr(algae$network, "names_sites")) 
+spb[i,] = 0.05 # half the passive dispersal
+
+sim = flume(mc, algae$network, sp0 = algae$sp0, st0 = algae$r0, spb = spb)
+sim = run_simulation(sim, nt = i_begin - 1)
+plot(sim)
+
+# now run the rest of the time steps
+sim = run_simulation(sim, nt = nt - i_begin)
+plot(sim) + ggplot2::geom_vline(xintercept = c(i_begin, i_end), linetype = "dotted")
+```
+
