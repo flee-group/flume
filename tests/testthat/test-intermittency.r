@@ -1,11 +1,10 @@
-comm = readRDS(system.file("testdata/metacom.rds", package = "flume"))
-network = readRDS(system.file("testdata/river_network.rds", package = "flume"))
+comm = readRDS(system.file("testdata/metacom.rds", package = "iflume"))
+network = readRDS(system.file("testdata/river_network.rds", package = "iflume"))
 
 ## note best to add a boundary condition for species so nothing goes globally extinct
 ## for this sim, would be good if it was high enough to ensure some colonisation no matter what
 bnd = matrix(0.5, ncol = attr(comm,"n_species"), nrow = attr(network,"n_sites"), 
 	dimnames = list(attr(network,"names_sites"), attr(comm,"sp_names")))
-boundary(network, "species") = bnd
 
 # run the model for some time steps, with a period of intermittency
 nt = 9
@@ -17,7 +16,7 @@ Q[inodes, itime] = 0
 
 
 test_that("Sim behaves itself during intermittent phase", {
-	sim = flume(comm, network)
+	sim = flume(comm, network, spb = bnd)
 	## run until the first intermittent timestep
 	i = 1
 	while(all(Q[,i] > 0)) {
@@ -69,7 +68,7 @@ test_that("Sim behaves itself during intermittent phase", {
 
 test_that("Full sim runs with intermittency and recovery", {
 
-	sim = flume(comm, network)
+	sim = flume(comm, network, spb = bnd)
 	discharge(sim$networks[[1]]) = Q
 
 	## sim runs with intermittency

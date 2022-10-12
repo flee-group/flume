@@ -1,7 +1,6 @@
 test_that("Model creation", {
-	stop("need to re-make the test data")
-	comm = readRDS(system.file("testdata/metacom.rds", package = "flume"))
-	network = readRDS(system.file("testdata/river_network.rds", package = "flume"))
+	comm = readRDS(system.file("testdata/metacom.rds", package = "iflume"))
+	network = readRDS(system.file("testdata/river_network.rds", package = "iflume"))
 
 	R = state(network, "resources")
 	S = state(network, "species")
@@ -64,8 +63,8 @@ test_that("Create model with special resource types", {
 })
 
 test_that("Running a model with variable discharge", {
-	comm = readRDS(system.file("testdata/metacom.rds", package = "flume"))
-	network = readRDS(system.file("testdata/river_network.rds", package = "flume"))
+	comm = readRDS(system.file("testdata/metacom.rds", package = "iflume"))
+	network = readRDS(system.file("testdata/river_network.rds", package = "iflume"))
 
 	discharge(network) = cbind(discharge(network), discharge(network), discharge(network))
 	sim = flume(comm, network)

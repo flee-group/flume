@@ -10,7 +10,7 @@
 niches_custom(
   nsp,
   nr,
-  nn,
+  nn = nr,
   location,
   breadth = 1,
   scale_c = 0.5,
@@ -18,7 +18,7 @@ niches_custom(
   dry_c = 0,
   dry_e = Inf,
   r_use = 0.05,
-  static,
+  static = integer(),
   alpha = 0.05,
   beta = 0.5,
   r_trans = identity
@@ -48,6 +48,8 @@ niches_random(nsp = 2, nr = 1, r_lim = c(0, 1), ...)
 \item{dry_e}{Factor to multiply extinction rate by when a reach is dry}
 
 \item{r_use}{Resource use scaling parameter, see 'details}
+
+\item{static}{Vector of resource indices that are static, default is empty vector}
 
 \item{alpha}{A scalar or a vector, active dispersal ability for each species}
 

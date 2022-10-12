@@ -49,9 +49,9 @@ niches = data.frame(species = rownames(niche_loc), location = niche_loc[,1],
 	breadth = niche_breadth)
 
 
-nopts = list(location = niches$location, breadth = niches$breadth, ratio = c(1, 2))
+nopts = list(location = niches$location, breadth = niches$breadth)
 mc = metacommunity(nsp = nrow(niches), nr = 2, niches = niches_custom, niche_args = nopts,
-  sp_names = niches$species, r_names = c("N", "P"))
+  sp_names = niches$species, r_names = c("N", "P"), ratio = c(1, 2))
 
 alg_flume = flume(mc, rn, sp0 = site_by_species, st0 = r0)
 
