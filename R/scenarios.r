@@ -69,8 +69,8 @@
 #' niches_uniform(nsp = 4)
 #' niches_custom(nsp = 2, nr = 2, location = matrix(c(1,2,3,4), nrow=2))
 #' @export
-niches_custom = function(nsp, nr, location, breadth = 1, scale_c = 0.5, scale_e = 0.2,
-		r_use = 0.05, r_lim = matrix(rep(c(0, 1), each = nr), ncol = 2), static, ratio) {
+niches_custom = function(nsp, nr, location, breadth = 1, scale_c = 5e-6, scale_e = 2e-7,
+		r_use = 5e-4, r_lim = matrix(rep(c(0, 1), each = nr), ncol = 2), static, ratio) {
 
 	val = list()
 	val$r_types = rep("normal", nr)
@@ -188,7 +188,7 @@ niches_random = function(nsp = 2, nr = 1, r_lim = c(0, 1), ratio, ...) {
 #' @examples
 #' dispersal_custom(nsp = 3)
 #' @export
-dispersal_custom = function(nsp, alpha = 0.05, beta = 0.5) {
+dispersal_custom = function(nsp, alpha = 0.1, beta = 0.1) {
 	if(length(alpha) == 1)
 		alpha = rep(alpha, nsp)
 	if(length(beta) == 1)

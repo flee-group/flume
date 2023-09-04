@@ -62,7 +62,7 @@
 #' @export
 metacommunity = function(nsp = 2, nr = 1, niches = niches_uniform, dispersal = dispersal_custom,
 			sp_names = paste0("sp", 1:nsp), r_names = paste0("r", 1:nr), niche_args = list(),
-			dispersal_args = list(), comp_scale = 1/nsp) {
+			dispersal_args = list(), comp_scale = 0.001) {
 	comm = structure(list(), class = "metacommunity")
 	## niche parameters
 	niche_args$nsp = nsp
