@@ -65,13 +65,13 @@ test_that("Running a model with variable discharge", {
 	comm = readRDS(system.file("testdata/metacom.rds", package = "flume"))
 	network = readRDS(system.file("testdata/river_network.rds", package = "flume"))
 
-	discharge(network) = cbind(discharge(network), discharge(network), discharge(network))
+	discharge(network) = cbind(discharge(network), 2*discharge(network), 1.5*discharge(network))
 	sim = flume(comm, network)
 	expect_error(sim <- run_simulation(sim, nt = 2* ncol(discharge(network))), regex = NA)
 
 	# make sure that state reports the proper history
 	### TODO
 	## Currently fails, see issue #25
-	expect_equal(ncol(state(sim$networks[[1]], "Q", history = TRUE)), 2 * ncol(discharge(network)))
+	expect_equal(ncol(state(sim$networks[[1]], "Q", history = TRUE)), 1+2 * ncol(discharge(network)))
 })
 

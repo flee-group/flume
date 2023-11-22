@@ -17,9 +17,7 @@
 #' from outside the river network; by default returns zero for all sites/species.
 #'
 #' The `comp_scale` is treated as a multiplier, changing the value of the competition matrix.
-#' By default the `comp_scale` parameter is 1/nsp, meaning pairwise competition gets less important
-#' with the number of species (but overall competition may still increase, because pairwise
-#' interactions are summed). This parameter must be:
+#' By default the `comp_scale` parameter is 0.001. This parameter must be:
 #'
 #' * a single value, interpreted as the overall strength of competition in the metacommunity,
 #' * a vector of length `nsp`, interpreted as the competitive strength of each species, or
@@ -103,11 +101,11 @@ metacommunity = function(nsp = 2, nr = 1, niches = niches_uniform, dispersal = d
 	}
 
 	## compute reasonable niche limits for plotting and integration
-	## this is done rather simply by looking for +/- 2 sds beyond any niche location
+	## this is done rather simply by looking for +/- 3 sds beyond any niche location
 	nlocs = niche_par(comm, "location")
 	nsds = niche_par(comm, "sd")
-	nmins = nlocs - 2 * nsds
-	nmaxes = nlocs + 2 * nsds
+	nmins = nlocs - 3 * nsds
+	nmaxes = nlocs + 3 * nsds
 
 	# niches/resources have a natural limit of zero
 	# note that this means that all habitat variables MUST be on a ratio scale
@@ -220,7 +218,7 @@ species = function(location, breadth, scale_c, scale_e, alpha, beta, r_use, r_tr
 		if(!requireNamespace("cubature", quietly = TRUE))
 			stop("Multidimensional niches require the 'mvtnorm' and 'cubature' packages")
 		integral_name = "integral"
-		if(length(xmin) < 4) {
+		if(ncol(xmin) < 4) {
 			integration_fun = cubature::pcubature
 		} else {
 			integration_fun = cubature::hcubature
@@ -228,22 +226,27 @@ species = function(location, breadth, scale_c, scale_e, alpha, beta, r_use, r_tr
 
 	}
 	## guard against case when there is only one species
-	if(length(sp) == 1) {
+	if(nsp == 1) {
 		comp = matrix(integration_fun(.pairwise_comp(sp[[1]], sp[[1]]), 
 			xmin[1,], xmax[1,])[[integral_name]], nrow = 1, ncol = 1)
 	} else {
-		comp = matrix(0., nrow = length(sp), ncol = length(sp))
-		for(i in seq_len(length(sp) - 1)) {
+		comp = matrix(0., nrow = nsp, ncol = nsp)
+		for(i in seq_len(nsp - 1)) {
 			si = sp[[i]]
 			comp[i, i] = integration_fun(.pairwise_comp(si, si), xmin[i,], xmax[i,])[[integral_name]]
-			for(j in (i + 1):length(sp)) {
+			for(j in (i + 1):nsp) {
 				# need to help the integrator with reasonable limits
 				# the only part that matters is the largest niche min and the smallest niche max
 				xmn = pmax(xmin[i,], xmin[j,])
 				xma = pmin(xmax[i,], xmax[j,])
-				sj = sp[[j]]
-				comp[i, j] = integration_fun(.pairwise_comp(si, sj), xmn, xma)[[integral_name]]
-				comp[j, i] = comp[i, j]
+				# if there is no overlap, we can skip integration
+				if(length(xmn) == 1 && xmn > xma) {
+					comp[i, j] = comp[j, i] = 0
+				} else {
+					sj = sp[[j]]
+					comp[i, j] = integration_fun(.pairwise_comp(si, sj), xmn, xma)[[integral_name]]
+					comp[j, i] = comp[i, j]
+				}
 			}
 		}
 		comp[j, j] = integration_fun(.pairwise_comp(sj, sj), xmin[j,], xmax[j,])[[integral_name]]

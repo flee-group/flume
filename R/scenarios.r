@@ -50,12 +50,12 @@
 #' for three resources are the r1:r2 ratio and r3, the `location` parameter should be of length 2,
 #' with the first entry being the location for r3, and the second for r1:r2. To avoid confusion,
 #' it is recommended (but not required) that users only construct ratio niches from resources that
-#' are specified at the end.
+#' are specified at the end. Default value 1.
 #'
 #' `scale_c`, `scale_e`: The (relative) height of the Gaussian colonisation function or
 #' the constant extinction function, must be a positive real number.
 #' Can be supplied as a scalar (all species have the same scale) or a vector of length `nsp`.
-#' If missing a default value of 0.5 (for colonisation) or 0.2 (for extinction) will be used.
+#' If missing a default value of re-6 (for colonisation) or 2e-7 (for extinction) will be used.
 #'
 #' `r_use`: The scale of resource consumption; larger values indicate
 #' faster consumption of resources, see [ruf()] for more details. This can be a scalar (all species
@@ -63,7 +63,7 @@
 #' (species behave differently, but all resources within species are consumed identically),
 #' a vector of length `nr` (all species have identical behaviour, but each resource is consumed at
 #' a different rate), or a matrix with `nsp` rows and `nr` columns. Note that static resources
-#' ignore this parameter.
+#' ignore this parameter. Default value 5e-4.
 #' @return A list of niche parameters, suitable for passing on to [species()].
 #' @examples
 #' niches_uniform(nsp = 4)
