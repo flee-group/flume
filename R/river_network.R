@@ -217,7 +217,7 @@ boundary.river_network = function(x, var) {
 	}
 	allowed_vars = c("resources", "species", "Q")
 	if(length(var) != 1 || !var %in% allowed_vars)
-		stop("var must be one of the following:", paste(allowed_vars))
+		stop("var must be one of the following:", paste(allowed_vars, collapse = ' '))
 
 	if(var == "Q") {
 		val = lateral_discharge(x)
