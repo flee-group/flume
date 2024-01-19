@@ -20,9 +20,11 @@ Plot the results of a flume simulation
 \details{
 \code{flume} comes with a collection of default plots. All of them are built around the
 \code{\link[=summarise]{summarise()}} function, which can be used to extract the data from a fitted \code{flume}. The
-following plot \code{type}s are recognized (partial matches are allowed):\preformatted{* **occupancy**: (plots the proportion of sites occupied by each in the network against time,  
+following plot \code{type}s are recognized (partial matches are allowed):
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{* **occupancy**: (plots the proportion of sites occupied by each in the network against time,  
 with quantiles if replciates are present)
-}
+}\if{html}{\out{</div>}}
 
 All plots return a \code{ggplot}, so further customisation is easy.
 }

@@ -12,9 +12,9 @@ niches_custom(
   nr,
   location,
   breadth = 1,
-  scale_c = 0.5,
-  scale_e = 0.2,
-  r_use = 0.05,
+  scale_c = 5e-06,
+  scale_e = 2e-07,
+  r_use = 5e-04,
   r_lim = matrix(rep(c(0, 1), each = nr), ncol = 2),
   static,
   ratio
@@ -92,12 +92,12 @@ that the \code{location} and \code{breadth} parameters reflect this. For example
 for three resources are the r1:r2 ratio and r3, the \code{location} parameter should be of length 2,
 with the first entry being the location for r3, and the second for r1:r2. To avoid confusion,
 it is recommended (but not required) that users only construct ratio niches from resources that
-are specified at the end.
+are specified at the end. Default value 1.
 
 \code{scale_c}, \code{scale_e}: The (relative) height of the Gaussian colonisation function or
 the constant extinction function, must be a positive real number.
 Can be supplied as a scalar (all species have the same scale) or a vector of length \code{nsp}.
-If missing a default value of 0.5 (for colonisation) or 0.2 (for extinction) will be used.
+If missing a default value of re-6 (for colonisation) or 2e-7 (for extinction) will be used.
 
 \code{r_use}: The scale of resource consumption; larger values indicate
 faster consumption of resources, see \code{\link[=ruf]{ruf()}} for more details. This can be a scalar (all species
@@ -105,7 +105,7 @@ consume all resources at the same rate relative to niche position), a vector of 
 (species behave differently, but all resources within species are consumed identically),
 a vector of length \code{nr} (all species have identical behaviour, but each resource is consumed at
 a different rate), or a matrix with \code{nsp} rows and \code{nr} columns. Note that static resources
-ignore this parameter.
+ignore this parameter. Default value 5e-4.
 }
 \examples{
 niches_uniform(nsp = 4)
