@@ -5,7 +5,7 @@
 \alias{dispersal_custom}
 \title{Generate scenarios for species' dispersal abilities}
 \usage{
-dispersal_custom(nsp, alpha = 0.05, beta = 0.5)
+dispersal_custom(nsp, alpha = 0.1, beta = 0.1)
 }
 \arguments{
 \item{nsp}{Number of species}

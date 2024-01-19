@@ -13,7 +13,7 @@ metacommunity(
   r_names = paste0("r", 1:nr),
   niche_args = list(),
   dispersal_args = list(),
-  comp_scale = 1/nsp
+  comp_scale = 0.001
 )
 }
 \arguments{
@@ -51,9 +51,7 @@ from outside the river network; by default returns zero for all sites/species.
 }
 
 The \code{comp_scale} is treated as a multiplier, changing the value of the competition matrix.
-By default the \code{comp_scale} parameter is 1/nsp, meaning pairwise competition gets less important
-with the number of species (but overall competition may still increase, because pairwise
-interactions are summed). This parameter must be:
+By default the \code{comp_scale} parameter is 0.001. This parameter must be:
 \itemize{
 \item a single value, interpreted as the overall strength of competition in the metacommunity,
 \item a vector of length \code{nsp}, interpreted as the competitive strength of each species, or
