@@ -42,8 +42,8 @@ test_that("Model creation", {
 })
 
 test_that("Create model with special resource types", {
-	data(algae)
-
+	algae = readRDS(system.file("testdata/algae-test.rds", package="flume"))
+	
 	# static
 	loc = apply(algae$r0, 2, function(x) colMeans(x*algae$sp0))
 	bre = apply(algae$r0, 2, function(x) apply((x*algae$sp0), 2, sd))

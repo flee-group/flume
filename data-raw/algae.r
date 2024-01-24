@@ -159,7 +159,7 @@ rownames(niche_params) = colnames(asv)
 
 
 # set up the river network with chemistry & community starting state
-r0 = as.matrix(mg_kamp[, c('SRP', "DIN")])
+r0 = as.matrix(mg_kamp[, c('DIN', "SRP")])
 sp0 = as.matrix(mg_kamp[, grep("ASV", colnames(kdat))])
 sp0[sp0 > 0] = 1
 

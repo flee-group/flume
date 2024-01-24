@@ -141,7 +141,7 @@ test_that("Niches estimated correctly", {
 })
 
 test_that("Ratio and static niches", {
-	data(algae)
+	algae = readRDS(system.file("testdata/algae-test.rds", package="flume"))
 	nopts = list(location = algae$niches$location, breadth = algae$niches$breadth, static = 1)
 	expect_error(
 		metacommunity(nsp = nrow(algae$niches), nr = 1, niches = niches_custom, niche_args = nopts),
@@ -165,7 +165,7 @@ test_that("Ratio and static niches", {
 })
 
 test_that("Asymmetric competition", {
-	data(algae)
+	algae = readRDS(system.file("testdata/algae-test.rds", package="flume"))
 	nopts = list(location = algae$niches$location, breadth = algae$niches$breadth)
 
 	# simple scale with all species the same

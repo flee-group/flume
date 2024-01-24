@@ -197,7 +197,7 @@ plot.metacommunity = function(x, axis = 1, res = 100, default_r, lwd = 1, xlim, 
 		ggplot2::scale_colour_brewer(type = "qual", palette = "Set2") +
 		ggplot2::theme_minimal() + ggplot2::xlab(attr(x, "niche_names")[axis]) + 
 		ggplot2::labs(colour = "Species") + ggplot2::ylim(ylim[1], ylim[2]) +
-		ggplot2::ylab("Dominant Eigenvalue") + 
+		ggplot2::ylab("Niche Height") + 
 		ggplot2::geom_hline(ggplot2::aes(yintercept = 0), size = 1.2)
 
 	if(plot_comp) {

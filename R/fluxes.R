@@ -33,6 +33,9 @@ col_prob = function(comm, network, dt, components = FALSE) {
 	Q = matrix(state(network, "Q"), nrow=nsites, ncol = nsp)
 
 
+	if(is.null(boundary(network, "species")))
+		stop("Invalid network boundary conditions. Is the network initialised?")
+	
 	dispersal = P * (A + B*Q) + boundary(network, "species")
 
 	dimnames(col) = dimnames(dispersal) = dimnames(state(network, "species"))

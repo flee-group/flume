@@ -18,7 +18,7 @@ test_that("Species flux works", {
 })
 
 test_that("Fluxes with static resources", {
-	data(algae)
+	algae = readRDS(system.file("testdata/algae-test.rds", package="flume"))
 	loc = apply(algae$r0, 2, function(x) colMeans(x*algae$sp0))
 	bre = apply(algae$r0, 2, function(x) apply((x*algae$sp0), 2, sd))
 	nopts = list(location = loc, breadth = bre, static = 1, r_lim = t(apply(algae$r0, 2, range)))
