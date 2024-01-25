@@ -22,8 +22,11 @@ Plot the results of a flume simulation
 \code{\link[=summarise]{summarise()}} function, which can be used to extract the data from a fitted \code{flume}. The
 following plot \code{type}s are recognized (partial matches are allowed):
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{* **occupancy**: (plots the proportion of sites occupied by each in the network against time,  
-with quantiles if replciates are present)
+\if{html}{\out{<div class="sourceCode">}}\preformatted{* **occupancy**: Plots the proportion of sites occupied by each in the network against time,  
+with quantiles if replciates are present.
+* **ef_time**: Plots EF (as total resource consumption) for the entire network (split by resources) over time
+* **bef**: Plots the relationship between biodiversity and EF in the network
+* **resources**: Plots raw resource concentrations per reach and as an average across the network over time
 }\if{html}{\out{</div>}}
 
 All plots return a \code{ggplot}, so further customisation is easy.

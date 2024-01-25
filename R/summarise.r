@@ -95,7 +95,7 @@ summarise = function(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95))
 			s[, .(EF = sum(ef)), keyby = by]
 		})
 	}
-	S = data.table::rbindlist(S, idcol = "network")
+	S = rbindlist(S, idcol = "network")
 	cols_S = grep("(^ef_)|(EF)", colnames(S))
 	if(length(x[["networks"]]) == 1) {
 		res = S[, lapply(.SD, median), keyby = by, .SDcols = cols_S]

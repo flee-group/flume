@@ -14,8 +14,6 @@ summarise(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95))
 \item{stat}{The statistic(s) to compute; see 'details'}
 
 \item{quantile}{The quantiles to compute; see 'details'}
-
-\item{network}{}
 }
 \value{
 A data.table with the desired summary statistics
@@ -30,8 +28,8 @@ time step and each reach, with quantiles computed across replicate networks. All
 \itemize{
 \item time
 \item reach
-\item species (incompatible with resources)
-\item resources (incompatible with species)
+\item species (incompatible with resources; not yet implemented)
+\item resources (incompatible with species; not yet implemented)
 }
 
 The statistics desired interact with the margins selected; certain values for \code{stat} are only
@@ -39,9 +37,10 @@ compatible with specific values within \code{by}. If missing, a default set will
 value in \code{by}. Allowable values, with compatible margins in parentheses, and required margins
 in bold:
 \itemize{
-\item occupany (\strong{species}, reach, time)
+\item occupancy (\strong{species}, reach, time)
 \item EF (resources, reach, time)
 \item richness (reach, time)
+\item concentration (\strong{resources}, reach, time)
 }
 
 If the fitted model includes multiple replicate networks, then summarise by default returns

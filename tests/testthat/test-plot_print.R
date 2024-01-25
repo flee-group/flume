@@ -31,9 +31,14 @@ test_that("Plot resource concentration over time", {
 	vdiffr::expect_doppelganger("Sim Resource Plot", pl)
 })
 
-## ggplot figs not working with vdiffr for some reason
 test_that("Occupancy Plotting", {
  	pl = function() plot(sim, type = "occupancy")
  	vdiffr::expect_doppelganger("Sim Occupancy Plot", pl)
 
+})
+
+test_that("BEF Plot", {
+	pl = function() plot(sim, type = "bef")
+	vdiffr::expect_doppelganger("Sim BEF Plot", pl)
+	
 })

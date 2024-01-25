@@ -73,13 +73,15 @@ plot.flume = function(x, type = "occupancy") {
 	pl
 }
 
+#' @import ggplot2
 .pl_bef = function(x) {
 	summ = summarise(x, stat = c("EF", "richness"), 
 		by = c("time", "resources", "reach"), quantile = NULL)
-	summ = data.table::melt(summ, id.vars = c("network", "reach", "time", "richness"))
-	pl = ggplot2::ggplot(summ, ggplot2::aes(x = factor(richness), y = value, fill = variable))
-	pl = pl + ggplot2::geom_boxplot() + theme_flume() + ggplot2::ylab("EF")
-	pl = pl + ggplot2::xlab("Species Richness") + ggplot2::labs(fill = "Resource")
+	summ = data.table::melt(summ, id.vars = c("reach", "time", "richness"))
+
+	pl = ggplot(summ, aes(x = factor(richness), y = value, colour = time)) +
+		geom_point() + facet_wrap(.~variable, scales = "free") + 
+		theme_flume() + ylab("EF") + xlab("Species richness")
 	pl
 }
 
