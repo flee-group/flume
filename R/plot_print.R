@@ -7,16 +7,37 @@
 #' [summarise()] function, which can be used to extract the data from a fitted `flume`. The
 #' following plot `type`s are recognized (partial matches are allowed):
 #'
-#' 	* **occupancy**: (plots the proportion of sites occupied by each in the network against time,  
-#'		with quantiles if replciates are present)
+#' 	* **occupancy**: Plots the proportion of sites occupied by each in the network against time,  
+#'		with quantiles if replciates are present.
+#' 	* **ef_time**: Plots EF (as total resource consumption) for the entire network (split by resources) over time
+#' 	* **bef**: Plots the relationship between biodiversity and EF in the network
+#' 	* **resources**: Plots raw resource concentrations per reach and as an average across the network over time
 #' 
 #' All plots return a `ggplot`, so further customisation is easy.
 #' @return A ggplot2 object
 #' @export
 plot.flume = function(x, type = "occupancy") {
-	pl_types = list(occupancy = .pl_occupancy, ef_time = .pl_ef_time, bef = .pl_bef)
+	pl_types = list(occupancy = .pl_occupancy, ef_time = .pl_ef_time, bef = .pl_bef, resources = .pl_resource)
 	type = match.arg(type, names(pl_types))
 	pl_types[[type]](x)
+}
+
+#' @keywords internal
+#' @import ggplot2
+#' @import data.table
+.pl_resource = function(x) {
+	S = summarise(x, by = c("resources", "time", "reach"), stat = "concentration")
+	labs = S[time == max(time)]
+	labs$time = 1.01*labs$time
+	S_net = summarise(x, by = c("resources", "time"), stat = "concentration")
+	col = scales::hue_pal()(5)[3]
+	
+	ggplot() + 
+		geom_line(data = S, aes(x= time, y = concentration, group = reach), linewidth = 0.2, col = col) + theme_flume() + 
+		geom_text(data = labs, aes(x = time, y = concentration, label = reach), size = 1.5) +
+		geom_line(data = S_net, aes(x= time, y = concentration), linewidth = 1, col = col) +
+		facet_wrap(.~resources, scales = "free") +
+		xlab("Time") + ylab("Resource concentration")
 }
 
 #' @keywords internal
@@ -67,12 +88,7 @@ plot.flume = function(x, type = "occupancy") {
 #' @keywords internal
 theme_flume = function() ggplot2::theme_minimal()
 
-resource_plot = function(x) {
-	res = resource_summary(x)
-	ggplot2::ggplot(res, ggplot2::aes(x = time, y = concentration, colour = as.factor(reach))) +
-		ggplot2::geom_line() + ggplot2::theme_minimal() + 
-		ggplot2::facet_wrap(.~resource, scales = 'free') + ggplot2::labs(colour = "Reach")
-}
+
 
 
 #' Plot a river network

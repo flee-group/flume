@@ -4,7 +4,6 @@
 #' @param by The margin(s) across which to summarise; see 'details'
 #' @param stat The statistic(s) to compute; see 'details'
 #' @param quantile The quantiles to compute; see 'details'
-#' @param network
 #'
 #' @details The `by` parameter controls how detailed of a summary to create; adding more
 #' margins creates a more detailed summary. The default behaviour provides statistics for each
@@ -12,17 +11,18 @@
 #' 
 #'	* time
 #'	* reach
-#'	* species (incompatible with resources)
-#'	* resources (incompatible with species)
+#'	* species (incompatible with resources; not yet implemented)
+#'	* resources (incompatible with species; not yet implemented)
 #' 
 #' The statistics desired interact with the margins selected; certain values for `stat` are only
 #' compatible with specific values within `by`. If missing, a default set will be selected given the
 #' value in `by`. Allowable values, with compatible margins in parentheses, and required margins
 #' in bold:
 #'
-#'	* occupany (**species**, reach, time)
+#'	* occupancy (**species**, reach, time)
 #'	* EF (resources, reach, time)
 #'	* richness (reach, time)
+#'	* concentration (**resources**, reach, time)
 #'
 #' If the fitted model includes multiple replicate networks, then summarise by default returns
 #' upper and lower quantiles along with the median, summarised across networks. 
@@ -31,7 +31,8 @@
 #' @import data.table
 #' @export
 summarise = function(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95)) {
-	st_choices = list(occupancy = .st_occupancy, EF = .st_ef, richness = .st_richness)
+	st_choices = list(occupancy = .st_occupancy, EF = .st_ef, richness = .st_richness, 
+					  concentration = .st_concentration)
 	stat = match.arg(stat, choices = names(st_choices), several.ok = TRUE)
 	res = lapply(stat, \(s) st_choices[[s]](x, by, quantile))
 	if(length(res) == 1) {
@@ -69,6 +70,9 @@ summarise = function(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95))
 #' @keywords internal
 #' @import data.table
 .st_ef = function(x, by, quantile) {
+	if("species" %in% by)
+		stop("Reporting EF by species is not available")
+	
 	rn = attr(x[["networks"]][[1]], "names_resources")
 	S = .output_table(x, "reaction")
 	if("resources" %in% by) {
@@ -129,6 +133,31 @@ summarise = function(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95))
 	}
 	res
 }
+
+
+
+#' @keywords internal
+#' @import data.table
+.st_concentration = function(x, by, quantile) {
+	if(! "resources" %in% by || "species" %in% by)
+		stop("'by' must contain 'resources' and must not contain 'species' for concentration summary")
+	
+	S = .output_table(x, "resources")
+	S = rbindlist(S, idcol = "network")
+	if(length(x[["networks"]]) == 1) {
+		res = S[, .(concentration = mean(concentration)), keyby = by]
+	} else if(!is.null(quantile)) {
+		res = S[, .(concentration = median(concentration), 
+					concentration_lo = quantile(concentration, quantile[1]), 
+					concentration_hi = quantile(concentration, quantile[2])), keyby = by]
+	} else {
+		res = S
+	}
+	res
+}
+
+
+
 
 #' Extract a variable across an entire network or series of networks
 #' @param x A [river_network()] or [flume()]

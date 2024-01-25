@@ -3,7 +3,6 @@
 ## if tests fail
 # testthat::snapshot_review()
 
-context("Plotting")
 comm = readRDS(system.file("testdata/metacom.rds", package="flume"))
 rn = readRDS(system.file("testdata/river_network.rds", package="flume"))
 sim = readRDS(system.file("testdata/sim.rds", package="flume"))
@@ -27,13 +26,14 @@ test_that("River Network community plotting", {
 		plot(rn, variable = 'species'))
 })
 
+test_that("Plot resource concentration over time", {
+	pl = function() plot(sim, type = 'resources')
+	vdiffr::expect_doppelganger("Sim Resource Plot", pl)
+})
+
 ## ggplot figs not working with vdiffr for some reason
-# test_that("Occupancy Plotting", {
-#  	pl = function() plot(sim, variable = "occupancy")
-#  	vdiffr::expect_doppelganger("Sim Occupancy Plot", pl)
-#
-# })
-# test_that("Resource Plotting", {
-# 	pl = function() plot(sim, variable = "resources")
-# 	vdiffr::expect_doppelganger("Sim Resource Plot", pl)
-# })
+test_that("Occupancy Plotting", {
+ 	pl = function() plot(sim, type = "occupancy")
+ 	vdiffr::expect_doppelganger("Sim Occupancy Plot", pl)
+
+})
