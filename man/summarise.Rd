@@ -4,7 +4,13 @@
 \alias{summarise}
 \title{Methods for summarising simulation results}
 \usage{
-summarise(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95))
+summarise(
+  x,
+  by = c("time", "reach"),
+  stat,
+  quantile = c(0.05, 0.95),
+  t_steps = NA
+)
 }
 \arguments{
 \item{x}{A fitted flume model}
@@ -14,6 +20,8 @@ summarise(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95))
 \item{stat}{The statistic(s) to compute; see 'details'}
 
 \item{quantile}{The quantiles to compute; see 'details'}
+
+\item{t_steps}{What time steps to include in the summary; default \code{NA} will include all}
 }
 \value{
 A data.table with the desired summary statistics

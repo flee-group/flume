@@ -4,6 +4,7 @@
 #' @param by The margin(s) across which to summarise; see 'details'
 #' @param stat The statistic(s) to compute; see 'details'
 #' @param quantile The quantiles to compute; see 'details'
+#' @param t_steps What time steps to include in the summary; default `NA` will include all
 #'
 #' @details The `by` parameter controls how detailed of a summary to create; adding more
 #' margins creates a more detailed summary. The default behaviour provides statistics for each
@@ -30,11 +31,11 @@
 #' @return A data.table with the desired summary statistics
 #' @import data.table
 #' @export
-summarise = function(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95)) {
+summarise = function(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95), t_steps = NA) {
 	st_choices = list(occupancy = .st_occupancy, EF = .st_ef, richness = .st_richness, 
 					  concentration = .st_concentration)
 	stat = match.arg(stat, choices = names(st_choices), several.ok = TRUE)
-	res = lapply(stat, \(s) st_choices[[s]](x, by, quantile))
+	res = lapply(stat, \(s) st_choices[[s]](x, by, quantile, t_steps))
 	if(length(res) == 1) {
 		res = res[[1]]
 	} else {
@@ -47,11 +48,11 @@ summarise = function(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95))
 # Statistics for flumes
 #' @keywords internal
 #' @import data.table
-.st_richness = function(x, by, quantile) {
+.st_richness = function(x, by, quantile, t_steps) {
 	if("species" %in% by)
 		stop("Cannot compute richness by species")
 	by = by[by != "resources"]
-	S = .output_table(x, "species")
+	S = .output_table(x, "species", t_steps)
 	S = lapply(S, function(s) s[, .(richness = sum(occupancy)), keyby = by])
 	S = data.table::rbindlist(S, idcol = "network")
 	if(length(x[["networks"]]) == 1) {
@@ -69,12 +70,12 @@ summarise = function(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95))
 # Statistics for flumes
 #' @keywords internal
 #' @import data.table
-.st_ef = function(x, by, quantile) {
+.st_ef = function(x, by, quantile, t_steps) {
 	if("species" %in% by)
 		stop("Reporting EF by species is not available")
 	
 	rn = attr(x[["networks"]][[1]], "names_resources")
-	S = .output_table(x, "reaction")
+	S = .output_table(x, "reaction", t_steps)
 	if("resources" %in% by) {
 		ef_n = paste0("ef_", rn)
 		by = by[-which(by == "resources")]
@@ -118,8 +119,8 @@ summarise = function(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95))
 
 #' @keywords internal
 #' @import data.table
-.st_occupancy = function(x, by, quantile) {
-	S = .output_table(x, "species")
+.st_occupancy = function(x, by, quantile, t_steps) {
+	S = .output_table(x, "species", t_steps)
 	S = lapply(S, function(s) s[, .(occupancy = sum(occupancy) / .N), keyby = by])
 	S = data.table::rbindlist(S, idcol = "network")
 	if(length(x[["networks"]]) == 1) {
@@ -138,11 +139,11 @@ summarise = function(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95))
 
 #' @keywords internal
 #' @import data.table
-.st_concentration = function(x, by, quantile) {
+.st_concentration = function(x, by, quantile, t_steps) {
 	if(! "resources" %in% by || "species" %in% by)
 		stop("'by' must contain 'resources' and must not contain 'species' for concentration summary")
 	
-	S = .output_table(x, "resources")
+	S = .output_table(x, "resources", t_steps)
 	S = rbindlist(S, idcol = "network")
 	if(length(x[["networks"]]) == 1) {
 		res = S[, .(concentration = mean(concentration)), keyby = by]
@@ -162,9 +163,10 @@ summarise = function(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95))
 #' Extract a variable across an entire network or series of networks
 #' @param x A [river_network()] or [flume()]
 #' @param v The variable to extract
+#' @param t_steps What time steps to include in the summary; default `NA` will include all
 #' @return A data.table
 #' @keywords internal
-setGeneric(".output_table", function(x, v) {
+setGeneric(".output_table", function(x, v, t_steps) {
 	standardGeneric(".output_table")
 })
 
@@ -174,13 +176,18 @@ setOldClass("flume")
 
 #' @import data.table
 setMethod(".output_table", c(x = "river_network"),
-	function(x, v) {
+	function(x, v, t_steps) {
 		S = state(x, v, history = TRUE)
 		res = rbindlist(lapply(S, function(s) {
 				val = data.table(s)
 				val$reach = rownames(s)
 				val
 			}), idcol = "time")
+		if(!is.na(t_steps)) {
+			if(! all(t_steps) %in% 1:length(S))
+				stop(paste0("t_steps outside of simluation bounds; all must be in 1:", length(S)))
+			res = res[time %in% t_steps]
+		}
 		if(v == "species") {
 			res = melt(res, id.vars = c("reach", "time"), 
 				variable.name = "species", value.name = "occupancy")
@@ -193,9 +200,9 @@ setMethod(".output_table", c(x = "river_network"),
 )
 
 setMethod(".output_table", c(x = "flume"),
-	function(x, v) {
+	function(x, v, t_steps) {
 		cores = ifelse(.Platform$OS.type == "unix", getOption("mc.cores", 1L), 1L)
-		parallel::mclapply(x[["networks"]], .output_table, v = v, 
+		parallel::mclapply(x[["networks"]], .output_table, v = v, t_steps = t_steps,
 			mc.cores = cores)
 	}
 )

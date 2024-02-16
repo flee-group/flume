@@ -4,12 +4,14 @@
 \alias{.output_table}
 \title{Extract a variable across an entire network or series of networks}
 \usage{
-.output_table(x, v)
+.output_table(x, v, t_steps)
 }
 \arguments{
 \item{x}{A \code{\link[=river_network]{river_network()}} or \code{\link[=flume]{flume()}}}
 
 \item{v}{The variable to extract}
+
+\item{t_steps}{What time steps to include in the summary; default \code{NA} will include all}
 }
 \value{
 A data.table
