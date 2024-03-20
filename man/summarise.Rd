@@ -2,15 +2,12 @@
 % Please edit documentation in R/summarise.r
 \name{summarise}
 \alias{summarise}
+\alias{summarize}
 \title{Methods for summarising simulation results}
 \usage{
-summarise(
-  x,
-  by = c("time", "reach"),
-  stat,
-  quantile = c(0.05, 0.95),
-  t_steps = NA
-)
+summarise(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95), t_steps)
+
+summarize(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95), t_steps)
 }
 \arguments{
 \item{x}{A fitted flume model}
@@ -21,7 +18,7 @@ summarise(
 
 \item{quantile}{The quantiles to compute; see 'details'}
 
-\item{t_steps}{What time steps to include in the summary; default \code{NA} will include all}
+\item{t_steps}{What time steps to include in the summary; if missing will include all}
 }
 \value{
 A data.table with the desired summary statistics

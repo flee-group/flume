@@ -4,7 +4,7 @@
 #' @param by The margin(s) across which to summarise; see 'details'
 #' @param stat The statistic(s) to compute; see 'details'
 #' @param quantile The quantiles to compute; see 'details'
-#' @param t_steps What time steps to include in the summary; default `NA` will include all
+#' @param t_steps What time steps to include in the summary; if missing will include all
 #'
 #' @details The `by` parameter controls how detailed of a summary to create; adding more
 #' margins creates a more detailed summary. The default behaviour provides statistics for each
@@ -31,10 +31,12 @@
 #' @return A data.table with the desired summary statistics
 #' @import data.table
 #' @export
-summarise = function(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95), t_steps = NA) {
+summarise = function(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95), t_steps) {
 	st_choices = list(occupancy = .st_occupancy, EF = .st_ef, richness = .st_richness, 
 					  concentration = .st_concentration)
 	stat = match.arg(stat, choices = names(st_choices), several.ok = TRUE)
+	if(missing(t_steps))
+		t_steps = 1:length(state(x$networks[[1]], "resources", TRUE))
 	res = lapply(stat, \(s) st_choices[[s]](x, by, quantile, t_steps))
 	if(length(res) == 1) {
 		res = res[[1]]
@@ -45,6 +47,12 @@ summarise = function(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95),
 }
 
 
+#' @rdname summarise
+#' @export
+## #' @examples bar("hello") add examples
+summarize = summarise
+
+
 # Statistics for flumes
 #' @keywords internal
 #' @import data.table
@@ -53,7 +61,16 @@ summarise = function(x, by = c("time", "reach"), stat, quantile = c(0.05, 0.95),
 		stop("Cannot compute richness by species")
 	by = by[by != "resources"]
 	S = .output_table(x, "species", t_steps)
-	S = lapply(S, function(s) s[, .(richness = sum(occupancy)), keyby = by])
+	
+	# richness is always at a time point, so first we keyby reach and time, summing across species
+	# then, if any margins are left, we take the median
+	by1 = by
+	if(! "reach" %in% by1) 
+		by1 = c("reach", by1)
+	if(! "time" %in% by1) 
+		by1 = c("time", by1)
+	S = lapply(S, function(s) s[, .(richness = sum(occupancy)), keyby = by1])
+	
 	S = data.table::rbindlist(S, idcol = "network")
 	if(length(x[["networks"]]) == 1) {
 		res = S[, .(richness = median(richness)), keyby = by]
@@ -178,16 +195,14 @@ setOldClass("flume")
 setMethod(".output_table", c(x = "river_network"),
 	function(x, v, t_steps) {
 		S = state(x, v, history = TRUE)
+		if(! all(t_steps %in% 1:length(S)))
+			stop(paste0("t_steps outside of simulation bounds; all must be in 1:", length(S)))
 		res = rbindlist(lapply(S, function(s) {
 				val = data.table(s)
 				val$reach = rownames(s)
 				val
 			}), idcol = "time")
-		if(!is.na(t_steps)) {
-			if(! all(t_steps) %in% 1:length(S))
-				stop(paste0("t_steps outside of simluation bounds; all must be in 1:", length(S)))
-			res = res[time %in% t_steps]
-		}
+		res = res[time %in% t_steps]
 		if(v == "species") {
 			res = melt(res, id.vars = c("reach", "time"), 
 				variable.name = "species", value.name = "occupancy")

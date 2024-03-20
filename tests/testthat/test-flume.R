@@ -15,9 +15,6 @@ test_that("Model creation", {
 	# create a model with everything specified
 	expect_error(flume(comm, network, st0 = R, sp0 = S, stb = R, spb = S), regex=NA)
 
-	R = state(sim$network[[1]], "resources")
-	S = state(sim$network[[1]], "species")
-
 	## errors
 	## missing initial state
 	nt2 = network
@@ -28,16 +25,6 @@ test_that("Model creation", {
 	expect_error(flume(comm, nt2), regex="Initial species state")
 
 	expect_error(sim <- run_simulation(sim, 1), regex=NA)
-
-
-	warning("Move these tests to test_summarise")
-	expect_error(occ_nt <- summarise(sim, c("species", "time"), "occupancy"), regex=NA)
-	expect_true(all(occ_nt$occupancy >= 0 & occ_nt$occupancy <= 1))
-	expect_identical(length(unique(occ_nt$species)), length(comm$species))
-	expect_true(all(range(unique(occ_nt$time)) == c(1,2)))
-	expect_equal(occ_nt[time == 1]$occupancy, colSums(S)/nrow(S), check.names = FALSE)
-
-	expect_error(occ_re <- summarise(sim, c("species", "reach"), "occupancy"), regex=NA)
 
 })
 
