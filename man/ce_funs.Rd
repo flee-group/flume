@@ -11,16 +11,18 @@ ce_linear(parm)
 
 ce_constant(scale, nr)
 
-ce_gaussian(location, breadth, scale)
+ce_gaussian(location, breadth, scale, displacement)
 }
 \arguments{
-\item{scale}{Height of the col/ext function}
+\item{scale}{Height of the col/ext function, see 'details'.}
 
 \item{nr}{Number of resource dimensions}
 
 \item{location}{Location optimum for functions with an optimum}
 
 \item{breadth}{Breadth of the function (e.g., standard deviation or vcv matrix for gaussian)}
+
+\item{displacement}{Zero-adjustment of col/ext function, see 'details.'}
 
 \item{x}{Niche axis matrix; input for c/e functions; one row per site, one column per axis}
 }
@@ -39,6 +41,16 @@ These functions represent the niche of a species, so the parameters are fixed.
 Note that these functions expect an input matrix in terms of niche axes not resources. If
 (e.g. for ratio niches) transformations are used, they must be applied before calling these
 functions. For a higher-level function that accepts resource state as input, see \code{\link[=f_niche]{f_niche()}}.
+
+For \code{ce_gaussian}, the \code{scale} parameter can be negative. This is used, e.g., when one wants a
+gaussian extinction niche. This will cause the niche the be 'flipped', with the usual peak
+of the gaussian curve at the lowest point on the curve. The scale in this case determines the
+height of this curve above zero and can be interpreted as a background extinction rate when
+conditions are ideal.
+
+Displacement is an additive transformation applied to the curve, raising or lowering the entire
+curve by a constant. For curves with a negative scale, it is 2x the scale, so that the curve minimum
+is equal to the scale and the flat tails have a height of 2x scale.
 }
 \examples{
 fun = ce_linear(parm=list(a=0, b = 1))

@@ -1,16 +1,14 @@
-#' flume: A package for modelling FLUvial Meta-Ecosystems
-#'
-#' Implementation of a theoretical/mechanistic model for exploring fluvial meta-ecosystems.
-#'
+#' @keywords internal
 #' @section Key functions:
 #'
 #' * [metacommunity()] Create species pools and associated attributes
 #' * [river_network()] Build a river network object
 #' * [flume()] Creates a model
 #' * [run_simulation()] Runs the simulation
-#'
-#' @docType package
-#' @name flume_package
+"_PACKAGE"
+
+## usethis namespace: start
+## usethis namespace: end
 NULL
 
 #' Algal metacommunity N:P dataset
