@@ -1,6 +1,7 @@
 devtools::load_all()
 ## make a species pool
-mc = metacommunity(nsp = 2, nr = 1, niche_args = list(r_use = c(0.3, 0.1)))
+mc = metacommunity(nsp = 2, nr = 1, niche_args = list(breadth = 0.2, r_use = c(0.3, 0.1),
+		scale = list(col = 5e-5, ext = 1e-6)))
 saveRDS(mc, "inst/testdata/metacom.rds")
 
 

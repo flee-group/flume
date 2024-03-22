@@ -48,9 +48,9 @@
 <circle cx='77.81' cy='210.85' r='8.74' style='stroke-width: 0.75; fill: #1F78B4;' />
 <circle cx='194.40' cy='210.85' r='8.74' style='stroke-width: 0.75; fill: #1F78B4;' />
 <circle cx='136.11' cy='164.21' r='8.74' style='stroke-width: 0.75; fill: #1F78B4;' />
-<circle cx='252.69' cy='164.21' r='8.74' style='stroke-width: 0.75; fill: #1F78B4;' />
-<circle cx='252.69' cy='304.12' r='8.74' style='stroke-width: 0.75; fill: #1F78B4;' />
-<circle cx='310.99' cy='257.48' r='8.74' style='stroke-width: 0.75; fill: #1F78B4;' />
+<circle cx='252.69' cy='164.21' r='8.74' style='stroke-width: 0.75; fill: #FFFFFF;' />
+<circle cx='252.69' cy='304.12' r='8.74' style='stroke-width: 0.75; fill: #FFFFFF;' />
+<circle cx='310.99' cy='257.48' r='8.74' style='stroke-width: 0.75; fill: #FFFFFF;' />
 </g>
 <g clip-path='url(#cpMC4wMHwzNjAuMDB8MC4wMHw1NzYuMDA=)'>
 <text x='194.40' y='400.69' text-anchor='middle' style='font-size: 9.60px; fill: #444444; font-family: sans;' textLength='5.34px' lengthAdjust='spacingAndGlyphs'>1</text>
@@ -88,9 +88,9 @@
 <line x1='605.87' y1='169.67' x2='561.23' y2='205.38' style='stroke-width: 1.25; stroke: #A6BDDB;' />
 <line x1='605.87' y1='309.58' x2='561.23' y2='345.29' style='stroke-width: 2.50; stroke: #A6BDDB;' />
 <line x1='664.16' y1='262.94' x2='619.52' y2='298.66' style='stroke-width: 1.25; stroke: #A6BDDB;' />
-<circle cx='554.40' cy='397.39' r='8.74' style='stroke-width: 0.75; fill: #B2DF8A;' />
-<circle cx='554.40' cy='350.75' r='8.74' style='stroke-width: 0.75; fill: #B2DF8A;' />
-<circle cx='496.11' cy='304.12' r='8.74' style='stroke-width: 0.75; fill: #B2DF8A;' />
+<circle cx='554.40' cy='397.39' r='8.74' style='stroke-width: 0.75; fill: #FFFFFF;' />
+<circle cx='554.40' cy='350.75' r='8.74' style='stroke-width: 0.75; fill: #FFFFFF;' />
+<circle cx='496.11' cy='304.12' r='8.74' style='stroke-width: 0.75; fill: #FFFFFF;' />
 <circle cx='496.11' cy='257.48' r='8.74' style='stroke-width: 0.75; fill: #B2DF8A;' />
 <circle cx='437.81' cy='210.85' r='8.74' style='stroke-width: 0.75; fill: #B2DF8A;' />
 <circle cx='554.40' cy='210.85' r='8.74' style='stroke-width: 0.75; fill: #B2DF8A;' />

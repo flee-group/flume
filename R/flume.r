@@ -60,6 +60,12 @@ flume = function(comm, network, sp0, st0, spb, stb, dt = 86400) {
 	}
 	if(ncol(init) != attr(comm, n))
 		stop("Initial network state doesn't match number of ", type, " in comm")
+	
+	if(type == "species" && !all(init %in% c(1,0))) {
+		init[init != 0] = 1
+		warning("Initial species abundance matrix converted to presence-absence")
+	}
+	
 	colnames(init) = attr(comm, nm)
 	state(rn, type) <- NULL
 	state(rn, type) <- init
