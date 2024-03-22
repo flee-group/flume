@@ -10,10 +10,11 @@
 niches_custom(
   nsp,
   nr,
+  cfun = "gaussian",
+  efun = c("constant", "inverse_gaussian"),
   location,
   breadth = 1,
-  scale_c = 5e-06,
-  scale_e = 2e-07,
+  scale = list(col = 5e-06, ext = 2e-07),
   r_use = 5e-04,
   r_lim = matrix(rep(c(0, 1), each = nr), ncol = 2),
   static,
@@ -29,13 +30,13 @@ niches_random(nsp = 2, nr = 1, r_lim = c(0, 1), ratio, ...)
 
 \item{nr}{Number of resources}
 
+\item{cfun, }{efun Niche function to use, see 'details'.}
+
 \item{location}{Location parameter for the niche, see 'details'.}
 
 \item{breadth}{Niche breadth, see 'details'.}
 
-\item{scale_c}{Niche height for colonisation, see 'details'.}
-
-\item{scale_e}{Niche height for extinction, see 'details'.}
+\item{scale}{Niche scale, see 'details'.}
 
 \item{r_use}{Resource use scaling parameter, see 'details}
 
@@ -58,15 +59,20 @@ Generate scenarios for species niches
 }
 \details{
 Scenarios handle the complexity of generating niches for you. For custom niches, there is some
-in allowable parameter values and dimensions. Details follow.
+flexibility in allowable parameter values and dimensions.
+}
+\section{Niche parameters}{
 
-\code{location}: Required for custom niches; the location of the niche optimum for each
-species-resource combination.
-Must be a matrix with one row per species (\code{nsp}), one column per niche axis (\code{nr}). For a
-single niche axis, a vector with one entry per species is also accepted. The location is the
-mean of the Gaussian colonisation function.
 
-\code{breadth}: Niche breadth, or the standard deviation of the Gaussian colonisation function;
+\code{cfun}, \code{efun}: The niche function to use; for colonisation only gaussian is supported,
+for extinction may be be constant (the default) or inverse_gaussian.
+
+\code{location}: Required, no default if using \code{niches_custom}. The location of the niche optimum
+for each species-resource combination. Must be a matrix with one row per species (\code{nsp}),
+one column per niche axis (\code{nr}). For a single niche axis, a vector with one entry per
+species is also accepted.
+
+\code{breadth}: Niche breadth, or the standard deviation of the gaussian col/ext function;
 larger values indicate species can occur in a wider variety of environments. For a single
 niche dimension, either a scalar (all species have the same breadth) or a vector of length \code{nsp}.
 For multivariate niches, the following are possible:
@@ -83,6 +89,8 @@ cannot depend on the concentration of any other resource.
 \item A \strong{list} of length \code{nsp}, each element is a square symmetric \code{nr} by \code{nr} matrix. Similar
 to the matrix above, but a full variance-covariance matrix is supplied for each species,
 describing the breadth of the niche along each axis but also how the axes covary.
+\item A \strong{list} with two elements named \code{col} and \code{ext}, each element is a valid entry above,
+in order to provide separate breadths for gaussian colonisation and extinction niches.
 }
 
 For ratio niche dimensions, note that \code{nr} will be larger than the number of niche dimensions
@@ -92,12 +100,14 @@ that the \code{location} and \code{breadth} parameters reflect this. For example
 for three resources are the r1:r2 ratio and r3, the \code{location} parameter should be of length 2,
 with the first entry being the location for r3, and the second for r1:r2. To avoid confusion,
 it is recommended (but not required) that users only construct ratio niches from resources that
-are specified at the end. Default value 1.
+are specified at the end. Default value 1. If a gaussian curve is desired for both
+colonisation and extinction, it
 
-\code{scale_c}, \code{scale_e}: The (relative) height of the Gaussian colonisation function or
-the constant extinction function, must be a positive real number.
-Can be supplied as a scalar (all species have the same scale) or a vector of length \code{nsp}.
-If missing a default value of re-6 (for colonisation) or 2e-7 (for extinction) will be used.
+\code{scale}: Named list with two elements (\code{col} and \code{ext}) giving the (relative) heights of the colonisation
+and extinction functions. Must be positive real numbers. Each element can be supplied
+as a scalar (all species have the same scale) or a vector of length \code{nsp}.
+If missing a default value of 5e-6 (for colonisation) or 2e-7 (for extinction) will be used.
+For gaussian extinction niches, the scale is the height of the curve \emph{minimum}
 
 \code{r_use}: The scale of resource consumption; larger values indicate
 faster consumption of resources, see \code{\link[=ruf]{ruf()}} for more details. This can be a scalar (all species
@@ -107,6 +117,7 @@ a vector of length \code{nr} (all species have identical behaviour, but each res
 a different rate), or a matrix with \code{nsp} rows and \code{nr} columns. Note that static resources
 ignore this parameter. Default value 5e-4.
 }
+
 \examples{
 niches_uniform(nsp = 4)
 niches_custom(nsp = 2, nr = 2, location = matrix(c(1,2,3,4), nrow=2))

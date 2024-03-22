@@ -45,6 +45,7 @@ flume = function(comm, network, sp0, st0, spb, stb, dt = 86400) {
 		spb = state(network, "species") * 0
 	boundary(network, "species") = spb
 	x = structure(list(metacom = comm, networks = list(network), dt = dt), class = "flume")
+	attr(x, "length") = 0
 	x
 }
 
@@ -124,6 +125,7 @@ run_simulation = function(x, nt, reps = length(x[["networks"]])) {
 
 	x[["networks"]] = parallel::mclapply(x[["networks"]], .do_sim, comm = x[["metacom"]], 
 		dt = x[["dt"]], nt = nt, mc.cores = cores)
+	attr(x, "length") = attr(x, "length") + nt
 	return(x)
 }
 

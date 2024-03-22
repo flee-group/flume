@@ -19,10 +19,10 @@
 #' Scenarios handle the complexity of generating niches for you. For custom niches, there is some
 #' flexibility in allowable parameter values and dimensions.
 #' 
-#' @section Niche parameters
+#' @section Niche parameters:
 #'
 #' `cfun`, `efun`: The niche function to use; for colonisation only gaussian is supported,
-#' for extinction maybe be constant (the default) or gaussian.
+#' for extinction may be be constant (the default) or inverse_gaussian.
 #' 
 #' `location`: Required, no default if using `niches_custom`. The location of the niche optimum 
 #' for each species-resource combination. Must be a matrix with one row per species (`nsp`), 

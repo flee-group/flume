@@ -17,7 +17,10 @@
 #' @return A ggplot2 object
 #' @export
 plot.flume = function(x, type = "occupancy") {
-	pl_types = list(occupancy = .pl_occupancy, ef_time = .pl_ef_time, bef = .pl_bef, resources = .pl_resource)
+	if(attr(x, "length") == 0)
+		stop("Model has not been run, nothing to plot")
+	pl_types = list(occupancy = .pl_occupancy, ef_time = .pl_ef_time, 
+					bef = .pl_bef, resources = .pl_resource)
 	type = match.arg(type, names(pl_types))
 	pl_types[[type]](x)
 }
@@ -44,7 +47,7 @@ plot.flume = function(x, type = "occupancy") {
 .pl_occupancy = function(x) {
 	occ = summarise(x, stat = "occupancy", by = c("time", "species"))
 	pl = ggplot2::ggplot(occ, ggplot2::aes(x = time, y = occupancy, colour = species)) + 
-		scale_color_manual(values = attr(x$metacom, "sp_colors"))
+		scale_color_manual(values = attr(x$metacom, "sp_colours"))
 	if("occupancy_lo" %in% colnames(occ))
 		pl = pl + geom_ribbon(aes(ymin = occupancy_lo, ymax = occupancy_hi, fill = species, 
 			colour = NULL), alpha = 0.3) + 	scale_fill_manual(values = attr(x$metacom, "sp_colors"))
@@ -102,6 +105,7 @@ theme_flume = function() ggplot2::theme_minimal()
 #' @param variable If state is defined, the column to use for plotting; see 'details'
 #' @param t Optional, time step to print; if missing, defaults to most recent
 #' @param zlim Optional, z limits for colour scales when plotting a state variable
+#' @param legend_pos Legend position, see [legend()]
 #' @param ... Additional arguments to [igraph::plot.igraph()]
 #' @examples
 #' Q = rep(1, 4)
@@ -111,7 +115,7 @@ theme_flume = function() ggplot2::theme_minimal()
 #' plot(rn)
 #' plot.river_network(rn)
 #' @export
-plot.river_network = function(x, variable = 1, t, zlim, ...) {
+plot.river_network = function(x, variable = 1, t, zlim, legend_pos = "topleft", ...) {
 	if(!requireNamespace("igraph", quietly = TRUE)) {
 		stop("Package 'igraph' is required for plotting, please install it and try again")
 	}
@@ -146,14 +150,18 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 		}
 		nsp = ncol(S)
 		# colours from colorbrewer
-		cols = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6")
-
+		cols = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", 
+				 "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6")
+		sp_cols = character(nsp)
 		par(mfrow = .set_mfrow(nsp))
 		for(i in 1:nsp) {
+			sp_cols[i] = cols[(i %% length(cols))+1]
 			args$vertex.color = rep('white', nrow(S))
-			args$vertex.color[S[,i] == 1] = cols[(i %% length(cols))+1]
+			args$vertex.color[S[,i] == 1] = sp_cols[i]
 			do.call(plot, args)
 		}
+		plot(0,0, axes = FALSE, type = 'n', xlab = "", ylab = "")
+		legend(legend_pos, fill = sp_cols, title = "species", legend = attr(x, "names_species"), bty = 'n')
 	}
 	else {
 		## choose a vertex colour scheme if none specified
@@ -167,11 +175,18 @@ plot.river_network = function(x, variable = 1, t, zlim, ...) {
 
 				if(missing(zlim))
 					zlim = range(R)
+				
+				zlim = pretty(zlim, 1)
 				args$vertex.color = scales::col_numeric("PuBu", zlim)(R)
 			}
 		}
 		do.call(plot, args)
+		lab = ifelse(is.numeric(variable), attr(x, "names_resources")[variable], variable)
+		RR = rev(pretty(R, 4))
+		leg_cols = scales::col_numeric("PuBu", zlim)(RR)
+		legend(legend_pos, fill = leg_cols, title = lab, legend = RR, bty = 'n')
 	}
+	invisible()
 }
 
 #' Plot species independent stable envelopes
@@ -230,8 +245,10 @@ plot.metacommunity = function(x, axis = 1, res = 100, default_r, lwd = 1, xlim, 
 
 		p2 = ggplot2::ggplot(comp) +
 			ggplot2::geom_tile(ggplot2::aes(x = sp1, y = sp2, fill = competition)) +
-			ggplot2::scale_fill_viridis_c(option = "plasma") + ggplot2::theme_minimal() +
-			ggplot2::xlab("") + ggplot2::ylab("")
+			ggplot2::scale_fill_viridis_c(option = "plasma") + 
+			ggplot2::theme_minimal() +
+			ggplot2::xlab("") + ggplot2::ylab("") +
+			ggplot2::theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 		gridExtra::grid.arrange(p1, p2, nrow = 1)
 	} else {
@@ -298,5 +315,7 @@ plot.species = function(x, R, axis = 1, res = 100, lwd = 1) {
 		nr = ceiling(sqrt(ratio * n))
 	}
 	nc = ceiling(n / nr)
+	if(n == nc*nr)
+		nc = nc + 1
 	return(c(nr, nc))
 }

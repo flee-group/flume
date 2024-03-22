@@ -4,7 +4,7 @@
 \alias{plot.river_network}
 \title{Plot a river network}
 \usage{
-\method{plot}{river_network}(x, variable = 1, t, zlim, ...)
+\method{plot}{river_network}(x, variable = 1, t, zlim, legend_pos = "topleft", ...)
 }
 \arguments{
 \item{x}{A \code{\link[=river_network]{river_network()}}}
@@ -14,6 +14,8 @@
 \item{t}{Optional, time step to print; if missing, defaults to most recent}
 
 \item{zlim}{Optional, z limits for colour scales when plotting a state variable}
+
+\item{legend_pos}{Legend position, see \code{\link[=legend]{legend()}}}
 
 \item{...}{Additional arguments to \code{\link[igraph:plot.igraph]{igraph::plot.igraph()}}}
 }
