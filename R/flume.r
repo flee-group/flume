@@ -58,8 +58,8 @@ flume = function(comm, network, sp0, st0, spb, stb, dt = 86400) {
 			stop("Initial ", type, " state not specified")
 		init = state(rn, type)
 	}
-	if(ncol(init) != attr(comm, n))
-		stop("Initial network state doesn't match number of ", type, " in comm")
+	if(!is(init, "matrix") || (ncol(init) != attr(comm, n)))
+		stop("init must be a matrix with one column per number of ", type, " in comm")
 	
 	if(type == "species" && !all(init %in% c(1,0))) {
 		init[init != 0] = 1

@@ -18,6 +18,7 @@ test_that("Model creation", {
 	# test creation of using abundance as initial values
 	expect_warning(sim2 <- flume(comm, network, st0 = R, sp0 = 2*S, stb = R, spb = S), regex="abundance")
 	expect_identical(state(sim2$networks[[1]], "species"), S)
+	expect_error(flume(comm, network, st0 = R, sp0 = as.vector(S), stb = R, spb = S), regex = "must be a matrix")
 	
 	## errors
 	## missing initial state
