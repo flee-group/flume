@@ -71,8 +71,7 @@ metacommunity = function(nsp = 2, nr = 1, niches = niches_uniform, dispersal = d
 	dispersal_args$nsp = nsp
 	d_params = do.call(dispersal, dispersal_args)
 	## create a list of species
-	comm[["species"]] = mapply(species, location = n_params$location, breadth = n_params$breadth,
-		scale_c = n_params$scale_c, scale_e = n_params$scale_e, r_use = n_params$r_use,
+	comm[["species"]] = mapply(species, col = n_params$col, ext = n_params$ext, r_use = n_params$r_use,
 		alpha = d_params$alpha, beta = d_params$beta, MoreArgs = list(r_trans = n_params$r_trans), 
 		SIMPLIFY = FALSE)
 	attr(comm, "sp_names") = sp_names

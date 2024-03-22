@@ -67,11 +67,10 @@ test_that("Multivariate metacommunities", {
 test_that("Niches estimated correctly", {
 	# data(algae, package = "flume")
 	loc = c(0.25, 0.75)
-	scale_c = 0.5
-	scale_e = 0.2
+	scale = list(col = 0.5, ext = 0.2)
 	comm = metacommunity(niches = niches_custom, 
-		niche_args = list(location = loc, scale_c = scale_c, scale_e = scale_e))
-	expect_equal(attr(comm$species[[1]], "niche_max"), scale_c - scale_e, check.names = FALSE)
+		niche_args = list(location = loc, scale = scale))
+	expect_equal(attr(comm$species[[1]], "niche_max"), scale$col - scale$ext, check.names = FALSE)
 	expect_equal(f_niche(comm$species[[1]], loc[1]), attr(comm$species[[1]], "niche_max"))
 
 	# species 2 performs worse at species 1's optimum

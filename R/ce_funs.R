@@ -64,6 +64,8 @@ ce_gaussian = function(location, breadth, scale, displacement) {
 		stop("displacement must be a single value")
 	
 	if(length(location) == 1) {
+		if(is(breadth, "matrix"))
+			breadth = as.vector(breadth)
 		f = function(x) displacement + scale * exp(-(x - location)^2/(2 * breadth^2))
 	} else {
 		if(!requireNamespace("mvtnorm", quietly = TRUE))
@@ -80,12 +82,8 @@ ce_gaussian = function(location, breadth, scale, displacement) {
 	return(f)
 }
 
-
-
-
-
-
-
-
-
+#' @keywords internal
+.choose_ce_fun = function(x) {
+	if(class(x) == "GaussianNicheFun") return(ce_gaussian) else return(ce_constant)
+}
 

@@ -83,6 +83,7 @@ niches_custom = function(nsp, nr, cfun = "gaussian", efun = c("constant", "inver
 		r_use = 5e-4, r_lim = matrix(rep(c(0, 1), each = nr), ncol = 2), static, ratio) {
 	cfun = match.arg(cfun)
 	efun = match.arg(efun)
+	nr = as.integer(nr)
 	val = list()
 	val$r_types = rep("normal", nr)
 	if(missing(ratio)) {
@@ -110,7 +111,7 @@ niches_custom = function(nsp, nr, cfun = "gaussian", efun = c("constant", "inver
 	}
 
 	location = lapply(1:nsp, function(i) location[i, ])
-	if(efun == "gaussian") {
+	if(efun == "inverse_gaussian") {
 		if(all(c("col", "ext") %in% names(breadth))) {
 			breadth$col = .check_breadth(breadth$col, nsp, nn)
 			breadth$ext = .check_breadth(breadth$ext, nsp, nn)
@@ -122,13 +123,19 @@ niches_custom = function(nsp, nr, cfun = "gaussian", efun = c("constant", "inver
 		breadth = list(col = .check_breadth(breadth, nsp, nn), ext = NULL)
 	}
 	scale = .check_scale(scale, nsp)
+	
+	val$col = mapply(\(sh, l, br, sc, nr) new("GaussianNicheFun", location = l, 
+		breadth = br, scale = sc, nr = nr), l = location, br = breadth$col, sc = scale$col,
+		MoreArgs = list(nr = nn), SIMPLIFY = FALSE)
 
-	val$col = list(fun = ce_gaussian, location = location, breadth = breadth$col, scale = scale$col)
-	if(efun == "gaussian") {
-		val$ext = list(fun = ce_gaussian, location = location, breadth = breadth$ext,
-					   scale = -abs(scale$ext))
+	
+	if(efun == "inverse_gaussian") {
+		val$ext = mapply(\(sh, l, br, sc, nr) new("GaussianNicheFun", location = l, 
+			breadth = br, scale = sc, nr = nr), l = location, br = breadth$ext, sc = -abs(scale$ext),
+			MoreArgs = list(nr = nn), SIMPLIFY = FALSE)
 	} else {
-		val$ext = list(fun = ce_constant, scale = scale$ext, nr = nr)
+		val$ext = mapply(\(sh, sc, nr) new("ConstantNicheFun", scale = sc, nr = nr), 
+			sc = scale$ext, MoreArgs = list(nr = nn), SIMPLIFY = FALSE)
 	}
 	
 	val$r_use = .check_r_use(r_use, nsp, nr, static)

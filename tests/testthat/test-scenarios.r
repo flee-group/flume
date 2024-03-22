@@ -1,9 +1,5 @@
 test_that("Custom niches", {
 
-	## exported functions
-	# 
-
-
 	## input validation
 	location = c(1, 2)
 	breadth = c(1, 1.5)
@@ -102,32 +98,32 @@ test_that("Niche scenarios", {
 
 	# few species
 	expect_error(nu <- niches_uniform(nsp = 2, nr = 1), regex = NA)
-	expect_equal(unlist(nu$col$location), c(1/3, 2/3))
+	expect_equal(sapply(nu$col, \(x) x@location), c(1/3, 2/3))
 
 	# many species
 	expect_error(nu <- niches_uniform(nsp = 10, nr = 1), regex = NA)
-	expect_equal(unlist(nu$col$location), seq(0, 1, length.out = 10))
+	expect_equal(sapply(nu$col, \(x) x@location), seq(0, 1, length.out = 10))
 
 	# custom niche width
 	br = 2.4
 	expect_error(nu <- niches_uniform(nsp = 2, nr = 1, breadth = br), regex = NA)
-	expect_equal(nu$col$breadth, rep(br, 2))
+	expect_equal(sapply(nu$col, \(x) x@breadth), rep(br, 2))
 
 	# random niches, single resource
 	nsp = 2
 	nr = 1
 	expect_error(ni_r <- niches_random(nsp = nsp, nr = nr), regex = NA)
-	expect_equal(length(unlist(ni_r$col$location)), nsp * nr)
+	expect_equal(length(sapply(ni_r$col, \(x) x@location)), nsp * nr)
 
 	# random niches, multiple resources
 	nr = 2
 	expect_error(ni_r <- niches_random(nsp = nsp, nr = nr), regex = NA)
-	expect_equal(length(unlist(ni_r$col$location)), nsp * nr)
-
+	expect_equal(length(sapply(ni_r$col, \(x) x@location)), nsp * nr)
+	
 	# random niches, custom breadth
 	br = 1
 	expect_error(ni_r <- niches_random(nsp = nsp, nr = nr, breadth = br), regex = NA)
-	br_o = unlist(lapply(ni_r$col$breadth, diag))
+	br_o = as(sapply(ni_r$col, \(x) diag(x@breadth)), "vector")
 	expect_equal(br_o, rep(br, length(br_o)))
 
 })

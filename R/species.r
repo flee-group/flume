@@ -10,10 +10,7 @@
 #' The resource use function is set automatically by default, but can be set to an arbitrary
 #' function; see [resource use functions][ruf()] for details on how this function should behave.
 #'
-#' @param col Named list of colonisation parameters, must include `fun`, 
-#'		the colonisation function (e.g., [ce_gaussian()])
-#' @param ext Named list of colonisation parameters, must include `fun`, 
-#'		the extinction function (e.g., [ce_constant()])
+#' @param col,ext A `NicheFun` describing the colonisation/extinction niche, created by, e.g., [niches_custom()]
 #' @param alpha Active dispersal ability
 #' @param beta Passive dispersal ability
 #' @param r_use Resource use scaling parameter, one per resource axis
@@ -35,8 +32,8 @@
 #' @export
 species = function(col, ext, alpha, beta, r_use, r_trans = identity) {
 	x = structure(list(), class = "species")
-	x$par_c = col[names(col) != 'fun']
-	x$par_e = ext[names(ext) != 'fun']
+	x$par_c = get_pars(col)
+	x$par_e = get_pars(ext)
 	x$alpha = alpha
 	x$beta = beta
 	if(length(r_use) == 1)
@@ -44,8 +41,8 @@ species = function(col, ext, alpha, beta, r_use, r_trans = identity) {
 	x$r_use = r_use
 	.check_species_params(x)
 	x$r_trans = r_trans
-	x$col = do.call(col[['fun']], x$par_c)
-	x$ext = do.call(ext[['fun']], x$par_e)
+	x$col = do.call(.choose_ce_fun(col), x$par_c)
+	x$ext = do.call(.choose_ce_fun(ext), x$par_e)
 	
 	attr(x, "niche_max") = f_niche(x, N = x$par_c$location)
 	return(x)

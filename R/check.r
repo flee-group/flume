@@ -47,8 +47,8 @@
 	if(nrx == 1) {
 		if(!(is.matrix(p) && nrow(p) == nsp && ncol(p) == 1))
 			stop("Invalid niche breadth: must be a scalar, vector, or one-column matrix")
-		## convert back to a vector so it plays nicely with mapply
-		p = p[, 1]
+		## convert to list of single-element matrices
+		p = lapply(p[, 1], \(pp) matrix(pp, nrow = 1, ncol = 1))
 	} else {
 		## for multivariate niches
 		p = .check_breadth_multi(p, nsp, nrx)
