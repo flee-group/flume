@@ -190,10 +190,10 @@ plot.metacommunity = function(x, axis = 1, res = 100, default_r, lwd = 1, xlim, 
 	# loc = niche_par(x, "location")
 	# sc = niche_par(x, "sd")
 	if(missing(xlim))
-		xlim = attr(x, "niche_lim")[axis, ]
+		xlim = attr(x, "niche_plot_lims")[axis, ]
 
 	if(missing(default_r))
-		default_r = rowMeans(attr(x, "niche_lim"))
+		default_r = rowMeans(attr(x, "niche_plot_lims"))
 
 	R = matrix(rep(default_r, each = res), nrow = res, ncol = length(default_r))
 	R[,axis] = seq(xlim[1], xlim[2], length.out = res)

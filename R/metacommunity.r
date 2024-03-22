@@ -114,7 +114,7 @@ metacommunity = function(nsp = 2, nr = 1, niches = niches_uniform, dispersal = d
 	# note that this means that all habitat variables MUST be on a ratio scale
 	# for example, do not use temperature in C, use K
 	nmins[nmins < 0] = 0
-	attr(comm, "niche_lim") = cbind(apply(nmins, 2, min), apply(nmaxes, 2, max))
+	attr(comm, "niche_plot_lims") = cbind(apply(nmins, 2, min), apply(nmaxes, 2, max))
 	attr(comm, "niche_lims") = list(min = nmins, max = nmaxes)
 
 	comm[["competition"]] = .compute_comp_matrix(comm, comp_scale)
