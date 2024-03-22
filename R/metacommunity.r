@@ -105,7 +105,11 @@ metacommunity = function(nsp = 2, nr = 1, niches = niches_uniform, dispersal = d
 	nsds = niche_par(comm, "sd")
 	nmins = nlocs - 3 * nsds
 	nmaxes = nlocs + 3 * nsds
-
+	
+	## make colours per species
+	cols = scales::hue_pal()(nsp)
+	attr(comm, "sp_colours") = cols
+		
 	# niches/resources have a natural limit of zero
 	# note that this means that all habitat variables MUST be on a ratio scale
 	# for example, do not use temperature in C, use K

@@ -43,10 +43,11 @@ plot.flume = function(x, type = "occupancy") {
 #' @keywords internal
 .pl_occupancy = function(x) {
 	occ = summarise(x, stat = "occupancy", by = c("time", "species"))
-	pl = ggplot2::ggplot(occ, ggplot2::aes(x = time, y = occupancy, colour = species))
+	pl = ggplot2::ggplot(occ, ggplot2::aes(x = time, y = occupancy, colour = species)) + 
+		scale_color_manual(values = attr(x$metacom, "sp_colors"))
 	if("occupancy_lo" %in% colnames(occ))
 		pl = pl + geom_ribbon(aes(ymin = occupancy_lo, ymax = occupancy_hi, fill = species, 
-			colour = NULL), alpha = 0.3)
+			colour = NULL), alpha = 0.3) + 	scale_fill_manual(values = attr(x$metacom, "sp_colors"))
 	pl = pl + ggplot2::geom_line() + theme_flume() + ggplot2::ylim(0,1)
 	pl
 }
@@ -212,9 +213,9 @@ plot.metacommunity = function(x, axis = 1, res = 100, default_r, lwd = 1, xlim, 
 
 	p1 = ggplot2::ggplot(pldat) + 
 		ggplot2::geom_line(ggplot2::aes(x = r, y = value, colour = species), size = lwd) +
-		ggplot2::scale_colour_brewer(type = "qual", palette = "Set2") +
+		ggplot2::scale_colour_manual("Species", values = attr(x, "sp_colours")) +
 		ggplot2::theme_minimal() + ggplot2::xlab(attr(x, "niche_names")[axis]) + 
-		ggplot2::labs(colour = "Species") + ggplot2::ylim(ylim[1], ylim[2]) +
+		ggplot2::ylim(ylim[1], ylim[2]) +
 		ggplot2::ylab("Niche Height") + 
 		ggplot2::geom_hline(ggplot2::aes(yintercept = 0), size = 1.2)
 
