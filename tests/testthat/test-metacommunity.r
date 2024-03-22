@@ -2,57 +2,7 @@
 # f_niche
 # dispersal_params
 
-test_that("Species creation", {
 
-	# input validation
-	# many parameters must not be negative
-	expect_error(species(location = 0, breadth = -1, scale_c = 1, scale_e = 1, alpha = 1, beta = 1,
-		r_use = 1), regex = "negative")
-	expect_error(species(location = 0, breadth = 1, scale_c = -1, scale_e = 1, alpha = 1, beta = 1,
-		r_use = 1), regex = "negative")
-	expect_error(species(location = 0, breadth = 1, scale_c = 1, scale_e = -1, alpha = 1, beta = 1,
-		r_use = 1), regex = "negative")
-	expect_error(species(location = 0, breadth = 1, scale_c = 1, scale_e = 1, alpha = -1, beta = 1,
-		r_use = 1), regex = "negative")
-	expect_error(species(location = 0, breadth = 1, scale_c = 1, scale_e = 1, alpha = 1, beta = -1,
-		r_use = 1), regex = "negative")
-
-	# some parameters may be negative or positive
-	expect_error(species(location = 1, breadth = 1, scale_c = 1, scale_e = 1, alpha = 1, beta = 1,
-		r_use = 1), regex = NA)
-	expect_error(species(location = -1, breadth = 1, scale_c = 1, scale_e = 1, alpha = 1, beta = 1,
-		r_use = -1), regex = NA)
-
-
-	# multivariate niches
-	loc = c(1, 2)
-	rsc = c(1, 2)
-	rsc_wrong = 1:3
-	bre = matrix(c(1, 0, 0, 1), nrow = 2)
-	bre_wrong = matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1), nrow = 3)
-
-	# all dimensions must agree
-	expect_error(species(location = loc, breadth = bre_wrong, scale_c = 1, scale_e = 1, alpha = 1,
-		beta = 1, r_use = rsc), regex = "dimension mismatch")
-	expect_error(species(location = 1, breadth = bre, scale_c = 1, scale_e = 1, alpha = 1,
-		beta = 1, r_use = rsc), regex = "dimension mismatch")
-	expect_error(species(location = loc, breadth = bre[1, ], scale_c = 1, scale_e = 1, alpha = 1,
-		beta = 1, r_use = rsc_wrong), regex = "dimension mismatch")
-
-	# also check that no entries in vcv matrix are negative
-	expect_error(species(location = loc, breadth = -1 * bre, scale_c = 1, scale_e = 1, alpha = 1,
-		beta = 1, r_use = rsc), regex = "negative")
-
-	# scale_c, scale_e, alpha and beta must be single values
-	expect_error(species(location = loc, breadth = bre, scale_c = c(1, 2), scale_e = 1, alpha = 1,
-		beta = 1, r_use = rsc), regex = "single value")
-	expect_error(species(location = loc, breadth = bre, scale_c = 1, scale_e = c(1, 2), alpha = 1,
-		beta = 1, r_use = rsc), regex = "single value")
-	expect_error(species(location = loc, breadth = bre, scale_c = 1, scale_e = 1, alpha = c(1, 0),
-		beta = 1, r_use = rsc), regex = "single value")
-	expect_error(species(location = loc, breadth = bre, scale_c = 1, scale_e = 1, alpha = 1,
-		beta = c(1, 0), r_use = rsc), regex = "single value")
-})
 
 test_that("Metacommunity creation", {
 
@@ -62,8 +12,7 @@ test_that("Metacommunity creation", {
 	nargs = list(
 		location = c(1, 2),
 		breadth = c(1, 1.5),
-		scale_c = c(0.5, 0.7),
-		scale_e = c(0.2, 0.3),
+		scale = list(col = c(0.5, 0.7), ext = c(0.2, 0.3)),
 		r_use = c(0.5, 0.4),
 		r_lim = c(0, 1)
 	)

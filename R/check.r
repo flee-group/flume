@@ -6,11 +6,15 @@
 #' @rdname check_par
 #' @keywords internal
 .check_scale = function(p, nsp) {
-	if(length(p) == 1)
-		p = rep(p, nsp)
-	if(length(p) != nsp)
-		stop("Scale parameters must be missing, a single value, or 1 value per species")
-	p
+	if(!is(p, "list") || !all(c("col", "ext") %in% names(p)))
+		stop("scale must be a list with two named elements, col and ext")
+	lapply(p, \(pp) {
+		if(length(pp) == 1)
+			pp = rep(pp, nsp)
+		if(length(pp) != nsp)
+			stop("Scale parameters must be missing, a single value, or 1 value per species")
+		pp
+	})
 }
 
 #' @rdname check_par

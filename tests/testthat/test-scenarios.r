@@ -9,18 +9,19 @@ test_that("Custom niches", {
 	breadth = c(1, 1.5)
 	scale_c = c(0.5, 0.7)
 	scale_e = c(0.2, 0.3)
+	scale = list(col = scale_c, ext = scale_e)
 	r_use = c(0.5, 0.4)
 	r_lim = c(0, 1)
 
 	# single species, single resource
 	expect_error(niches_custom(nsp = 1, nr = 1, location = location[1]), regex=NA)
 	expect_error(niches_custom(nsp = 1, nr = 1, location = location[1], breadth = breadth[1], 
-		scale_c = scale_c[1], scale_e = scale_e[1], r_use = r_use[1], r_lim = r_lim), regex=NA)
+		scale = list(col = scale_c[1], ext = scale_e[1]), r_use = r_use[1], r_lim = r_lim), regex=NA)
 	expect_error(niches_custom(nsp = 1, nr = 1, location = 1, breadth = breadth),
 		regex = "niche breadth")
-	expect_error(niches_custom(nsp = 1, nr = 1, location = 1, scale_c = scale_c),
-		regex = "Scale parameters")
-	expect_error(niches_custom(nsp = 1, nr = 1, location = 1, scale_e = scale_e),
+	expect_error(niches_custom(nsp = 1, nr = 1, location = 1, scale = scale_e),
+				 regex = "scale must be a list")
+	expect_error(niches_custom(nsp = 1, nr = 1, location = 1, scale = list(col = scale_c[1], ext = scale_e)),
 		regex = "Scale parameters")
 	expect_error(niches_custom(nsp = 1, nr = 1, location = 1, r_use = r_use),
 		regex = "r_use")
@@ -30,12 +31,11 @@ test_that("Custom niches", {
 	# multiple species, single resource
 	expect_error(niches_custom(nsp = 2, nr = 1, location = location), regex=NA)
 	expect_error(niches_custom(nsp = 2, nr = 1, location = location, breadth = breadth, 
-		scale_c = scale_c, scale_e = scale_e, r_use = r_use, r_lim = r_lim), regex=NA)
+		scale = scale, r_use = r_use, r_lim = r_lim), regex=NA)
 	expect_error(niches_custom(nsp = 2, nr = 1, location = location, breadth = rep(breadth, 2)),
 		regex = "niche breadth")
-	expect_error(niches_custom(nsp = 2, nr = 1, location = location, scale_c = rep(scale_c, 2)),
-		regex = "Scale parameters")
-	expect_error(niches_custom(nsp = 2, nr = 1, location = location, scale_e = rep(scale_e, 2)),
+	expect_error(niches_custom(nsp = 2, nr = 1, location = location, scale = list(
+		col = rep(scale_c, 2), ext = scale_e)),
 		regex = "Scale parameters")
 	expect_error(niches_custom(nsp = 2, nr = 1, location = location, r_use = rep(r_use, 2)),
 		regex = "r_use")
@@ -102,32 +102,32 @@ test_that("Niche scenarios", {
 
 	# few species
 	expect_error(nu <- niches_uniform(nsp = 2, nr = 1), regex = NA)
-	expect_equal(unlist(nu$location), c(1/3, 2/3))
+	expect_equal(unlist(nu$col$location), c(1/3, 2/3))
 
 	# many species
 	expect_error(nu <- niches_uniform(nsp = 10, nr = 1), regex = NA)
-	expect_equal(unlist(nu$location), seq(0, 1, length.out = 10))
+	expect_equal(unlist(nu$col$location), seq(0, 1, length.out = 10))
 
 	# custom niche width
 	br = 2.4
 	expect_error(nu <- niches_uniform(nsp = 2, nr = 1, breadth = br), regex = NA)
-	expect_equal(nu$breadth, rep(br, 2))
+	expect_equal(nu$col$breadth, rep(br, 2))
 
 	# random niches, single resource
 	nsp = 2
 	nr = 1
 	expect_error(ni_r <- niches_random(nsp = nsp, nr = nr), regex = NA)
-	expect_equal(length(unlist(ni_r$location)), nsp * nr)
+	expect_equal(length(unlist(ni_r$col$location)), nsp * nr)
 
 	# random niches, multiple resources
 	nr = 2
 	expect_error(ni_r <- niches_random(nsp = nsp, nr = nr), regex = NA)
-	expect_equal(length(unlist(ni_r$location)), nsp * nr)
+	expect_equal(length(unlist(ni_r$col$location)), nsp * nr)
 
 	# random niches, custom breadth
 	br = 1
 	expect_error(ni_r <- niches_random(nsp = nsp, nr = nr, breadth = br), regex = NA)
-	br_o = unlist(lapply(ni_r$breadth, diag))
+	br_o = unlist(lapply(ni_r$col$breadth, diag))
 	expect_equal(br_o, rep(br, length(br_o)))
 
 })

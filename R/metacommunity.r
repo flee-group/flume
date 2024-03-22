@@ -137,58 +137,7 @@ dispersal_params = function(x) {
 	list(alpha = alpha, beta = beta)
 }
 
-#' Creates species
-#'
-#' @details Creates a species, which is defined by its niche parameters and its
-#' colonisation/extinction functions.
-#'
-#' Note that for gaussian functions in multiple variables, `scale` is always a scalar, but
-#' `location` must be a location vector of length `nx`, and `width` must be a variance covariance
-#' matrix with `dim = c(nx, nx)`.
-#'
-#' The resource use function is set automatically by default, but can be set to an arbitrary
-#' function; see [resource use functions][ruf()] for details on how this function should behave.
-#'
-#' @param location Location of the niche optimum; one per niche axis
-#' @param breadth Niche breadth, or variance-covariance matrix for multivariate
-#' @param scale_c Scale of the colonisation portion of the niche
-#' @param scale_e Scale of the extinction portion of the niche
-#' @param alpha Active dispersal ability
-#' @param beta Passive dispersal ability
-#' @param r_use Resource use scaling parameter, one per resource axis
-#' @param r_trans A transformation function for converting resources into niche dimensions
-#' @return An S3 object of class 'species', which contains the following named elements:
-#'   * `col`: The colonisation function, takes a state matrix R and returns a vector of
-#'		colonisation rates
-#'   * `ext`: The extinction function
-#'   * `par_c`: colonisation niche parameters
-#'   * `par_e`: extinction niche parameters
-#'   * `alpha`: Active dispersal ability
-#'   * `beta`: Passive dispersal ability
-#'   * `r_use`: Resource use rate per niche axis
-#'	 * `r_trans`: Resource-to-niche transformation function
-#'
-#' Additionally, the following attributes:
-#'    * `niche_max`: the maximum possible value of the fundamental niche
-#' @examples NULL
-#' @export
-species = function(location, breadth, scale_c, scale_e, alpha, beta, r_use, r_trans = identity) {
-	x = structure(list(), class = "species")
-	x$par_c = list(location = location, breadth = breadth, scale = scale_c)
-	x$par_e = list(scale = scale_e)
-	x$alpha = alpha
-	x$beta = beta
-	if(length(r_use) == 1)
-		r_use = rep(r_use, length(location))
-	x$r_use = r_use
-	.check_species_params(x)
-	x$r_trans = r_trans
-	x$col = ce_gaussian(location, breadth, scale_c)
-	x$ext = ce_constant(scale_e, length(location))
 
-	attr(x, "niche_max") = f_niche(x, N = location)
-	return(x)
-}
 
 #' Make a competition matrix
 #' @param x A [metacommunity()]
